@@ -1,0 +1,26 @@
+# Nextflow
+.nextflow*
+work/
+results/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+
+# Local data, never committed
+data/
+reference/
+*.bam
+*.bai
+*.cram
+*.crai
+*.vcf.gz
+*.vcf.gz.tbi
