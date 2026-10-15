@@ -1,7 +1,7 @@
 # Nextflow
 .nextflow*
 work/
-results/
+/results/
 *.log
 
 # Python
