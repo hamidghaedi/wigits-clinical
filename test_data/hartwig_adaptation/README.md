@@ -29,6 +29,9 @@ original lane numbers have been invented. Confirmed DNA flowcells are included
 from the laboratory manifest; the missing RNA flowcell is left unspecified.
 The tumour DNA row supplies the case-level `cancer_type:Carcinoid`, based on the
 recorded morphology 8240/3, not a new OncoTree assignment or primary-site choice.
+**This is an ORANGE display label, not a validated NEO cohort assignment.**
+The staged NEO reference has no `Carcinoid` column. See the consumer-specific
+terminology review below before interpreting this field.
 `info` accepts documented keys, not arbitrary clinical fields. Specimen
 preservation remains in `inputs.csv`; it is not an extra native column.
 
@@ -47,6 +50,10 @@ Supported `info` keys are `library_id`, `lane`, `flowcell`, `cancer_type`,
 The last three are optional operational settings, not additional clinical fields.
 References: [native input documentation](https://nf-co.re/oncoanalyser/3.0.0/docs/usage/#info-field-keys)
 and [morphology terminology](https://seer.cancer.gov/manuals/2026/SPCSM_2026_Appendix_E.pdf).
+
+Consumer meanings, exact reference vocabulary, source limitations and test
+evidence are recorded in [METADATA_CONSUMERS.md](METADATA_CONSUMERS.md).
+Schema/parser acceptance alone does not establish downstream semantic validity.
 
 Format authority: native `assets/schema_input.json`, `docs/usage.md` (FASTQ
 inputs), and `lib/Utils.groovy` at Oncoanalyser 3.0.0 commit
