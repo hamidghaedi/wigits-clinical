@@ -25,8 +25,28 @@ as `--input` for the native test; no analysis is launched by creating it.
 `library_id:<sample>_chr17_chr19;lane:merged` identifies each combined BAM-derived
 test library. These are technical test read-group labels, not claims about the
 original physical library or sequencing lane. No flowcell, clinical metadata or
-original lane numbers have been invented. Specimen preservation remains in
-`inputs.csv`; it is not an extra column in the native samplesheet.
+original lane numbers have been invented. Confirmed DNA flowcells are included
+from the laboratory manifest; the missing RNA flowcell is left unspecified.
+The tumour DNA row supplies the case-level `cancer_type:Carcinoid`, based on the
+recorded morphology 8240/3, not a new OncoTree assignment or primary-site choice.
+`info` accepts documented keys, not arbitrary clinical fields. Specimen
+preservation remains in `inputs.csv`; it is not an extra native column.
+
+The remaining recorded case information is available to the adaptation agent at:
+```text
+/global/scratch/hpc6049/hartwig_test_fastqs_20261109/KQ0205/case_metadata.json
+```
+This private reference includes the bound clinical and laboratory source rows,
+histology/site codes, grade, pathology cellularity, dates, specimen preparation
+and library kits, with source paths. Source discrepancies are preserved. Native
+Oncoanalyser does not automatically consume this JSON. Clinical payload stays
+outside Git; no new metadata-ingestion code is introduced here.
+
+Supported `info` keys are `library_id`, `lane`, `flowcell`, `cancer_type`,
+`read_group_overrides`, `longitudinal_sample`, and `generate_redux_tsvs_only`.
+The last three are optional operational settings, not additional clinical fields.
+References: [native input documentation](https://nf-co.re/oncoanalyser/3.0.0/docs/usage/#info-field-keys)
+and [morphology terminology](https://seer.cancer.gov/manuals/2026/SPCSM_2026_Appendix_E.pdf).
 
 Format authority: native `assets/schema_input.json`, `docs/usage.md` (FASTQ
 inputs), and `lib/Utils.groovy` at Oncoanalyser 3.0.0 commit
