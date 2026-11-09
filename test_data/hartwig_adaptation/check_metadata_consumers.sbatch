@@ -14,10 +14,10 @@ neo_image=$4
 orange_image=$5
 mkdir -p "$outdir" "$SLURM_TMPDIR/classes"
 javac --release 17 -d "$SLURM_TMPDIR/classes" "$source_java"
-apptainer exec "$neo_image" cp /usr/local/share/hmftools-neo-1.3-0/neo.jar "$SLURM_TMPDIR/neo.jar"
+apptainer exec --bind "$SLURM_TMPDIR:$SLURM_TMPDIR" "$neo_image" cp /usr/local/share/hmftools-neo-1.3-0/neo.jar "$SLURM_TMPDIR/neo.jar"
 java -Xmx1g -cp "$SLURM_TMPDIR/neo.jar:$SLURM_TMPDIR/classes" CheckCancerType "$fixture" \
     > "$outdir/neo_native_probe.log"
-apptainer exec "$orange_image" cp /usr/local/share/hmftools-orange-5.0.1-0/orange.jar "$SLURM_TMPDIR/orange.jar"
+apptainer exec --bind "$SLURM_TMPDIR:$SLURM_TMPDIR" "$orange_image" cp /usr/local/share/hmftools-orange-5.0.1-0/orange.jar "$SLURM_TMPDIR/orange.jar"
 javap -p -c -classpath "$SLURM_TMPDIR/orange.jar" com.hartwig.hmftools.orange.algo.OrangeAlgo \
     > "$outdir/orange_native_bytecode.txt"
 sha256sum "$SLURM_TMPDIR/neo.jar" "$SLURM_TMPDIR/orange.jar" > "$outdir/native_jar_sha256.txt"
