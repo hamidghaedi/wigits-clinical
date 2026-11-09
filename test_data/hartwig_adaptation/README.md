@@ -14,6 +14,29 @@ FASTQ conversion. It prefers OQ qualities when present and otherwise uses QUAL.
 These BAM-derived reads can retain earlier trimming or hard clipping and are
 not a reconstruction of original sequencer FASTQs.
 
+## Native samplesheet
+
+[`samplesheet.KQ0205.chr17_chr19.csv`](samplesheet.KQ0205.chr17_chr19.csv)
+is the completed Oncoanalyser FASTQ samplesheet: one analysis group and three
+rows for tumour DNA, normal DNA and tumour RNA. Each row contains its R1/R2
+paths separated by `;`, as required by native Oncoanalyser 3.0.0. Use this file
+as `--input` for the native test; no analysis is launched by creating it.
+
+`library_id:<sample>_chr17_chr19;lane:merged` identifies each combined BAM-derived
+test library. These are technical test read-group labels, not claims about the
+original physical library or sequencing lane. No flowcell, clinical metadata or
+original lane numbers have been invented. Specimen preservation remains in
+`inputs.csv`; it is not an extra column in the native samplesheet.
+
+Format authority: native `assets/schema_input.json`, `docs/usage.md` (FASTQ
+inputs), and `lib/Utils.groovy` at Oncoanalyser 3.0.0 commit
+`7c74c87a43749952b38c9a18915947570f0595a0`. Samplesheet metadata can be complete
+before extraction finishes: the datasets are ready only when all three
+`completion.json` files exist and their Slurm jobs have completed successfully.
+Validation passed against the official JSON schema and the unmodified native
+`Utils.parseInput` parser: one group, tumour DNA, normal DNA and tumour RNA.
+This parser-only check launched no analysis processes.
+
 Outputs are external to Git:
 ```text
 /global/scratch/hpc6049/hartwig_test_fastqs_20261109/KQ0205/

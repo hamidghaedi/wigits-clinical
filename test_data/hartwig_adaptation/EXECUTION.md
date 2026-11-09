@@ -43,3 +43,22 @@ Only small header/index inspections and the synthetic regression ran on the
 login node. All real BAM extraction, conversion and FASTQ verification run in
 the three Slurm allocations. No source BAMs, existing analyses or production
 workflow settings were modified.
+
+## Samplesheet and RNA completion checkpoint
+
+The completed three-row native samplesheet is
+`samplesheet.KQ0205.chr17_chr19.csv` beside this document. It passed the official
+Oncoanalyser 3.0.0 JSON schema and the unmodified native `Utils.parseInput`
+parser at `7c74c87a43749952b38c9a18915947570f0595a0`, using Nextflow 26.04.4.
+The parser-only workflow resolved one group and all three intended sample/role
+bindings; it launched no analytical processes. Validation artifacts are under
+the runtime root's `samplesheet_validation/` directory; its `.nextflow.log`
+is at the runtime root. This establishes metadata validity, not data readiness.
+
+RNA job **12440945 COMPLETED, exit 0:0, elapsed 00:08:02**, with maximum RSS
+908580 KiB. Its completion record reports **41,399,966 paired reads**, zero
+singletons and zero other reads; all selected primary records were accounted
+for. The R1/R2 compressed sizes are 3,022,368,548 and 3,121,712,533 bytes.
+Tumour and normal DNA jobs were still RUNNING at this checkpoint. Do not launch
+the complete DNA/RNA test until their completion records and successful Slurm
+accounting are also available.
