@@ -1,6 +1,6 @@
 # workflow
 
-Nothing runs from here yet.
+Site configuration for Frontenac is in `conf/` (`frontenac.config`, `frontenac_limits.config`, `frontenac_paths.env`); the smoke-test launcher is `run_oncoanalyser_test_frontenac.sh`. All HPC paths come from `conf/frontenac_paths.env`, the machine-readable form of [`docs/directory_layout.md`](../docs/directory_layout.md).
 
 Intended layout once work starts.
 

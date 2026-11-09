@@ -16,6 +16,7 @@ The project starts as documentation. Nothing runs yet.
 | `docs/hartwig_clinical_layer.md` | What is known about SERVE, PROTECT, ROSE and the patient reporter from public history and regulatory documents. |
 | `docs/djerba_wgts_dataflow.md` | The same analysis for OICR's Djerba, kept here as the comparison point that motivated this work. |
 | `docs/gap_register.md` | The running list of features that are missing or private, with what is known and what we intend to do about each. |
+| `docs/directory_layout.md` | **Canonical directory-layout contract.** Where every kind of file lives on the HPC side (git / shared project storage / scratch), what already exists where, and the machine-readable `workflow/conf/frontenac_paths.env`. |
 | `workflow/` | Where the Nextflow layer will live. Empty apart from a note on intended structure. |
 | `CONTRIBUTING.md` | How work moves between this repository and the HPC side where testing happens. |
 
