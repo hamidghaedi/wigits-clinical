@@ -116,6 +116,13 @@ interpretation rules or production reporting template.
   and captures the installed ORANGE bytecode and both JAR hashes. Execution
   results are recorded in `EXECUTION.md` after completion.
 
+Completed binary probe **12441043**, exit **0:0**: `Carcinoid` and
+`Small_intestine` did not match, `Small intestine` did match, and the unmatched
+key retained pan-cancer TPM while returning unavailable cancer-specific TPM.
+Installed ORANGE bytecode corroborated the source-level display/DOID finding.
+Exact executed JAR hashes and the small harness bind correction are recorded
+in `EXECUTION.md`. This does not claim that a full clinical report was validated.
+
 Private evidence:
 ```text
 /global/scratch/hpc6049/hartwig_test_fastqs_20261109/KQ0205/terminology_review/
