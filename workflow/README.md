@@ -8,6 +8,10 @@ records. It generates initial resources before launching stock Oncoanalyser,
 including64-core heavy CPU tasks, and overrides the historical32-core ceiling.
 The model is a conservative first-full-case extrapolation pending runtime evidence.
 
+Existing d1.vd1 BAMs use the separate [native BAM entry](../docs/NATIVE_BAM_ENTRY.md):
+`run_bam_oncoanalyser_frontenac.sbatch`. It supplies a custom reference through
+the supported upstream interface and retains full REDUX and native callers.
+
 Intended layout once work starts.
 
 ```

@@ -1,5 +1,9 @@
 # oncoanalyser wiring around the alignment file and the SNV VCF
 
+Current site BAM entry and verification status: [NATIVE_BAM_ENTRY.md](NATIVE_BAM_ENTRY.md).
+This wiring assessment includes hypotheses and historical estimates; its blanket
+BQSR statements do not establish the processing history of every current BAM.
+
 **Purpose.** Map, from source, exactly what oncoanalyser 3.0.0 does with (a) the DNA alignment file and
 (b) the small-variant (SNV/indel) VCF, so that replacing the aligner with Parabricks-aligned BAMs and the
 small-variant caller with DeepSomatic can be done as deliberate rewiring rather than guesswork. For each

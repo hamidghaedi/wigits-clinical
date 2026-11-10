@@ -1,0 +1,3 @@
+group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath
+KQ0205_full_bam_custom,KQ0205,KQ0205-DNA,tumor,dna,bam,cancer_type:Carcinoid,/global/scratch/hpc6049/mohcc_runs/gi_frontenac_20261103/KQ0205/inputs/KQ0205-DNA.analysis_ready.bam
+KQ0205_full_bam_custom,KQ0205,KQ0205-gDNA,normal,dna,bam,,/global/scratch/hpc6049/mohcc_runs/gi_frontenac_20261103/KQ0205/inputs/KQ0205-gDNA.analysis_ready.bam

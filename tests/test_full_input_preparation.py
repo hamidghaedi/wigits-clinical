@@ -19,6 +19,34 @@ def load(name):
 
 
 class ResourceTests(unittest.TestCase):
+    def test_existing_input_lanes_are_sized_without_inventing_read_counts(self):
+        module = load('build_input_resources')
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            paths = []
+            for i in range(4):
+                p = tmp/f'lane{i}.fastq.gz'
+                p.write_bytes(b'test')
+                paths.append(str(p))
+            sheet = tmp/'samplesheet.csv'
+            sheet.write_text('sample_id,sample_type,sequence_type,filetype,filepath\n'
+                + f'tumour,tumor,dna,fastq,{paths[0]};{paths[1]}\n'
+                + f'tumour,tumor,dna,fastq,{paths[2]};{paths[3]}\n')
+            result = module.load_samplesheet(sheet)
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0]['input_bytes'], 16)
+            self.assertIsNone(result[0]['read_pairs'])
+            sheet.write_text(sheet.read_text() + f'tumour,tumor,dna,fastq,{paths[0]};{paths[1]}\n')
+            with self.assertRaises(ValueError):
+                module.load_samplesheet(sheet)
+
+    def test_bam_byte_proxy_changes_allocation(self):
+        module = load('build_input_resources')
+        rows = [dict(role=r, read_pairs=None, input_bytes=200*1024**3) for r in ['tumor','normal']]
+        result = module.plan(rows)
+        self.assertEqual(result['REDUX']['cpus'], 64)
+        self.assertEqual(result['ESVEE']['workload_units'], 40)
+
     def test_workload_increases_initial_resources(self):
         module = load('build_input_resources')
         small = [dict(role=r, read_pairs=50_000_000) for r in ['tumor', 'normal', 'rna']]

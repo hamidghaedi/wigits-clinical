@@ -33,6 +33,7 @@ SAMPLESHEET="$(readlink -f "${2:?usage: $0 <run_id> <samplesheet.csv> [extra arg
 shift 2
 ONCO_REV="${ONCO_REV:-$ONCO_REFERENCE_VERSION}"
 ONCO_SOURCE="${ONCO_SOURCE:-nf-core/oncoanalyser}"
+ONCO_GENOME="${ONCO_GENOME:-GRCh38_hmf}"
 REF_CONFIG="${REF_CONFIG:-$ONCO_REF_ROOT/$ONCO_REFERENCE_VERSION/reference_data.config}"
 RUN_DIR="$RUN_ROOT/$RUN_ID"
 
@@ -58,7 +59,7 @@ CMD+=(-profile apptainer
      -c "$HERE/conf/frontenac.config"
      -c "$HERE/conf/frontenac_limits.config"
      -c "$REF_CONFIG"
-     --mode wgts --genome GRCh38_hmf
+     --mode wgts --genome "$ONCO_GENOME"
      --input "$RUN_DIR/samplesheet.csv"
      --outdir "$RUN_DIR/results"
      -work-dir "$RUN_DIR/work"
