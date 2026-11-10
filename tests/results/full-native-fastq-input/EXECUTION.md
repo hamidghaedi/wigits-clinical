@@ -64,7 +64,27 @@ whole-file patient audit stages.
 
 ## Submission
 
-Submission/accounting is appended after launching the frozen package. The
+The frozen package was submitted as **Slurm head12444653**, observed RUNNING
+on`frnt075`. Source release commit:
+`26fd5d764dcda6335a8a6c941e6e6646d4301e14`.
+
+Issued command shape:
+
+```bash
+sbatch --parsable --account=def-hpcg6049_cpu \
+  --output=<run-root>/logs/native_full_fastq_head.%j.log \
+  <run-root>/package_fastq_v0.3.0/workflow/run_full_native.sbatch \
+  <run-root>/package_fastq_v0.3.0 KQ0205_full_native_20261109_onco3.0.0
+```
+
+`state/execution.json` records the exact absolute command, job and submission
+time; `package_fastq_v0.3.0/release.json` pins source/reference/scope. The head
+log confirms Nextflow26.04.4, Apptainer1.3.5, native3.0.0, mode`wgts`,
+genome`GRCh38_hmf` and the generated resource config loaded last. The resource
+file explicitly requests64CPUs for BWA-MEM2 and other heavy threaded tasks.
+Task dispatch/allocation and completion are not established by head startup.
+
+The
 BAM-route controller12444300 and tumour preparation12444301 remain active
 and are not dependencies of this separate full FASTQ run. Work/cache and output
 directories are separate. Completion and report generation remain pending.
