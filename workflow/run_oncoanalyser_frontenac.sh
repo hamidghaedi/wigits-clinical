@@ -75,8 +75,11 @@ CMD+=(-profile apptainer
   fi;
   printf '%q ' "${CMD[@]}"; echo; } | tee -a launch.sh
 
-"${CMD[@]}"
-status=$?
+status=0
+"${CMD[@]}" || status=$?
 echo "nextflow exit=$status"
 cp -f .nextflow.log "logs/nextflow_head_$(date -u +%Y%m%dT%H%M%SZ).log" 2>/dev/null || true
+# Reporting observes accounting only; its failure never changes the native exit.
+python3 "$HERE/report_resources.py" --run-dir "$RUN_DIR" \
+    ${SLURM_JOB_ID:+--job-id "$SLURM_JOB_ID"} || echo 'Resource report could not be written; native exit preserved' >&2
 exit $status

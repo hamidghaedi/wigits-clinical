@@ -1,6 +1,6 @@
 # Native BAM entry with our existing reference
 
-Branch: `codex/native-bam-input`. Site resource policy: `input-v2`.
+Development branch: `hartwig_adoptation`. Site resource policy: `input-v2`.
 Upstream source remains nf-core/oncoanalyser3.0.0,
 `7c74c87a43749952b38c9a18915947570f0595a0`. This is a site launch profile,
 not a fork of its analytical modules or a replacement variant caller.

@@ -1,5 +1,10 @@
 # workflow
 
+Read-only allocation/use reporting: `report_resources.py --run-dir <run>`.
+It writes CSV and standalone HTML summaries; see
+[resource reporting](../docs/RESOURCE_REPORTING.md). Future site launches run
+it once after Nextflow returns, without changing the native exit status.
+
 Site configuration for Frontenac is in `conf/` (`frontenac.config`, `frontenac_limits.config`, `frontenac_paths.env`); the smoke-test launcher is `run_oncoanalyser_test_frontenac.sh`. All HPC paths come from `conf/frontenac_paths.env`, the machine-readable form of [`docs/directory_layout.md`](../docs/directory_layout.md).
 
 Full-size native runs use [the input-adjusted execution entry](../docs/FULL_NATIVE_EXECUTION.md),

@@ -6,6 +6,13 @@ How work moves through this repository.
 
 `main` holds reviewed work only. Everything else happens on a branch named for what it does, for example `docs/clinical-layer`, `evidence/serve-directory`, `reporter/qc-fail-templates`. Branches merge to `main` through a pull request.
 
+For the ongoing Hartwig adaptation, the canonical development branch is
+**`hartwig_adoptation` in this repository**. It consolidates the earlier native
+BAM, full-input resource and ORANGE experiment branch histories. New related
+work is committed here. `dna-seq-nf` has a separate branch with the same name;
+that repository owns changes to its own DNA workflow, not this native
+Oncoanalyser launcher. Published tags and frozen runtime packages remain intact.
+
 ## Where things are tested
 
 Development and documentation happen here. Anything that needs real data, a reference bundle, containers or a scheduler runs on the HPC side. The hand-off is the pull request.
