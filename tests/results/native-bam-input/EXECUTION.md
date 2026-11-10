@@ -47,3 +47,24 @@ the native QC/report gates and the complete trace/accounting for later review.
 The separate original-FASTQ relay controller12441547 remains active; one of16
 files had landed on Frontenac. Its state and payloads are unchanged by this
 BAM execution. No unrelated running analysis or transfer was cancelled.
+
+## Subsequent status check: missing mate-CIGAR tags
+
+The actual tumour and normal REDUX jobs12441619 and12441618 each requested
+**64 CPUs,208GiB,36hours**, as confirmed in `.command.run` and Slurm accounting.
+Both failed after about5seconds with exit1 and the native message
+`required mate CIGAR not set, exiting`. This is the input-format prerequisite
+described in upstream `docs/usage.md`, not resource exhaustion. No SAGE/PURPLE
+analysis has started. The requirement should have been checked before submission.
+
+The head remains running while native reference-index job12441617 completes
+(6 CPUs/36GiB/8h; observed about40minutes elapsed). Preserve this reference work.
+The native documented repair is Picard `FixMateInformation` with mate-CIGAR
+generation. Prepare new copies and retain the original BAMs before resuming;
+do not remove the native requirement or invent MC tags from a read's own CIGAR.
+Repair and analytical resumption remain pending at this checkpoint.
+
+The independent FASTQ controller remains ACTIVE with no recorded exception:
+2/16 files (71,819,382,338 bytes) verified on Frontenac. File3, tumour lane2 R1,
+has11,777,081,344 of35,301,263,198 bytes transferred on hop2 with statusOK,
+zero faults and no fatal error. Transfers remain unblocked.
