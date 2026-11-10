@@ -124,3 +124,22 @@ FASTQ relay12441547 remains ACTIVE:5/16 files (178,776,539,315 bytes) have lande
 File6, tumour lane3 R2, is transferring on hop2 with8,514,699,264 of36,534,722,254
 bytes copied, statusOK, zero faults and no fatal error. No new blocker or source
 modification was found; no active job was restarted or cancelled.
+
+## Subsequent checkpoint: FASTQ landing complete; intake progressing
+
+FASTQ controller12441547 completed exit0 in5h45m33s. All16 original DNA FASTQs,
+437,332,334,327 bytes total, are verified locally through the recorded two-hop
+transfers. No active transfer remains and no exception was recorded.
+
+At7h16m of intake runtime, both workers remain RUNNING with64CPUs/192GiB.
+The normal source scan inspected1,894,142,243 records with no reference/RG,
+supplementary-clipping, missing-sequence or missing-quality blocker. Missing MC
+was confirmed on1,892,098,646 eligible records. Picard preparation and indexing
+have finished; the new97,387,227,810-byte BAM and9,436,680-byte BAI are undergoing
+full post-preparation conservation checks. This is **not yet a PASS**.
+
+The tumour remains in full source inspection; live process I/O showed about
+212.5GB of its242.6GB source consumed, with sustained CPU/read activity.
+Neither intake receipt has passed, so controller12441707 has correctly not
+resumed native analysis. Original BAMs and completed reference work remain
+untouched; no new blocker or resubmission was identified.
