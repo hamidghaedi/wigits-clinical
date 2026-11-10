@@ -104,3 +104,23 @@ resumed yet at this checkpoint; they are gated on intake completion.
 
 The independent FASTQ controller12441547 remains ACTIVE, with3/16 original
 DNA FASTQs landed. No transfer job or reference job was cancelled.
+
+## Follow-up: full scans active, reference cached, no new blocker
+
+After about50minutes, both intake jobs12441708/12441709 remain RUNNING with
+64CPUs/192GiB allocated. Their logs are at full source inspection/conservation
+checksumming; neither has published PASS or begun the native resume. Live Slurm
+accounting and an allocation-local process/I/O probe confirmed active processing.
+The normal decoder had consumed about36.9GB of its172.25GB source; the current
+checksums/audit files are finalized at end-of-stream, so empty intermediate
+checksum files and the INSPECTING receipt are not themselves a stall.
+
+Reference-index task12441617 completed exit0 in1h28m26s. Its successful work
+directory/hash82/d8ffef and original cache remain in place; the original head
+12441614 then ended FAILED because of the earlier REDUX error. The new controller
+12441707 remains waiting for both verified intake outputs, with no new error.
+
+FASTQ relay12441547 remains ACTIVE:5/16 files (178,776,539,315 bytes) have landed.
+File6, tumour lane3 R2, is transferring on hop2 with8,514,699,264 of36,534,722,254
+bytes copied, statusOK, zero faults and no fatal error. No new blocker or source
+modification was found; no active job was restarted or cancelled.
