@@ -23,10 +23,10 @@ input-v2 and BAM entry0.3.0 remain in force. There is no tuning release yet.
 - Verified32 frozen active package files still matched the saved pre-change
   fingerprints. This is development evidence, not a new patient input gate.
 
-## Running / pending
+## Pilot completed; adoption pending
 
-Slurm **12446613**,64 CPUs/192GiB/2h, running onfrnt119 when recorded.
-It executes four trials sequentially on one node: baseline, partition ratio8,
+Slurm **12446613**,64 CPUs/192GiB/2h, completed0:0 in17m43s onfrnt119.
+It executed four trials sequentially on one node: baseline, partition ratio8,
 ratio8 plus parallel concatenation, repeated baseline. All trials use the same
 native pre-REDUX chromosome-test normal BAM, reference, container,120GiB heap
 and scientific options. A repeated baseline helps expose cache/order effects.
@@ -48,6 +48,14 @@ are in `final_source_tests/`. Earlier candidate tests are superseded evidence,
 not proof that a CPU cap was adopted. Neither full-case controller was cancelled,
 requeued or resubmitted; both remained running at the final inspection.
 
-Pending: pilot timing/CPU comparison, output scientific equivalence, a matched
-full-input confirmation if promising, and separate sorting/streaming experiments.
-No speedup or general scalability improvement has yet been established.
+The [completed pilot and equivalence findings](REDUX_PILOT_20261110.md) show a
+2.28–2.37x speedup for finer partitions on this restricted fixture. Parallel
+concatenation adds no measured speed benefit. Ratio8 alone loses one generated
+consensus mate at a new partition boundary; the combined mode retains baseline
+BAM content checksums, but both faster modes change BQR sidecars. A source-backed
+limitation also remains: alt/decoy contigs are grouped into the final partition,
+so the restricted-fixture gain is not proof of a fix for the full-case tail.
+
+Pending: characterize these differences, confirm any promising setting on a
+representative full input, and run separate sorting/streaming experiments.
+No production adoption, CPU-cap reduction or general scaling claim is made.
