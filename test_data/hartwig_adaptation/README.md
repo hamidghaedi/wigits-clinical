@@ -1,5 +1,11 @@
 # KQ0205 chr17 + chr19 test FASTQs
 
+**Current source location:** `wigits-clinical`, branch `hartwig_adoptation`.
+This directory was migrated intact from the DNA adaptation branch; see the
+[migration record](../../docs/migrations/DNA_HARTWIG_ADOPTATION_20261110.md).
+The preparation and baseline evidence below describe the historical chromosome
+test, not the newer full-genome FASTQ or BAM executions.
+
 Initial test data for branch `hartwig_adoptation`. Extract **all** primary reads
 overlapping either chromosome and retrieve their mates, including mates outside
 those chromosomes or unmapped. No downsampling, duplicate removal, QC-fail or

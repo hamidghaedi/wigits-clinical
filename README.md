@@ -8,7 +8,14 @@ Hartwig's WiGiTS tools (PURPLE, LINX, SAGE, ORANGE and the rest) are open source
 
 ## What is here now
 
-The project starts as documentation. Nothing runs yet.
+The canonical development branch is **`hartwig_adoptation`**. Current working
+code launches unmodified nf-core/oncoanalyser3.0.0 on Frontenac, using either
+original FASTQs and the native HMF reference or existing BAMs and their custom
+reference. It provides input-adjusted resources and read-only efficiency
+reports. The clinical layers described below remain proposed work.
+
+The earlier DNA-branch adaptation inputs and metadata work are now maintained
+here; see [the migration record](docs/migrations/DNA_HARTWIG_ADOPTATION_20261110.md).
 
 | Path | What it is |
 |---|---|
@@ -17,7 +24,11 @@ The project starts as documentation. Nothing runs yet.
 | `docs/djerba_wgts_dataflow.md` | The same analysis for OICR's Djerba, kept here as the comparison point that motivated this work. |
 | `docs/gap_register.md` | The running list of features that are missing or private, with what is known and what we intend to do about each. |
 | `docs/directory_layout.md` | **Canonical directory-layout contract.** Where every kind of file lives on the HPC side (git / shared project storage / scratch), what already exists where, and the machine-readable `workflow/conf/frontenac_paths.env`. |
-| `workflow/` | Where the Nextflow layer will live. Empty apart from a note on intended structure. |
+| `workflow/` | Native Oncoanalyser launch profiles, optional BAM mate preparation, input-size resource planning, transfers and read-only resource reports. |
+| `test_data/hartwig_adaptation/` | Migrated chromosome-test input preparation, samplesheet, metadata probes and native-run evidence. |
+| `docs/FULL_NATIVE_EXECUTION.md` | Full original-FASTQ entry using the native HMF reference and all DNA lanes. |
+| `docs/NATIVE_BAM_ENTRY.md` | Existing-BAM entry with explicit custom reference and optional mate preparation. |
+| `docs/RESOURCE_REPORTING.md` | CSV/HTML efficiency reporting and the non-blocking future-launch completion hook. |
 | `CONTRIBUTING.md` | How work moves between this repository and the HPC side where testing happens. |
 
 ## Intended shape

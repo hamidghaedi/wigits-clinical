@@ -1,0 +1,126 @@
+{
+  "source_repository": "hamidghaedi/dna-seq-nf",
+  "source_branch": "hartwig_adoptation",
+  "source_tip": "b3440c9f58dde81bdcd400d81729aa82bedadbde",
+  "source_base": "54e22322ce55dae39fd325e7b80adf07e174c7e3",
+  "destination_repository": "hamidghaedi/wigits-clinical",
+  "destination_branch": "hartwig_adoptation",
+  "identical_files_verified_at": "5cc854d3946345265e2076a51659464987c0d1f0",
+  "source_to_imported_commits": [
+    {
+      "source": "9d883c669329939c16da2555e807b33c39578dbe",
+      "imported": "8edc7dc4166b6b2ce45aad59eced2a7ed4ce8b98"
+    },
+    {
+      "source": "903eb5a908e3433d62490ccedde18fe2a33a94bf",
+      "imported": "87033e7e6e462cae771b53756bed2ac08bf60739"
+    },
+    {
+      "source": "4d7c13a2a47f5e85a7b6019b162629deb516fde6",
+      "imported": "e75ba994abc7acd0b4c4cba79e5dc8813ad9e2ed"
+    },
+    {
+      "source": "e214007fb925c220cfb43752661cd582c1b8b470",
+      "imported": "eb2e528b6a1833d25075e4470c2010e98e424d48"
+    },
+    {
+      "source": "dfc305ebb6cca90a9aeaf1bf7287f3ac970529ce",
+      "imported": "5538c856464a1c8c1141c47ece660edfca9bbe52"
+    },
+    {
+      "source": "9ed2dab7aa1a9eb4783aebc9729552cc9b849b58",
+      "imported": "cf3615d74a294204100e126b3b9e9af0a0608cd1"
+    },
+    {
+      "source": "722777ff105d19e1ee8789da582488b0fd2aa6e0",
+      "imported": "520170d5a6cac2d48dcbf74e1341f67244bf1001"
+    },
+    {
+      "source": "b3440c9f58dde81bdcd400d81729aa82bedadbde",
+      "imported": "5cc854d3946345265e2076a51659464987c0d1f0"
+    }
+  ],
+  "files": [
+    {
+      "path": "test_data/hartwig_adaptation/CheckCancerType.java",
+      "mode": "100644",
+      "source_git_blob": "419dc4fbc1240b3f8202d49f857ec55cf04bcd94",
+      "imported_git_blob": "419dc4fbc1240b3f8202d49f857ec55cf04bcd94"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/EXECUTION.md",
+      "mode": "100644",
+      "source_git_blob": "477bc1bbc7aca45826aaf70491f40d5d2d329ef1",
+      "imported_git_blob": "477bc1bbc7aca45826aaf70491f40d5d2d329ef1"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/METADATA_CONSUMERS.md",
+      "mode": "100644",
+      "source_git_blob": "6cd3042b08d4342c29939b2a2669e38ed134a06a",
+      "imported_git_blob": "6cd3042b08d4342c29939b2a2669e38ed134a06a"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/NATIVE_BASELINE.md",
+      "mode": "100644",
+      "source_git_blob": "9545fbf18d311d413391c63041fdffaeb16c4487",
+      "imported_git_blob": "9545fbf18d311d413391c63041fdffaeb16c4487"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/README.md",
+      "mode": "100644",
+      "source_git_blob": "b9793defa7ef6a8cf70d0849bc29488797ff6cbf",
+      "imported_git_blob": "b9793defa7ef6a8cf70d0849bc29488797ff6cbf"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/check_metadata_consumers.sbatch",
+      "mode": "100644",
+      "source_git_blob": "069661560377153d0db599eeb39cde1fa5a81834",
+      "imported_git_blob": "069661560377153d0db599eeb39cde1fa5a81834"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/inputs.csv",
+      "mode": "100644",
+      "source_git_blob": "6824d87d8d12c4146ff49175824430b8b3ba44e1",
+      "imported_git_blob": "6824d87d8d12c4146ff49175824430b8b3ba44e1"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/prepare_fastqs.py",
+      "mode": "100644",
+      "source_git_blob": "ad3e99ba84cc52da221af5fc77fff6567f622c02",
+      "imported_git_blob": "ad3e99ba84cc52da221af5fc77fff6567f622c02"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/prepare_fastqs.sbatch",
+      "mode": "100644",
+      "source_git_blob": "478c6bf82a00f986a41c533467bc832815ea768e",
+      "imported_git_blob": "478c6bf82a00f986a41c533467bc832815ea768e"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/samplesheet.KQ0205.chr17_chr19.csv",
+      "mode": "100644",
+      "source_git_blob": "168bee6d47c16997bf4fb5a881fca3e648688421",
+      "imported_git_blob": "168bee6d47c16997bf4fb5a881fca3e648688421"
+    },
+    {
+      "path": "test_data/hartwig_adaptation/test_prepare_fastqs.py",
+      "mode": "100644",
+      "source_git_blob": "a3ddfbff305ce236ef2e114d07da94df77a076f4",
+      "imported_git_blob": "a3ddfbff305ce236ef2e114d07da94df77a076f4"
+    }
+  ],
+  "older_dna_history_retained_by": [
+    "origin/codex/run19-all4-native-qc",
+    "origin/docs/reporting-flow-20261020",
+    "origin/feat/purple-qc-routing-20261018"
+  ],
+  "note": "All adaptation-only file contents and modes match at the recorded imported commit. Original authors and technical commit messages retained; attribution trailers omitted per destination repository convention. No DNA branch or runtime data deleted.",
+  "older_dna_history_alternative_refs_count": 76,
+  "migration_tests": {
+    "slurm_job": "12444964",
+    "state": "COMPLETED",
+    "exit_code": "0:0",
+    "elapsed_seconds": 7,
+    "existing_tests": 22,
+    "migrated_synthetic_tests": 1
+  }
+}
