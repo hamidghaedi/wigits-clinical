@@ -19,6 +19,27 @@ inputs, or restart recovery without an explicit new instruction.
 
 ## Owner-selected route
 
+### Existing FASTQ transfer, subsequent November9 instruction
+
+Live RC2 listings established all16 original DNA FASTQs: four lanes and both
+mates per tumour/normal library,437,332,334,327 bytes total. They remain under
+the respective native run `fastq/` directories (runs0058 and0063). The earlier
+claim of missing full DNA FASTQs did not establish NAS availability.
+
+`workflow/transfer_fastqs_two_hop.py` copies one exact FASTQ at a time through
+RC2→Fir→Frontenac. It adopts saved task IDs, requests checksum verification on
+both hops, checks the landed size, and retains NAS and relay copies. It performs
+no analysis, payload cleanup or BAM conversion. Runtime manifest/state:
+`/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/package_rc2_fastqs_v1/`
+and `state/rc2_fastqs/`. Controller Slurm job12441547 adopts first-hop Globus
+task548a63f5-dcb5-11f1-a6d6-0affd629e535. That task was observed ACTIVE/OK with
+4,853,858,304 bytes transferred. Completion is pending, not implied by submission.
+
+The existing full RNA FASTQ pair remains local under the recorded QUEEN001
+`fastq_from_bam/KQ0205-RNA/` directory. A native full-run launch remains pending
+the complete original DNA landing and an existing-FASTQ resource/input package.
+Do not dispatch the recovery-based entry documented below for this run.
+
 November9: run complete KQ0205 tumour DNA, blood-normal DNA and tumour RNA
 through FASTQ realignment using the native Hartwig reference and resource
 bundle. The custom-reference BAM route was not selected. Do not use the
