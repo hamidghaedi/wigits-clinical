@@ -122,5 +122,7 @@
     "elapsed_seconds": 7,
     "existing_tests": 22,
     "migrated_synthetic_tests": 1
-  }
+  },
+  "source_remote_tip_at_migration": "54e22322ce55dae39fd325e7b80adf07e174c7e3",
+  "source_branch_state": "Local tip b3440c9 held eight adaptation commits beyond remote/base54e2232; all eight are imported and pushed in destination"
 }
