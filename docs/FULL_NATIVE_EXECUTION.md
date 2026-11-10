@@ -6,6 +6,17 @@ Scientific source: unmodified nf-core/oncoanalyser3.0.0,
 native labels; local modules receive `task.cpus` through their existing thread
 arguments. This release changes preparation and site allocation only.
 
+**Current execution status, owner correction November9:** use existing full-size
+FASTQs; do not recover them from BAMs. Preparation jobs12441461/12441462/12441463
+were cancelled before execution (elapsed0); no full workflow head was submitted.
+The prepared recovery-based entry below is preserved source, not the issued
+execution route. The supplied inventory identifies the full DNA BAMs and an
+existing full RNA FASTQ pair; the three FASTQ pairs prepared for the earlier
+test contain only chr17/chr19-selected reads and their mates. Exact full DNA
+FASTQ paths remain to be bound to the new samplesheet. Do not infer that the
+owner's full FASTQs are absent from all storage, reuse subset files as full
+inputs, or restart recovery without an explicit new instruction.
+
 ## Owner-selected route
 
 November9: run complete KQ0205 tumour DNA, blood-normal DNA and tumour RNA
@@ -13,8 +24,9 @@ through FASTQ realignment using the native Hartwig reference and resource
 bundle. The custom-reference BAM route was not selected. Do not use the
 experimental ORANGE patch or override native report eligibility.
 
-The two DNA FASTQ pairs are not present in the bounded local search. Prepare
-all three libraries consistently from the available BAMs. These are complete
+The initial proposal was to prepare all three libraries from the available BAMs.
+The owner rejected this proposal; the helper description below is historical.
+Its outputs would be complete
 BAM-derived read sets, not a claim of original raw sequencer FASTQ identity.
 No chromosome selection, downsampling, MAPQ, duplicate or QC-fail filtering.
 Exclude secondary/supplementary records to emit each sequencing read once.
