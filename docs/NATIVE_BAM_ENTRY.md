@@ -94,3 +94,8 @@ remain pending until separately recorded.
 
 Current checks and the native preview-finalization limitation are recorded in
 [the development evidence](../tests/results/native-bam-input/README.md).
+
+The owner subsequently authorized the full paired-DNA BAM execution. Controller
+job12441614 was submitted using a frozen740b501 package and the generated64-core
+resource plan. See [execution evidence](../tests/results/native-bam-input/EXECUTION.md).
+Completion and report output remain pending; the separate FASTQ relay continues.

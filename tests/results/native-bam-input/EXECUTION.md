@@ -1,0 +1,49 @@
+# KQ0205 full paired-DNA BAM execution
+
+Owner-authorized submission on November9,2026 (America/New_York).
+
+- Slurm controller: **12441614**, observed RUNNING on `frnt076`.
+- Site source: `740b501`, branch `codex/native-bam-input`, release
+  `bam-entry/v0.1.0`; resource policy `input-v2`.
+- Scientific source: unmodified nf-core/oncoanalyser3.0.0,
+  `7c74c87a43749952b38c9a18915947570f0595a0`.
+- Run ID: `KQ0205_full_bam_custom_20261109_r1`.
+- Scope: existing full tumour and matched blood-normal DNA BAMs and adjacent
+  BAI files; custom GRCh38.d1.vd1 FASTA/FAI/dictionary, full native REDUX and
+  downstream callers. The prepared DNA-only sheet is used unchanged. No
+  BAM-to-FASTQ conversion, ORANGE patch, manual stage selection or RNA row.
+
+All runtime details are external under:
+`/global/scratch/hpc6049/wigits_runs/KQ0205_full_bam_custom_20261109_r1/`
+
+The frozen read-only `package/` contains scripts/configuration, samplesheet and
+`release.json` with source hashes, input sizes and native source SHA.
+`state/execution.json` contains the exact sbatch command and submission time.
+`state/input_resources.{config,json}` records measured BAM sizes and the
+initial allocations. The head log is `logs/native_bam_head.12441614.log`.
+
+| Process | CPUs | Memory (GiB) | Initial walltime (hours) |
+|---|---:|---:|---:|
+| REDUX | 64 | 208 | 36 |
+| SAGE somatic | 64 | 320 | 60 |
+| SAGE germline | 64 | 240 | 28 |
+| ESVEE | 64 | 432 | 80 |
+| AMBER | 64 | 208 | 20 |
+| COBALT | 64 | 208 | 20 |
+| VIRUSBreakend | 64 | 256 | 48 |
+
+The BAM sizes are a declared workload proxy, not measured primary-read counts
+or a validated runtime model. Reference-index creation uses native tool-specific
+resources. Head allocation is4 CPUs/8GiB/13days; genomic tasks run as separate
+Slurm jobs. The generated configuration is loaded last to override the former
+32-core ceiling. Live scheduler admission previously accepted64 CPUs/432GiB/80h
+on the eligible CPU nodes.
+
+At this checkpoint, Nextflow26.04.4 and Apptainer1.3.5 had initialized with the
+custom reference and the intended input/resource configuration. Analysis and
+report generation are **pending**, not established by head startup. Preserve
+the native QC/report gates and the complete trace/accounting for later review.
+
+The separate original-FASTQ relay controller12441547 remains active; one of16
+files had landed on Frontenac. Its state and payloads are unchanged by this
+BAM execution. No unrelated running analysis or transfer was cancelled.
