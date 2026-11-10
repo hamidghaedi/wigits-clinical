@@ -43,8 +43,8 @@ Cluster: Frontenac (CAC, Queen's). Account `hpc6049`, group `hpcg6049`. Verified
 
 `ONCO_SOURCE_VERSION=3.0.0-qlmp.1` and `ONCO_REFERENCE_VERSION=3.0.0` deliberately
 distinguish the patched reporting interface from the unchanged native reference
-bundle. The baseline remains available through explicit `ONCO_SOURCE` /
-`ONCO_REV` overrides; see the workflow runbook.
+bundle. The launcher defaults to unmodified native 3.0.0. The patched source
+is experimental and requires an explicit `ONCO_SOURCE` override; see the workflow runbook.
 
 Agent scratch (`/global/home/hpc6049/.claude-science-scratch`, `/global/scratch/hpc6049/.claude-science-scratch`)
 is harness-internal: per-job wrappers and logs for jobs an assistant submitted. Nothing we rely on lives there.

@@ -3,6 +3,14 @@
 Release: Oncoanalyser `3.0.0-qlmp.1`, QC-report patch `0.1.0`, based on native
 Oncoanalyser `7c74c87a43749952b38c9a18915947570f0595a0` and ORANGE `5.0.1`.
 
+Status correction after owner review, November9: this is an isolated renderer
+experiment, not an established upstream defect or production fix. The restricted
+chr17/chr19 input and absent fit satisfy the native skip condition. Successful
+full-input rendering must be evaluated with suitable native inputs; this test
+does not justify changing native eligibility. The launcher defaults to unmodified
+Oncoanalyser3.0.0. Previously submitted experimental job12441408 is preserved;
+its results cannot validate the unmodified reporting path.
+
 ## Problem and resulting behavior
 
 The KQ0205 chr17/chr19 baseline completed 39 tasks successfully but emitted no
@@ -46,8 +54,8 @@ template or authorization for clinical issuance.
   the original container remains read-only. Tool versions record patch0.1.0.
 
 The original native baseline and shared Nextflow asset checkout stay unchanged.
-The default launcher now selects the local versioned source release; baseline
-reproduction remains an explicit source/revision override.
+The default launcher selects the unmodified upstream release. This experiment
+requires an explicit local source override.
 
 ## Build and verify the source release
 
@@ -84,6 +92,7 @@ calling and other completed analytical steps are not repeated:
 
 ```bash
 sbatch --account=def-hpcg6049_cpu --time=02:00:00 --cpus-per-task=2 --mem=8G \
+  --export=ALL,ONCO_SOURCE=/global/project/hpcg6049/somatic_pipeline/software/oncoanalyser/3.0.0-qlmp.1 \
   --output=/global/scratch/hpc6049/wigits_runs/KQ0205_chr17_19_orange_qc_report_r1.head.%j.log \
   workflow/run_oncoanalyser_frontenac.sh \
   KQ0205_chr17_19_orange_qc_report_r1 \

@@ -31,8 +31,8 @@ set -u
 RUN_ID="${1:?usage: $0 <run_id> <samplesheet.csv> [extra args]}"
 SAMPLESHEET="$(readlink -f "${2:?usage: $0 <run_id> <samplesheet.csv> [extra args]}")"
 shift 2
-ONCO_REV="${ONCO_REV:-$ONCO_SOURCE_VERSION}"
-ONCO_SOURCE="${ONCO_SOURCE:-$ONCO_SOURCE_DIR}"
+ONCO_REV="${ONCO_REV:-$ONCO_REFERENCE_VERSION}"
+ONCO_SOURCE="${ONCO_SOURCE:-nf-core/oncoanalyser}"
 REF_CONFIG="${REF_CONFIG:-$ONCO_REF_ROOT/$ONCO_REFERENCE_VERSION/reference_data.config}"
 RUN_DIR="$RUN_ROOT/$RUN_ID"
 
