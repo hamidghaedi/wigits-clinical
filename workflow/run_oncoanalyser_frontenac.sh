@@ -15,6 +15,14 @@
 set -eo pipefail   # -u only after the cvmfs profile is sourced (it reads unset SKIP_CC_CVMFS)
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ ! -f "$HERE/conf/frontenac_paths.env" ]]; then
+    # sbatch copies this script to its spool; configuration stays in the checkout.
+    HERE="${WIGITS_WORKFLOW_DIR:-${SLURM_SUBMIT_DIR:?submit from the repository root}/workflow}"
+fi
+[[ -f "$HERE/conf/frontenac_paths.env" ]] || {
+    echo "workflow configuration not found in $HERE; set WIGITS_WORKFLOW_DIR" >&2
+    exit 2
+}
 source "$HERE/conf/frontenac_paths.env"
 source /cvmfs/soft.computecanada.ca/config/profile/bash.sh
 module load "$NEXTFLOW_MODULE" "$APPTAINER_MODULE"

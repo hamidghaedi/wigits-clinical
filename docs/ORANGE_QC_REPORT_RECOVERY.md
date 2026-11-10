@@ -95,6 +95,14 @@ The head uses two CPUs/8GiB, and ORANGE uses two CPUs/8GiB/one hour. This is a
 bounded report render over small existing tables/VCFs, not a new genomic
 analysis or a claim of a universal whole-genome resource model.
 
+Submit from the repository root. Slurm spools the head script, so the launcher
+resolves configuration through `SLURM_SUBMIT_DIR/workflow` when its own directory
+does not contain the configuration. `WIGITS_WORKFLOW_DIR` is an explicit override
+for submission from another directory. The initial head job12441406 failed
+before launching Nextflow because of the former script-relative lookup; the
+corrected launcher is tested for direct, spooled, explicit and missing paths
+with `python3 tests/test_frontenac_launcher.py` (four paths pass).
+
 Acceptance: successful ORANGE task, nonempty/parseable ORANGE JSON and PDF,
 preserved `FAIL_NO_TUMOR`, null/unavailable circos metadata rather than a fake
 image, and visible native QC-fail text. The trace must not contain new alignment
