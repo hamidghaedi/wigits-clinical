@@ -19,6 +19,34 @@ def load(name):
 
 
 class ResourceTests(unittest.TestCase):
+    def test_full_entry_uses_staged_lanes_and_native_hmf_reference(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = root/'package'
+            (package/'workflow').mkdir(parents=True)
+            # A sentinel proves this entry consumes the CSV, rather than
+            # requiring BAM-recovery completion.json files for original FASTQs.
+            (package/'samplesheet.csv').write_text('original lane inputs\n')
+            (package/'workflow/build_input_resources.py').write_text(
+                'import pathlib,sys\n'
+                'p=pathlib.Path(sys.argv[sys.argv.index("--samplesheet")+1])\n'
+                'assert p.read_text()=="original lane inputs\\n"\n'
+                'for k in ["--out","--evidence"]:\n'
+                ' pathlib.Path(sys.argv[sys.argv.index(k)+1]).write_text("sized")\n')
+            marker = root/'native.json'
+            (package/'workflow/run_oncoanalyser_frontenac.sh').write_text(
+                '#!/usr/bin/env bash\n'
+                'python3 - "$@" <<\'PY\'\n'
+                'import json,os,pathlib,sys\n'
+                f'pathlib.Path({str(marker)!r}).write_text(json.dumps(dict(args=sys.argv[1:],'
+                'genome=os.environ["ONCO_GENOME"],source=os.environ["ONCO_SOURCE"])))\nPY\n')
+            subprocess.run(['bash',str(ROOT/'workflow/run_full_native.sbatch'),str(package),'synthetic'],check=True)
+            data = json.loads(marker.read_text())
+            self.assertEqual(data['genome'],'GRCh38_hmf')
+            self.assertEqual(data['source'],'nf-core/oncoanalyser')
+            self.assertEqual(data['args'][:2],['synthetic',str(package/'samplesheet.csv')])
+            self.assertEqual((root/'state/input_resources.config').read_text(),'sized')
+
     def test_existing_input_lanes_are_sized_without_inventing_read_counts(self):
         module = load('build_input_resources')
         with tempfile.TemporaryDirectory() as tmp:

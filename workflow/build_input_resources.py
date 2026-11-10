@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate initial site resources from completed FASTQ recovery measurements.
+"""Generate initial site resources from measured existing inputs or recovery records.
 
 Policy input-v2: units = ceil(primary reads / 250 million), or compressed
 input GiB / 10 when a verified read count is unavailable. Heavy threaded

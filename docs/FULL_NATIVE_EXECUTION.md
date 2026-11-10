@@ -1,12 +1,48 @@
 # Full-input native execution and initial resources
 
-Site execution release: `input-resources/v0.1.0`, policy `input-v1`.
+Current staged-FASTQ entry: `input-resources/v0.3.0`, policy `input-v2`.
+The earlier `input-resources/v0.1.0`/`input-v1` recovery-based execution below
+is historical source, superseded for the current original-FASTQ run.
 Scientific source: unmodified nf-core/oncoanalyser3.0.0,
 `7c74c87a43749952b38c9a18915947570f0595a0`. Its `conf/base.config` supplies the
 native labels; local modules receive `task.cpus` through their existing thread
 arguments. This release changes preparation and site allocation only.
 
-**Current execution status, owner correction November9:** use existing full-size
+## Current original-FASTQ execution, November10
+
+All16 original DNA FASTQs have landed through the recorded two-hop transfer:
+four lanes with both mates for tumour and matched blood normal. The full
+existing RNA FASTQ pair is also local. The native CSV contains8 DNA lane rows
+plus1 RNA row; RNA is the existing full BAM-derived pair, not newly recovered
+or claimed to be original sequencer FASTQs. DNA flowcell identifiers are taken
+from the original FASTQ headers (`HMNFNDSXF`, `HNMH2DSXF`), not the run-folder
+side prefix. Native `read_alignment_dna/main.nf` constructs per-lane read groups
+and groups alignment products for subsequent sample processing.
+
+The current entry `workflow/run_full_native.sbatch` accepts the frozen package
+and run ID, sizes existing inputs with `build_input_resources.py --samplesheet`,
+then calls stock Oncoanalyser3.0.0 with **GRCh38_hmf**. It does not invoke BAM
+recovery or require recovery completion records for original sequencer files.
+All lane rows remain explicit in the native samplesheet. The existing original
+transfer manifest and completion state record the16-file scope.
+
+Resources use policy input-v2, a declared compressed-byte workload proxy, not
+invented read counts. Initial heavy threaded steps receive64 CPUs. Examples for
+this complete case: BWA-MEM2=224GiB/56h; REDUX=224GiB/44h;
+SAGE somatic=336GiB/64h; ESVEE=448GiB/84h; STAR=160GiB/12h.
+Memory/walltime are conservative limits, not predicted durations. Picard RNA
+MarkDuplicates retains its tool-appropriate8CPUs. The generated configuration
+is loaded last, overriding the old32CPU/180GiB site ceiling. The head limit is
+13days because the exact14day head request was previously rejected.
+
+The full FASTQ and custom-reference BAM routes use separate run roots and
+work/cache directories. Do not interrupt the running BAM route. Runtime
+launch/accounting details are in
+`tests/results/full-native-fastq-input/EXECUTION.md` once submitted.
+
+## Historical setup and owner correction, November9
+
+**Historical execution status, owner correction November9:** use existing full-size
 FASTQs; do not recover them from BAMs. Preparation jobs12441461/12441462/12441463
 were cancelled before execution (elapsed0); no full workflow head was submitted.
 The prepared recovery-based entry below is preserved source, not the issued

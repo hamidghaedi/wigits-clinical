@@ -3,8 +3,8 @@
 Site configuration for Frontenac is in `conf/` (`frontenac.config`, `frontenac_limits.config`, `frontenac_paths.env`); the smoke-test launcher is `run_oncoanalyser_test_frontenac.sh`. All HPC paths come from `conf/frontenac_paths.env`, the machine-readable form of [`docs/directory_layout.md`](../docs/directory_layout.md).
 
 Full-size native runs use [the input-adjusted execution entry](../docs/FULL_NATIVE_EXECUTION.md),
-`run_full_native.sbatch`, with a frozen package and completed full-read recovery
-records. It generates initial resources before launching stock Oncoanalyser,
+`run_full_native.sbatch`, with a frozen package and the already staged FASTQ
+lane samplesheet. It generates initial resources before launching stock Oncoanalyser,
 including64-core heavy CPU tasks, and overrides the historical32-core ceiling.
 The model is a conservative first-full-case extrapolation pending runtime evidence.
 
