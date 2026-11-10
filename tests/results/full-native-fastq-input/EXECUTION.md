@@ -88,3 +88,13 @@ The
 BAM-route controller12444300 and tumour preparation12444301 remain active
 and are not dependencies of this separate full FASTQ run. Work/cache and output
 directories are separate. Completion and report generation remain pending.
+
+### Alignment dispatch confirmed
+
+Native BWA-MEM2 jobs12444656/12444657/12444658 were observed RUNNING with
+64CPUs/224GiB; STAR job12444659 was submitted requesting64CPUs/160GiB.
+The first DNA task's `.command.run` contains`#SBATCH -c 64`,56h and229376MB,
+and its `.command.sh` passes`-t 64` to`bwa-mem2 mem`. Thus the64-core request
+is established in both Slurm allocation and the actual aligner command, not
+only the configuration. Additional lane dispatch is ongoing. BAM jobs
+12444300/12444301 remain RUNNING independently.
