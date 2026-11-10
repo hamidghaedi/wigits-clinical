@@ -36,10 +36,9 @@ not full-WGS preparation sizing. No GPU inference completion is claimed yet.
 
 `execution.json` contains the exact issued command, source-run binding and
 Slurm ID. The raw VCF/sample/FILTER/FORMAT/INFO/version summary is added only
-after a successful caller exit. Google deliberately disables GPU use during
-CPU example generation; a CPU-stage CUDA message alone does not establish
-whether subsequent inference uses the allocated GPU. Inspect inference device
-logs rather than treating the allocation as proof.
+after a successful caller exit. The job is still generating examples; its CUDA
+messages do not demonstrate successful GPU inference. Inference-device visibility
+remains to be checked. Inspect device logs rather than treating allocation as proof.
 
 ## Still pending
 
