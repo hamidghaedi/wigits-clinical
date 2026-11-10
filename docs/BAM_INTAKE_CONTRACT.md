@@ -135,8 +135,6 @@ Technical compatibility does not guarantee a reportable PURPLE fit, tumour
 purity, sensitivity, concordant interpretation or clinical clearance. Preserve
 native scientific QC and report eligibility after intake succeeds.
 
-## Sources
-
 ## Implemented v0.2.0 interface and verification
 
 `workflow/bam_intake.py`, `bam_intake_audit.cpp` and

@@ -68,3 +68,39 @@ The independent FASTQ controller remains ACTIVE with no recorded exception:
 2/16 files (71,819,382,338 bytes) verified on Frontenac. File3, tumour lane2 R1,
 has11,777,081,344 of35,301,263,198 bytes transferred on hop2 with statusOK,
 zero faults and no fatal error. Transfers remain unblocked.
+
+## Systematic intake and automatic resume, November10
+
+Release `bam-entry/v0.2.0`, source `3d06abd7d0ec9c95f855c20bf885c9e88d14a231`,
+implements the mandatory [intake contract](../../../docs/BAM_INTAKE_CONTRACT.md).
+Slurm test12441700 completed exit0 with24 tests passing using actual
+samtools1.22.1 and GATK4.6.1.0, including deliberate record/sequence/quality/
+annotation/alignment mutations, raw-input bypass refusal and failure gating.
+Development-only trials caught and corrected binary stdout contamination by
+the GATK wrapper before any real preparation; GATK now writes a normal BAM file.
+
+The frozen package is under the same execution root at
+`package_intake_v0.2.0/`, with source hashes and submission provenance in
+`release.json`. Original `package/`, inputs, work/cache and logs remain unchanged.
+
+| Job | Role | Allocation | State observed |
+|---|---|---|---|
+|12441707|Intake/resume controller|4 CPUs,8GiB,13days|RUNNING|
+|12441708|Full tumour DNA intake|64 CPUs,192GiB,88h initial limit|RUNNING|
+|12441709|Full matched-normal DNA intake|64 CPUs,192GiB,64h initial limit|RUNNING|
+
+These are conservative input-volume limits, not runtime predictions. Every
+record is inspected and conservation-checked; new prepared BAMs/indexes will
+be under `inputs/prepared_bams_v0.2.0/<sample>/`. The source BAMs are not edited.
+Receipts and dispatch state are stored beside the preparation outputs;
+`state/intake_resume_execution.json` names the controller and exact command.
+
+After both intake jobs pass and their prepared-input/reference bindings are
+verified, the controller waits for the prior controller12441614 to become
+terminal, then invokes the unchanged native pipeline with `-resume` in the
+existing execution root. This preserves and reuses successful reference tasks
+without simultaneous access to the same Nextflow cache. REDUX/callers have not
+resumed yet at this checkpoint; they are gated on intake completion.
+
+The independent FASTQ controller12441547 remains ACTIVE, with3/16 original
+DNA FASTQs landed. No transfer job or reference job was cancelled.
