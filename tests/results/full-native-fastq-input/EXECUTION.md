@@ -98,3 +98,24 @@ and its `.command.sh` passes`-t 64` to`bwa-mem2 mem`. Thus the64-core request
 is established in both Slurm allocation and the actual aligner command, not
 only the configuration. Additional lane dispatch is ongoing. BAM jobs
 12444300/12444301 remain RUNNING independently.
+
+### All lanes active: November10,09:53 EST
+
+All8 DNA alignment tasks are RUNNING. Each has64CPUs/224GiB allocated;
+all8 corresponding aligner commands were inspected and use`-t 64`.
+The alignment tasks have run for approximately46minutes at this checkpoint.
+
+| Input | Lane | Slurm job | State |
+|---|---|---|---|
+| Tumour DNA |L001|12444665|RUNNING|
+| Tumour DNA |L002|12444661|RUNNING|
+| Tumour DNA |L003|12444666|RUNNING|
+| Tumour DNA |L004|12444662|RUNNING|
+| Normal DNA |L001|12444658|RUNNING|
+| Normal DNA |L002|12444656|RUNNING|
+| Normal DNA |L003|12444660|RUNNING|
+| Normal DNA |L004|12444657|RUNNING|
+
+RNA STAR12444659 is also RUNNING with64CPUs/160GiB. Head12444653 remains
+RUNNING. Scheduler accounting and task logs show no new failure. These states
+establish active execution, not completed alignment or downstream analysis.

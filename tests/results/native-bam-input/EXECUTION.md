@@ -197,3 +197,14 @@ The previous execution record was retained under
 `state/audit_retirement_20261110/`; the current command/job/config are in
 `state/intake_resume_execution.json`. All16 FASTQs are already local; no new
 transfer or BAM-to-FASTQ recovery was started.
+
+### Preparation progressing: November10,09:53 EST
+
+Tumour preparation12444301 remains RUNNING with64CPUs/192GiB after1h36m.
+Name sorting has completed; Picard's live progress log reports940million
+records processed after40m39s of actual mate-processing traversal. Coordinate
+sorting and indexing have not started yet. Controller12444300 remains RUNNING
+and waits for this ordinary tool preparation to finish before native resume.
+The already prepared normal BAM/index are reused and have no new worker.
+No new failure was observed. Original inputs and completed reference work
+remain preserved; the separate full FASTQ workflow is now running concurrently.
