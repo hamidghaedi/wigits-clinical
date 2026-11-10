@@ -18,7 +18,7 @@ native workflow nor the default caller is modified.
 - `bash -n workflow/test_deepsomatic.sbatch`, exit0;
   `git diff --check`, exit0. Scheduler test-only accepted16 CPUs/128GiB/one GPU/4h.
 
-## Submitted / running
+## Historical submission snapshot
 
 Slurm **12446769**, running onfrnt153 when recorded. First scope is20Mb,
 chr17:1–10000000 and chr19:1–10000000, read through the full BAM indexes.
@@ -40,9 +40,30 @@ after a successful caller exit. The job is still generating examples; its CUDA
 messages do not demonstrate successful GPU inference. Inference-device visibility
 remains to be checked. Inspect device logs rather than treating allocation as proof.
 
+## Completed pilot and full-run correction
+
+Job12446769 completed0:0 in53m37s. GPU:0 inference is confirmed by TensorFlow
+MirroredStrategy and successful predictions. Approximate stage times: examples
+38m13s, inference12m13s, postprocessing1m53s. The indexed VCF has183 PASS calls
+(136 SNVs,47 indel/complex alleles),38,683 GERMLINE,597,564 RefCall and15,096 NoCall
+records. All records are within the requested20Mb. NDP/NAD/NAF normal evidence
+is present despite the single tumour sample column.
+
+The owner clarified that the requested execution was **whole genome**. The
+regional test does not fulfil that request. Component0.2.0 now runs Google's
+generated native commands as three dependent full-genome jobs, with no region
+argument. Inputs are the completed full FASTQ-run REDUX BAMs, not the older
+custom-reference BAM route. Jobs12447879/12447880/12447881 were submitted for
+examples/inference/postprocessing. Source and runtime evidence are described in
+the [substitution plan](../../../docs/DEEPSOMATIC_SUBSTITUTION.md).
+
+Validation:31 unit tests passed (3 existing integration skips); bash syntax and
+git diff checks passed. All three allocations passed scheduler test-only checks.
+Full caller completion and downstream compatibility remain pending.
+
 ## Still pending
 
-Caller completion and actual inference-device evidence; paired normal/context
+Whole-genome caller completion; paired normal/context
 adaptation using current native resources; PAVE1.9/PURPLE4.4 comparison with
 unchanged SV/CN inputs; exact SAGE side-output consumer resolution; eventual
 optional workflow integration. Prior PURPLE4.3 experiments establish useful

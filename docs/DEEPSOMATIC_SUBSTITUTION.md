@@ -55,7 +55,7 @@ Do not import its old2.3.0 process definitions into this3.0.0 experiment.
 |---|---|
 | Matched reference/BAMs | Use the new full FASTQ route's REDUX tumour/normal and exact HMF masked FASTA; old d1.vd1 callsets cannot stand in for this caller comparison. |
 | FFPE caller | Existing official Google1.10.0 GPU image, `--model_type=FFPE_WGS`; no Parabricks engine substitution. |
-| Normal evidence | Raw caller output has one tumour sample. Reuse real normal AD/DP measurement, retaining missing/positive support; never synthesize clean0/0. |
+| Normal evidence | Raw caller output has one tumour sample, but the completed Google1.10 test also emits NDP/NAD/NAF normal evidence. Preserve those fields and verify their semantics before deciding whether additional measurement is needed; never synthesize clean0/0. |
 | Region/hotspot/repeat annotations | Reuse native5.0.2 helper logic with the current3.0 bundle. No blanket tier, zero repeat, or invented phasing/read-context values. |
 | DeepSomatic FILTER/GT/AD/DP/VAF | Preserve raw output. A downstream accepted-somatic view can select real PASS/non-reference calls; never convert non-PASS calls to PASS. |
 | PAVE population/PON/effects | Use real current native resources and preserve its actual added filters. Earlier no-filter experimental flags are not silently transferred. |
@@ -106,7 +106,44 @@ a valid observation. No report, annotation adapter or native rerun is triggered.
 Execution root:
 `/global/scratch/hpc6049/wigits_runs/deepsomatic_seam_20261110/`.
 Exact issued source, input JSON and scheduler evidence are external. Completion
-and downstream compatibility remain pending until demonstrated.
+and downstream compatibility are recorded in the results note.
+
+## Whole-genome execution (owner correction, 10 November)
+
+The owner requested the full caller run. The earlier20Mb restriction was an
+executor scope error, not an owner-requested substitute. It completed successfully
+(12446769,53m37s,183 PASS records, confirmed GPU inference), but is only a pilot.
+
+`workflow/deepsomatic_full.py` and `workflow/deepsomatic_full.sbatch`, component
+**0.2.0**, now run the whole-genome caller on those same full FASTQ-run REDUX
+BAMs. There is **no --regions argument, downsampling or new alignment**.
+Google's own `run_deepsomatic --dry_run` generates the three native commands;
+we execute them unchanged in separate dependent Slurm allocations. Native model
+defaults, intermediate filenames and original FILTER values remain intact.
+
+| Stage | CPUs | Memory | Initial walltime limit | Job |
+|---|---:|---:|---:|---|
+| Example preparation |64|256GiB|60h|12447879|
+| GPU inference |16 +1GPU|128GiB|72h|12447880|
+| Postprocessing |64|256GiB|12h|12447881|
+
+Resource sizing records433,692,554,748 paired BAM bytes and3,217,352,303 FASTA
+bases. The function scales the measured20Mb stage times by reference length,
+uses estimated4x CPU scaling from16 to64 threads for preparation/postprocessing,
+adds a2x uncertainty margin, and rounds up to12-hour limits. These are conservative
+allocation estimates, **not validated whole-genome completion predictions**.
+CPU memory has a256GiB floor with128GiB increments per400GiB paired BAM workload;
+inference retains128GiB. BAM bytes are a workload proxy, not a fitted memory model.
+The scheduler accepted these requests using automatic partition routing after
+rejecting explicit partition selection. Dependencies use afterok and cancel if
+the preceding job fails; no automatic whole-run retry or source mutation.
+
+External execution package:
+`/global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_native_20261110/`.
+`case.json`, `resources.json`, `package_v0.2.0/release.json` and `submission.json`
+record the exact inputs, allocation basis, source fingerprints and job commands.
+Results go in `results/`, with separate commands/logs/execution records per stage.
+This executes the full caller; native downstream substitution remains pending.
 
 ## Remaining increments
 
