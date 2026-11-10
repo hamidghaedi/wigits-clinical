@@ -143,3 +143,11 @@ The tumour remains in full source inspection; live process I/O showed about
 Neither intake receipt has passed, so controller12441707 has correctly not
 resumed native analysis. Original BAMs and completed reference work remain
 untouched; no new blocker or resubmission was identified.
+
+## Preparation performance investigation
+
+[PERFORMANCE.md](PERFORMANCE.md) separates the measured normal-BAM audit,
+sorting, Picard and indexing times and records bounded Slurm optimization
+experiments. The current audit is the largest completed individual stage.
+No active intake/native package was changed by that investigation; the normal
+still requires final verification and the tumour is still in source inspection.
