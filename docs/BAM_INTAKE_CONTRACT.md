@@ -1,7 +1,8 @@
 # BAM intake and preparation for native Oncoanalyser
 
-Owner direction: November10,2026. Status: **required design; not yet implemented
-or wired into the launcher**. This document owns the intake requirements. The
+Owner direction: November10,2026. Status: **implemented in the v0.2.0 BAM entry;
+synthetic Slurm integration tested; full KQ0205 intake/execution pending**.
+This document owns the intake requirements. The
 site launch entry, resource policy and scientific source remain documented in
 [NATIVE_BAM_ENTRY.md](NATIVE_BAM_ENTRY.md).
 
@@ -33,11 +34,11 @@ flowchart TD
     F --> G[Unmodified Oncoanalyser: REDUX and downstream tools]
 ```
 
-The existing public BAM launcher must eventually orchestrate this dependency
+The public BAM launcher orchestrates this dependency
 automatically. The user supplies the manifest/reference once. A manually
 prepared PASS file or a different launcher must not bypass intake. The native
-scientific pipeline remains unchanged. Implementation is pending; this diagram
-is not a claim that today's launcher enforces the dependency.
+scientific pipeline remains unchanged. The shared native launcher also rejects
+alignment paths without matching verified intake and reference bindings.
 
 ## Requirements and outcomes
 
@@ -50,7 +51,7 @@ warnings and scientific QC findings are not automatically fatal.
 | Sorting/index | Actual coordinate ordering and a usable matching index | Supported sort/index preparation on a new output; preserve source |
 | Sample binding | Samplesheet tumour/normal roles agree with the source mapping and read-group SM values; every read's RG resolves where required | Stop for explicit source-backed mapping; never infer a biological pair from filenames alone |
 | Exact reference | BAM sequence names/lengths agree with the configured FASTA; compare available M5 values and source reference identity as well | Stop on mismatch/unknown identity; contig agreement alone does not prove sequence identity |
-| Mate-CIGAR | Valid MC tags on the paired mapped records whose mates are mapped; do not demand MC on records whose mates are unmapped | Prepare mate information with a pinned established tool, then verify the result |
+| Mate-CIGAR | Valid MC tags on primary/supplementary paired mapped records whose mates are mapped; secondary records are preserved but not processing targets | Prepare missing/incorrect valid-form mate information with a pinned tool; reject malformed CIGAR strings |
 | Supplementary clipping | Supplementary alignments meet native soft-clipping requirements; inspect records, not only a recorded `-Y` command | Stop for an appropriate alignment/input route; changing a CIGAR string does not recover missing sequence |
 | Platform tags | Required tags for the explicitly selected technology; Illumina must not inherit SBX/Ultima-only requirements | Use a validated platform preparation or stop with the exact missing requirement |
 | Enabled branches | Correct build-specific resource files/indexes; CRAM decoding requirements if CRAM is selected; RNA reference/annotation compatibility if RNA is selected | Report the affected input/resource requirement; never silently omit the requested branch |
@@ -135,6 +136,70 @@ purity, sensitivity, concordant interpretation or clinical clearance. Preserve
 native scientific QC and report eligibility after intake succeeds.
 
 ## Sources
+
+## Implemented v0.2.0 interface and verification
+
+`workflow/bam_intake.py`, `bam_intake_audit.cpp` and
+`bam_intake_worker.sbatch` implement the stage. The public BAM launcher submits
+one input-sized Slurm preparation job per explicitly bound DNA sample, waits
+for both, verifies their receipts and publishes the prepared samplesheet. The
+shared native launcher checks that the actual paths/reference match those
+receipts. It rejects raw BAM paths, changed prepared inputs and bounded-probe
+evidence. A dispatcher lock prevents duplicate preparation submissions.
+
+The released scope is paired Illumina DNA BAMs. CRAM, RNA alignments and other
+platforms stop before analysis until their mappings are implemented. Existing
+FASTQ-only runs remain unaffected. New prepared BAMs and indexes go under
+`inputs/prepared_bams_v0.2.0/<sample>/`; originals remain at their source paths.
+The prepared samplesheet is `state/intake_prepared_samplesheet.csv`.
+
+Tools: samtools1.22.1 and GATK4.6.1.0's Picard FixMateInformation, using the
+already installed container. Query-name sorting is lexical (`samtools sort -N`)
+for Picard compatibility. GATK writes a normal BAM file; its stdout contains
+completion text and must not be used as a binary transport stream. Coordinate
+sorting/indexing follows. The exact generated mate-fixed intermediate is
+removed only after successful output verification. Source BAMs are never
+modified or deleted.
+
+Reference verification hashes the configured FASTA against its published
+SHA256, derives a fresh sequence dictionary from that FASTA and compares the
+supplied dictionary. Header sequence M5 values are compared where present.
+Older BAMs lacking complete M5 require an unambiguous source-PG FASTA declaration;
+the receipt explicitly records that provenance basis, without claiming header
+M5 proof. Unknown/conflicting declarations fail.
+
+A20,000-record probe can reject an incompatible input early. Full source and
+prepared traversals then run under Slurm. A streaming C++ counter reads samtools
+SAM output and feeds standard `samtools checksum` processes; it neither edits
+records nor implements a new checksum algorithm. Order-independent checks cover
+all records, names, sequences, qualities including OQ, flags except documented
+mate-related bits, MAPQ/CIGAR and all non-mate auxiliary tags. A second checksum
+covers mapped coordinates. Picard can position unmapped reads beside their mate,
+so unmapped coordinates are not asserted invariant. MC/MQ and mate fields are
+recomputed from actual mates. Standard samtools CRC conservation is not a claim
+of cryptographic file identity. Output counts, coordinate order, tag requirements,
+index readability, reference/sample binding and source immutability are also checked.
+
+Initial intake requests:64 CPUs/192GiB, walltime rounded up to4h using
+`max(24h, source_BAM_GiB/4*1.5h)`, capped at240h. This is a conservative declared
+4GiB/hour end-to-end allowance with1.5 safety margin, not a measured throughput
+model. Sorting uses up to63 threads; Picard's serial/GC behavior is preserved.
+
+Slurm test job12441700 completed with exit0: **24 tests pass** using the actual
+tools. Coverage includes missing/wrong/malformed MC, secondary/supplementary and
+unmapped records, duplicates/QC-fail reads, invalid sample/reference/platform,
+hard clipping, missing/broken index, truncation, unchanged valid input and
+rejection of deliberate sequence, QUAL, OQ, MAPQ and record-loss mutations.
+Integration checks reject bypass/raw paths and prove an intake failure prevents
+the analytical launcher. Full KQ0205 preparation/native execution remains the
+real-data acceptance step.
+
+The frozen failed execution/reference tasks are preserved. The resumed head
+waits for the previous head's terminal state before opening the same Nextflow
+cache; `-resume` can reuse successful reference tasks. Original manifests and
+logs remain in their original package. FASTQ transfers are independent.
+
+## Source references
 
 - [Oncoanalyser3.0.0 usage](https://nf-co.re/oncoanalyser/3.0.0/docs/usage/#sequencing-technologies):
   BAM requirements, custom genomes and CRAM requirements. Local pinned source:

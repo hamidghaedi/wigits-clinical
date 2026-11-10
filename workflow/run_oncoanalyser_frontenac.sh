@@ -37,6 +37,17 @@ ONCO_GENOME="${ONCO_GENOME:-GRCh38_hmf}"
 REF_CONFIG="${REF_CONFIG:-$ONCO_REF_ROOT/$ONCO_REFERENCE_VERSION/reference_data.config}"
 RUN_DIR="$RUN_ROOT/$RUN_ID"
 
+# Native format prerequisites are enforced before starting Nextflow tasks.
+INTAKE_VERIFY=(python3 "$HERE/bam_intake.py" verify-launch --samplesheet "$SAMPLESHEET")
+if [[ -n "${ONCO_BAM_INTAKE_ROOT:-}" ]]; then
+    source "$HERE/conf/bam_intake.env"
+    [[ "$ONCO_GENOME" == "$INTAKE_GENOME_ID" ]] || {
+        echo 'BAM intake and selected genome profile differ' >&2; exit 2;
+    }
+    INTAKE_VERIFY+=(--receipts "$ONCO_BAM_INTAKE_ROOT" --reference "$INTAKE_REFERENCE_FASTA" --reference-sha256 "$INTAKE_REFERENCE_SHA256")
+fi
+"${INTAKE_VERIFY[@]}"
+
 export NXF_SINGULARITY_CACHEDIR="$CONTAINER_DIR"
 export NXF_APPTAINER_CACHEDIR="$CONTAINER_DIR"
 export APPTAINER_CACHEDIR=/global/scratch/hpc6049/tmp
