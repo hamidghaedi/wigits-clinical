@@ -5,6 +5,12 @@ Upstream source remains nf-core/oncoanalyser3.0.0,
 `7c74c87a43749952b38c9a18915947570f0595a0`. This is a site launch profile,
 not a fork of its analytical modules or a replacement variant caller.
 
+**November10 correction:** the current launcher lacks mandatory record-level
+intake. KQ0205 failed the documented MC requirement. The next BAM release must
+implement and test [BAM_INTAKE_CONTRACT.md](BAM_INTAKE_CONTRACT.md) before a new
+analytical submission. The profile/preview checks below do not establish BAM
+compatibility. Preserve the frozen execution and completed reference work.
+
 ## Entry and data flow
 
 ```mermaid
