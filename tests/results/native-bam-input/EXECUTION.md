@@ -175,3 +175,25 @@ mapping of a pre-existing normal and an ordinarily failing tool. Login-node
 tests passed13 with3 real-tool skips; shell syntax and diff checks passed.
 These code-development tests are not patient-processing stages. Runtime
 continuation is recorded below after submission.
+
+### v0.3.0 continuation submitted
+
+Release `bam-entry/v0.3.0`, source
+`e917ae843a76782fd7c4ffab8253eccb30c9ba0d`, is pushed. The frozen package is
+`package_bam_v0.3.0/` under the existing KQ0205 run root; its `case.yaml` is the
+operator configuration and `release.json` records the source. The normal row
+names its already prepared v0.2.0 BAM with `prepare_mates: false`; the tumour
+row names the preserved source BAM with `prepare_mates: true`.
+
+Controller12444300 is RUNNING. It submitted exactly one preparation worker,
+12444301, requesting64 CPUs/192GiB with the existing input-sized88h upper
+limit; initially observed waiting for scheduler admission. No normal worker
+or audit job is submitted. After successful tumour preparation, the controller
+writes `state/bam_samplesheet_v0.3.0.csv` and resumes stock Oncoanalyser in the
+same original work/cache with the same custom reference. Native resumption
+and downstream completion are still pending at this checkpoint.
+
+The previous execution record was retained under
+`state/audit_retirement_20261110/`; the current command/job/config are in
+`state/intake_resume_execution.json`. All16 FASTQs are already local; no new
+transfer or BAM-to-FASTQ recovery was started.
