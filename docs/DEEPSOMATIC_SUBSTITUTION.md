@@ -65,6 +65,23 @@ Do not import its old2.3.0 process definitions into this3.0.0 experiment.
 
 ## First actual caller test
 
+Additional exact-reader review: SAGE5.0.2 (`ae912dbe0dcb27627a9d2d45e735e77d9a7c0368`),
+PURPLE4.4 (`99290c0cadb723d1786ec8026bc7c7c74b446d75`) and ORANGE5.0.1
+(`5fb9c98d488eb8f2daabe550b3a1b51f0f7d8cd1`) sources are recorded externally
+under `source/refs.json`.
+
+- `SageAppendApplication.validateInputHeader` requires a prior SAGE version;
+  `RegionAppendTask` reconstructs SAGE read context through
+  `CandidateSerialisation`. Native append is **not** a drop-in normal-count
+  annotator for a raw DeepSomatic VCF. Do not fake a SAGE header to bypass it.
+- `SomaticPurityFitter.isFittingCandidate` in4.4 still needs real tiers,
+  population/repeat/mappability and normal evidence. Its frequency exceptions
+  include hotspot/panel cases; do not copy4.3 fitting counts/rules as4.4 results.
+- The ORANGE5.0.1 config accepts `sage_dir` arguments, but inspecting its config
+  and main algorithm has not established that all earlier-mentioned coverage
+  side files are required. Distinguish the Nextflow directory guard from actual
+  reader use; the remaining consumer inventory is pending, not a proven failure.
+
 Maintained entry: `workflow/test_deepsomatic.py` with
 `workflow/test_deepsomatic.sbatch`, component0.1.0. It runs Google's official
 `run_deepsomatic` directly on explicit paths, preserving all output FILTERs.
