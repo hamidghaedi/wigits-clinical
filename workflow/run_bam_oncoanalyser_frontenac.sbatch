@@ -8,15 +8,13 @@ HERE="${WIGITS_WORKFLOW_DIR:-${SLURM_SUBMIT_DIR:?submit from repository root}/wo
 source "$HERE/conf/frontenac_paths.env"
 source "$HERE/conf/bam_intake.env"
 RUN_ID="${1:?run ID required}"
-SHEET="$(readlink -f "${2:?BAM samplesheet required}")"
+CONFIG="$(readlink -f "${2:?BAM YAML configuration required}")"
 shift 2
 mkdir -p "$RUN_ROOT/$RUN_ID/state"
-export ONCO_BAM_INTAKE_ROOT="$RUN_ROOT/$RUN_ID/inputs/prepared_bams_v0.2.0"
-PREPARED_SHEET="$RUN_ROOT/$RUN_ID/state/intake_prepared_samplesheet.csv"
-python3 "$HERE/bam_intake.py" batch --samplesheet "$SHEET" \
-    --outdir "$ONCO_BAM_INTAKE_ROOT" --prepared-samplesheet "$PREPARED_SHEET" \
-    --reference "$INTAKE_REFERENCE_FASTA" --dictionary "$INTAKE_REFERENCE_DICT" \
-    --reference-sha256 "$INTAKE_REFERENCE_SHA256" --gatk-command "$INTAKE_GATK_COMMAND" \
+PREPARED_SHEET="$RUN_ROOT/$RUN_ID/state/bam_samplesheet_v0.3.0.csv"
+python3 "$HERE/bam_intake.py" batch --config "$CONFIG" \
+    --outdir "$RUN_ROOT/$RUN_ID/inputs/prepared_bams_v0.3.0" --prepared-samplesheet "$PREPARED_SHEET" \
+    --gatk-command "$INTAKE_GATK_COMMAND" \
     --account "$SLURM_ACCOUNT_CPU"
 SHEET="$PREPARED_SHEET"
 python3 "$HERE/build_input_resources.py" --samplesheet "$SHEET" \

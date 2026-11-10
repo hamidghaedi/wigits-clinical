@@ -151,3 +151,27 @@ sorting, Picard and indexing times and records bounded Slurm optimization
 experiments. The current audit is the largest completed individual stage.
 No active intake/native package was changed by that investigation; the normal
 still requires final verification and the tumour is still in source inspection.
+
+## Owner-directed audit removal and YAML entry, November10
+
+The owner explicitly removed the initial validation, final audit and custom
+launch gates. This supersedes the earlier mandatory-intake statements above.
+The current [contract](../../../docs/BAM_INTAKE_CONTRACT.md) and YAML entry
+v0.3.0 replace full scans, probes, checksum comparisons, reference/header
+validators and receipt requirements with ordinary standard-tool execution.
+The custom C++ audit is removed from current source. Native analysis and
+scientific QC are unchanged.
+
+Controller12441707 and workers12441708/12441709 were stopped on owner direction
+after7h47m; Slurm records CANCELLED. Original inputs, reference work and all old
+runtime logs/packages remain. The normal's completed mate-prepared BAM/index
+will be explicitly reused, without claiming its abandoned audit passed.
+The tumour still needs mate preparation; it will start directly with the
+name sort/Picard sequence, without repeating its source scan.
+
+Slurm development test12444294 completed exit0 in9s:13 tests passed, no skips,
+including real-tool synthetic mate repair, preserved reads/qualities, YAML
+mapping of a pre-existing normal and an ordinarily failing tool. Login-node
+tests passed13 with3 real-tool skips; shell syntax and diff checks passed.
+These code-development tests are not patient-processing stages. Runtime
+continuation is recorded below after submission.

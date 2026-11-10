@@ -11,6 +11,10 @@ The model is a conservative first-full-case extrapolation pending runtime eviden
 Existing d1.vd1 BAMs use the separate [native BAM entry](../docs/NATIVE_BAM_ENTRY.md):
 `run_bam_oncoanalyser_frontenac.sbatch`. It supplies a custom reference through
 the supported upstream interface and retains full REDUX and native callers.
+The v0.3.0 entry takes [a case YAML](../samplesheets/bam_case.example.yaml),
+with `prepare_mates` set explicitly per BAM. It performs optional standard
+Picard preparation and sorting/indexing, with no custom initial/final audit
+or receipt-based launch validation. See the [current contract](../docs/BAM_INTAKE_CONTRACT.md).
 
 Intended layout once work starts.
 

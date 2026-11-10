@@ -1,0 +1,21 @@
+# prepare_mates: false uses the supplied BAM as-is.
+# Reference selection comes from the native launch profile.
+samples:
+  - group_id: example_pair
+    subject_id: example
+    sample_id: example-DNA
+    sample_type: tumor
+    sequence_type: dna
+    filetype: bam
+    info: ""
+    filepath: /path/to/tumour.bam
+    prepare_mates: true
+  - group_id: example_pair
+    subject_id: example
+    sample_id: example-gDNA
+    sample_type: normal
+    sequence_type: dna
+    filetype: bam
+    info: ""
+    filepath: /path/to/prepared-normal.bam
+    prepare_mates: false

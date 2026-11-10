@@ -1,5 +1,10 @@
 # Imported BAM preparation: measured costs and optimization assessment
 
+**Superseded operational recommendation:** the owner subsequently directed
+removal of both audits, not adoption of the buffering candidate. BAM entry
+v0.3.0 follows the [current contract](../../../docs/BAM_INTAKE_CONTRACT.md).
+The measurements below remain historical evidence only.
+
 Date: November10,2026; stage times below are America/Toronto (EST).
 Production intake source: `bam-entry/v0.2.0`, `3d06abd`.
 Native Oncoanalyser source:3.0.0, `7c74c87a43749952b38c9a18915947570f0595a0`.

@@ -5,12 +5,11 @@ Upstream source remains nf-core/oncoanalyser3.0.0,
 `7c74c87a43749952b38c9a18915947570f0595a0`. This is a site launch profile,
 not a fork of its analytical modules or a replacement variant caller.
 
-**November10 correction:** v0.2.0 implements mandatory record-level intake after
-KQ0205 exposed the documented MC requirement. Read
-[BAM_INTAKE_CONTRACT.md](BAM_INTAKE_CONTRACT.md) for preparation, conservation
-checks, launch dependencies and the24-test Slurm result. The historical
-profile/preview checks below did not establish BAM compatibility. Preserve the
-frozen execution and completed reference work.
+**November10 owner simplification:** v0.3.0 replaces mandatory custom audits
+with YAML-configured optional mate preparation, followed by native execution.
+Read [BAM_INTAKE_CONTRACT.md](BAM_INTAKE_CONTRACT.md). The initial/full output
+audits, header/reference validators and receipt-based launch gates are removed.
+Preserve frozen historical execution evidence and completed reference work.
 
 ## Entry and data flow
 
@@ -71,8 +70,7 @@ the reference rather than patient read volume.
 
 ## Review and execution
 
-Historical v0.1.0 graph-only command (not an intake validation or a new launch
-instruction; v0.2.0 runs mandatory intake before any analytical invocation):
+Historical v0.1.0 graph-only command (not the current YAML entry):
 
 ```bash
 WIGITS_WORKFLOW_DIR="$PWD/workflow" \
@@ -88,7 +86,7 @@ The following is the entry shape, not a statement that it has been submitted:
 sbatch --account=def-hpcg6049_cpu \
   workflow/run_bam_oncoanalyser_frontenac.sbatch \
   KQ0205_full_bam_custom_comparison \
-  samplesheets/KQ0205_full_dna_bam_custom.csv
+  /absolute/path/to/case.yaml
 ```
 
 Preserve the native FASTQ baseline. Compare whole-genome analytical outputs
