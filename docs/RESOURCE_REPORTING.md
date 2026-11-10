@@ -66,6 +66,11 @@ Definitions: [Slurm sacct](https://slurm.schedmd.com/sacct.html) and
 
 ## Minimal future wiring
 
+Use measured reports to investigate tool performance through
+[the tuning plan](RESOURCE_TUNING.md). The owner prioritizes faster execution;
+lower CPU caps alone are not the solution. Reports never mutate allocations or
+automatically apply a resource rule.
+
 The shared site launcher calls this script once after Nextflow returns, on
 ordinary success or failure. A reporting error emits a message and preserves
 the native exit code. It adds no launch validation, monitoring daemon or Slurm

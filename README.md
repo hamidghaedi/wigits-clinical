@@ -29,6 +29,7 @@ here; see [the migration record](docs/migrations/DNA_HARTWIG_ADOPTATION_20261110
 | `docs/FULL_NATIVE_EXECUTION.md` | Full original-FASTQ entry using the native HMF reference and all DNA lanes. |
 | `docs/NATIVE_BAM_ENTRY.md` | Existing-BAM entry with explicit custom reference and optional mate preparation. |
 | `docs/RESOURCE_REPORTING.md` | CSV/HTML efficiency reporting and the non-blocking future-launch completion hook. |
+| `docs/RESOURCE_TUNING.md` | Full-case CPU diagnosis and isolated64-CPU performance experiments before changing defaults. |
 | `CONTRIBUTING.md` | How work moves between this repository and the HPC side where testing happens. |
 
 ## Intended shape
