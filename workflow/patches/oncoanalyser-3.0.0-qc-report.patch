@@ -3,16 +3,16 @@
 @@ -113,7 +113,7 @@
              def meta = d[0]
              def inputs = d[1..-1]
- 
+
 -            def dna_tumor_input_keys = ['sage_dir_somatic', 'purple_dir', 'qsee_dir', 'linx_annotation_dir_somatic', 'linx_plot_dir_somatic']
 +            def dna_tumor_input_keys = ['sage_dir_somatic', 'purple_dir', 'qsee_dir', 'linx_annotation_dir_somatic']
              def has_dna_tumor = dna_tumor_input_keys.every { k -> def i = input_indexes[k]; return inputs[i] }
- 
+
              def purple_dir = inputs[input_indexes['purple_dir']]
 @@ -121,7 +121,13 @@
              def has_smlv_vcf = purple_dir ? purple_dir.resolve("${tumor_dna_id}.purple.somatic.vcf.gz").exists() : false
              def has_purple_plots = purple_dir ? purple_dir.resolve("plot/${tumor_dna_id}.circos.png").exists() : false
- 
+
 -            runnable: has_dna_tumor && has_smlv_vcf && has_purple_plots
 +            def qcFile = purple_dir ? purple_dir.resolve("${tumor_dna_id}.purple.qc") : null
 +            def statusLine = qcFile?.exists() ? qcFile.readLines().find { it.startsWith('QCStatus') } : null
@@ -36,9 +36,9 @@
 --- a/modules/local/orange/main.nf
 +++ b/modules/local/orange/main.nf
 @@ -60,6 +60,10 @@
- 
+
      def primary_tumor_location_arg = meta.cancer_type ? "-primary_tumor_location ${meta.cancer_type}" : ''
- 
+
 +    def linx_plot_arg = linx_plot_dir_reportable_somatic ? "-linx_plot_dir ${linx_plot_dir_reportable_somatic}" : ''
 +
 +    def qc_front_page_source = file("${projectDir}/assets/orange_qc_report/FrontPageChapter.java").text
@@ -48,17 +48,17 @@
      def linx_germline_dir_arg = linx_annotation_dir_germline ? "-linx_germline_dir ${linx_annotation_dir_germline}" : ''
 @@ -104,7 +108,7 @@
      fi
- 
+
      # Set input plot directory and create it doesn't exist. See the LINX visualiser module for further info.
 -    if [[ ! -e ${linx_plot_dir_reportable_somatic}/ ]]; then
 +    if [[ -n "${linx_plot_arg}" && ! -e ${linx_plot_dir_reportable_somatic}/ ]]; then
          mkdir -p ${linx_plot_dir_reportable_somatic}/;
      fi;
- 
+
 @@ -121,8 +125,15 @@
- 
+
      mkdir -p output/
- 
+
 -    orange \\
 +    cat > FrontPageChapter.java <<'QLMP_ORANGE_JAVA'
 +${qc_front_page_source}
@@ -82,7 +82,7 @@
          ${reference_arg} \\
          ${sage_germline_dir_arg} \\
 @@ -162,6 +173,7 @@
- 
+
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
 +        qlmp-orange-qc-report: 0.1.0
@@ -91,7 +91,7 @@
      END_VERSIONS
 --- a/nextflow.config
 +++ b/nextflow.config
-@@ -306,7 +306,7 @@
+@@ -306,6 +306,6 @@
      mainScript      = 'main.nf'
      defaultBranch   = 'master'
      nextflowVersion = '!>=25.10.4'
@@ -99,4 +99,3 @@
 +    version         = '3.0.0-qlmp.1'
      doi             = '10.5281/zenodo.15189386'
  }
- 
