@@ -1,6 +1,11 @@
 # oncoanalyser wiring around the alignment file and the SNV VCF
 
 Current site BAM entry and verification status: [NATIVE_BAM_ENTRY.md](NATIVE_BAM_ENTRY.md).
+Current DeepSomatic experiment and verified/prior-versus-pending boundaries:
+[DEEPSOMATIC_SUBSTITUTION.md](DEEPSOMATIC_SUBSTITUTION.md). Its rules supersede
+the historical suggestion below to map DeepSomatic filters to PASS: original
+filters must be preserved, and no SAGE side outputs or clean normal counts may
+be fabricated. Earlier estimates are not current execution evidence.
 This wiring assessment includes hypotheses and historical estimates; its blanket
 BQSR statements do not establish the processing history of every current BAM.
 

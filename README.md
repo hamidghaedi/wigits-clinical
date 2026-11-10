@@ -30,6 +30,7 @@ here; see [the migration record](docs/migrations/DNA_HARTWIG_ADOPTATION_20261110
 | `docs/NATIVE_BAM_ENTRY.md` | Existing-BAM entry with explicit custom reference and optional mate preparation. |
 | `docs/RESOURCE_REPORTING.md` | CSV/HTML efficiency reporting and the non-blocking future-launch completion hook. |
 | `docs/RESOURCE_TUNING.md` | Full-case CPU diagnosis and isolated64-CPU performance experiments before changing defaults. |
+| `docs/DEEPSOMATIC_SUBSTITUTION.md` | Isolated Google caller test and the minimal somatic-VCF substitution boundary; native defaults unchanged. |
 | `CONTRIBUTING.md` | How work moves between this repository and the HPC side where testing happens. |
 
 ## Intended shape
