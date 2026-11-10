@@ -18,4 +18,24 @@ workflow/
     templates/         report templates
 ```
 
-The base pipeline is `nf-core/oncoanalyser` in `wgts` mode. This wrapper does not modify it; it consumes the ORANGE JSON and the per-tool directories that oncoanalyser writes.
+The base pipeline is `nf-core/oncoanalyser` in `wgts` mode. The original native
+3.0.0 baseline is preserved. The current launcher defaults to the isolated
+`3.0.0-qlmp.1` source release, with the same 3.0.0 references, to render native
+QC-failed ORANGE reports when a failed PURPLE fit has no circos plot. It retains
+the native QC failure and native QC-fail notices; it does not invent a fit or an
+image. Missing required analytical inputs, or a missing circos plot without a
+supported QC-failure status, raise an explicit error instead of silently
+discarding the report.
+
+The maintained change is `patches/oncoanalyser-3.0.0-qc-report.patch` plus
+`overlays/oncoanalyser-3.0.0/`. The Java overlay is derived from ORANGE 5.0.1 and
+retains GPL-3.0 licensing in its `COPYING` file. All other native classes and
+scientific outputs are unchanged. `prepare_oncoanalyser_qc_report.sh` builds a
+new, committed/tagged local source release from the pinned upstream checkout;
+it never modifies the shared Nextflow asset cache or an installed image.
+
+For an explicit baseline reproduction, set both
+`ONCO_SOURCE=nf-core/oncoanalyser` and `ONCO_REV=3.0.0`.
+
+See [QC-failed report recovery](../docs/ORANGE_QC_REPORT_RECOVERY.md) for the
+exact build/test/launch instructions and real-data execution evidence.

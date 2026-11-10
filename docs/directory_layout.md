@@ -39,6 +39,12 @@ Cluster: Frontenac (CAC, Queen's). Account `hpc6049`, group `hpcg6049`. Verified
 | `RUN_ROOT` | `/global/scratch/hpc6049/wigits_runs` | scratch | **new.** One directory per run (§4). Work dirs, intermediate files, Slurm logs. Regenerable |
 | `RELEASE_ROOT` | `${PIPELINE_ROOT}/wigits_releases` | project | **new.** Durable copy of what a finished run produced that we keep: ORANGE JSON/PDF, clinical-layer outputs, provenance. No BAM/CRAM |
 | `SOFTWARE_ROOT` | `${PIPELINE_ROOT}/software` | project | **new, reserved.** Pinned checkouts of external pipelines (§5) |
+| `ONCO_SOURCE_DIR` | `${SOFTWARE_ROOT}/oncoanalyser/3.0.0-qlmp.1` | project | Isolated, tagged local QC-report fix; upstream asset cache stays unchanged |
+
+`ONCO_SOURCE_VERSION=3.0.0-qlmp.1` and `ONCO_REFERENCE_VERSION=3.0.0` deliberately
+distinguish the patched reporting interface from the unchanged native reference
+bundle. The baseline remains available through explicit `ONCO_SOURCE` /
+`ONCO_REV` overrides; see the workflow runbook.
 
 Agent scratch (`/global/home/hpc6049/.claude-science-scratch`, `/global/scratch/hpc6049/.claude-science-scratch`)
 is harness-internal: per-job wrappers and logs for jobs an assistant submitted. Nothing we rely on lives there.
