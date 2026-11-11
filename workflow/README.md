@@ -13,6 +13,12 @@ lane samplesheet. It generates initial resources before launching stock Oncoanal
 including64-core heavy CPU tasks, and overrides the historical32-core ceiling.
 The model is a conservative first-full-case extrapolation pending runtime evidence.
 
+The [SEQC2 FFPE comparison](../docs/SEQC2_FFPE_COMPARISON_20261111.md) uses
+`run_reference_native.sbatch` for its full native control, followed by
+`submit_reference_deepsomatic.py` on the same published REDUX BAMs. Download,
+native execution and caller dispatch have explicit Slurm dependencies. The
+experimental downstream adapter remains a separate, unfinished increment.
+
 Existing d1.vd1 BAMs use the separate [native BAM entry](../docs/NATIVE_BAM_ENTRY.md):
 `run_bam_oncoanalyser_frontenac.sbatch`. It supplies a custom reference through
 the supported upstream interface and retains full REDUX and native callers.
