@@ -64,3 +64,10 @@ Each package records its original command, session, sample-sheet hash and files.
 
 Submission is not completion. Confirm CACHED upstream tasks and actual recovery
 outcomes from the new trace/log before claiming either workflow is complete.
+
+Observed startup: BAM resume12449093 reports12 CACHED tasks, including both
+REDUX outputs, all three reference preparation tasks, both SAGE callers, BAM
+metrics, COBALT, TEAL and VirusBreakend. Only CIDER12449094, AMBER12449095 and
+ESVEE12449096 have been submitted at this point (pending scheduler resources).
+No alignment or BAM preparation was submitted. Native resume12449091 is still
+waiting for the old native head; DeepSomatic preparation12447879 remains running.
