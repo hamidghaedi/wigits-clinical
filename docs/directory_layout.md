@@ -93,6 +93,14 @@ step; until then that work dir must not be deleted.
 `<run_id>` = `<label>_<YYYYMMDD>_onco<version>`, e.g. `test_20261014_onco3.0.0`,
 `KQ0315_20261101_onco3.0.0`. `<label>` is a case id, cohort name or `test`.
 
+Bounded component experiments also live under the existing `RUN_ROOT`, using
+`<case>_<component>_<YYYYMMDD>/`. They hold explicit input JSON, a frozen
+`package_v<version>/`, source hashes, submission JSON, logs and separate result
+subdirectories for each tested version. They do not masquerade as complete
+oncoanalyser runs or publish to `RELEASE_ROOT`. The November 11 DeepSomatic
+distributed and adapter experiments follow this convention; see
+`DEEPSOMATIC_DISTRIBUTED_TEST.md`. No root variable or shared asset is changed.
+
 Scratch is volatile. Anything a run produced that must outlive it is copied to
 `${RELEASE_ROOT}/<run_id>/` together with `samplesheet.csv`, `launch.sh`, `pipeline_info/` and a
 `RELEASE.md` naming the oncoanalyser version, pipeline commit, reference directory and container cache

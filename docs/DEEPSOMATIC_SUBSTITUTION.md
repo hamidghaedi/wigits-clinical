@@ -4,6 +4,13 @@ Owner direction,10 November2026. Development branch: `hartwig_adoptation`.
 This is an isolated experiment, not a default caller change or a report release.
 Both full native KQ0205 workflows keep running unchanged.
 
+**November 11 execution update:** the owner approved the distributed example
+test and measured-count/native-annotation adapter development while preserving
+all downstream features. See [current experiment](DEEPSOMATIC_DISTRIBUTED_TEST.md)
+and its execution evidence. The earlier draft wiring contract's feature-disabling
+and synthetic-context suggestions are not adopted. Full-feature substitution
+remains unproven until genuine read context/phasing and all consumers work.
+
 ## Smallest boundary
 
 ```mermaid

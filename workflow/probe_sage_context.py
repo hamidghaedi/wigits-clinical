@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""Measure whether unmodified SAGE can supply context for pilot DS PASS alleles.
+
+This is an isolated diagnostic, not a new selected callset or a forced genotype.
+Use native SAGE 5.0.2 specific_var_file (CSV) with the original reference,
+resources, reads and scientific defaults. It may fail to discover DS-only alleles.
+Do not use this restricted pass to estimate sample-wide contamination or phasing.
+"""
+import argparse
+import csv
+from datetime import datetime,timezone
+import json
+import os
+from pathlib import Path
+import subprocess
+from deepsomatic_adapter import read_rows,audit
+
+
+def select_probe(vcf):
+    rows=[row for _,row in read_rows(vcf) if row[6]=='PASS']
+    if any(',' in row[4] for row in rows):raise ValueError('Normalize alleles first')
+    if not 0<len(rows)<=1000:raise ValueError('Bounded pilot requires 1–1000 PASS alleles')
+    return rows
+
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--config',type=Path,required=True);p.add_argument('--adapted',type=Path,required=True)
+    p.add_argument('--out',type=Path,required=True);a=p.parse_args();c=json.loads(a.config.read_text())
+    out=a.out.resolve();out.mkdir(parents=True,exist_ok=False);rows=select_probe(a.adapted)
+    with (out/'requested.csv').open('w') as f:
+        w=csv.writer(f);w.writerow(['Chromosome','Position','Ref','Alt'])
+        w.writerows([row[0],row[1],row[3],row[4]] for row in rows)
+    r=Path(c['resources']);cpus=int(os.environ['SLURM_CPUS_PER_TASK'])
+    cmd=['apptainer','exec','--cleanenv','--bind','/global',c['sage_image'],'sage','-Xmx24g',
+         '-reference',c['normal_id'],'-reference_bam',c['normal_bam'],'-ref_sample_count','1',
+         '-tumor',c['tumor_id'],'-tumor_bam',c['tumor_bam'],
+         '-ref_genome',c['reference'],'-ref_genome_version','38',
+         '-hotspots',str(r/'dna/variants/KnownHotspots.somatic.38.vcf.gz'),
+         '-driver_gene_panel',str(r/'common/DriverGenePanel.38.tsv'),
+         '-high_confidence_bed',c['high_confidence_bed'],'-ensembl_data_dir',str(r/'common/ensembl_data'),
+         '-sequencing_type','ILLUMINA','-include_mt','-run_tinc','-write_fit_variants',
+         '-pon_file',str(r/'dna/variants/hmf_wgs_sage_pon_1000.38.tsv.gz'),
+         '-gnomad_freq_dir',str(r/'dna/variants/gnomad'),'-threads',str(cpus),'-log_level','DEBUG',
+         '-specific_var_file',str(out/'requested.csv'),'-output_vcf',str(out/'probe.sage.somatic.vcf.gz')]
+    record=dict(version='0.1.0',job=os.environ['SLURM_JOB_ID'],requested_pass_alleles=len(rows),command=cmd,
+                started_utc=datetime.now(timezone.utc).isoformat(),
+                limits='Restricted discovery test only; no full-sample TINC/phasing conclusions, no substituted outputs')
+    path=out/'execution.json';path.write_text(json.dumps(record,indent=2)+'\n')
+    with (out/'sage.log').open('w') as log:
+        run=subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT)
+    record.update(exit_code=run.returncode,finished_utc=datetime.now(timezone.utc).isoformat())
+    path.write_text(json.dumps(record,indent=2)+'\n');run.check_returncode()
+    audit(a.adapted,out/'probe.sage.somatic.vcf.gz',out/'probe_audit.tsv',c['tumor_id'],c['normal_id'])
+
+
+if __name__=='__main__':main()

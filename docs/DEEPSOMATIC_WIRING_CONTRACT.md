@@ -1,5 +1,11 @@
 # DeepSomatic → oncoanalyser wiring contract (SAGE_SOMATIC substitution)
 
+> November 11 owner-approved follow-up: use DEEPSOMATIC_DISTRIBUTED_TEST.md
+> and DEEPSOMATIC_FINDINGS_REVIEW_20261111.md for current implementation decisions.
+> The draft suggestions below to disable consumers, synthesize RC_CNT/RC_INFO,
+> accept lost phasing, or automatically re-pileup normal counts are NOT adopted.
+> All downstream features remain required.
+
 Status: draft for review — 2026-11-11. Scope: oncoanalyser **3.0.0** (commit `7c74c87a43`), hmftools **sage 5.0.2 / pave 1.9 / purple 4.4 / orange 5.0.1**.
 Evidence: (1) real outputs of the completed route-B run `KQ0205_full_bam_custom_20261109_r1` (VCF headers read from disk); (2) oncoanalyser source in the cluster clone; (3) hmftools source at tags `pave-v1.9` and `purple-v4.4` (monorepo snapshot also used for sage/orange/sigs/cuppa/neo/chord). Every file:line anchor below was read, not recalled. Companion evidence table: `sage_tag_consumers.tsv` (every source line that reads a SAGE tag).
 
