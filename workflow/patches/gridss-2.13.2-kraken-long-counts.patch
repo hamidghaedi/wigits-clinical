@@ -1,0 +1,13 @@
+--- a/au/edu/wehi/idsv/kraken/KrakenReportLine.java
++++ b/au/edu/wehi/idsv/kraken/KrakenReportLine.java
+@@ -20,8 +20,8 @@
+         String[] fields = line.split("\t");
+         int offset = 0;
+         this.percentage = Double.parseDouble(fields[offset++].replace("%", ""));
+-        this.countAssignedToTree = Integer.parseInt(fields[offset++]);
+-        this.countAssignedDirectly = Integer.parseInt(fields[offset++]);
++        this.countAssignedToTree = Long.parseLong(fields[offset++]);
++        this.countAssignedDirectly = Long.parseLong(fields[offset++]);
+         this.rank = fields[offset++];
+         this.taxonomyId = Integer.parseInt(fields[offset++]);
+         this.scientificName = fields[offset++].trim();
