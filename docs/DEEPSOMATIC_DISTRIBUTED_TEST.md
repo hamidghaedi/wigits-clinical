@@ -95,6 +95,14 @@ it does not force alleles, lower thresholds or promise all will be emitted.
 Native SAGE outputs remain separate from DeepSomatic outputs. Contamination
 estimates and phase sets from a restricted probe are not sample-wide results.
 
+Probe component 0.1.1 stages links to both samples' actual REDUX BQR, jitter
+parameters and microsatellite tables in a single experiment-local directory,
+passed via native `-jitter_bqr_dir`. SAGE 5.0.2 otherwise defaults that directory
+to the first normal BAM's parent, which cannot locate the tumour sidecars when
+published BAMs are in separate sample directories. No file is recomputed and
+neither BQR nor jitter modelling is disabled. The original Nextflow task avoids
+this by staging both samples together; this probe now supplies equivalent inputs.
+
 All native branches must remain available for final integration. An intersection
 of the two callers, synthetic read-context vectors, or switching off SAGE_APPEND
 or NEO does not meet that requirement. The November 11 reviewed recommendations

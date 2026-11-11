@@ -45,7 +45,8 @@ replace the independent native germline branch.
 | 12452831 | Pilot annotation with source payload retained verbatim, component 0.1.2 | All annotation/preservation/compression steps succeeded; audit stopped on multiple native SAGE records for an exact allele. |
 | 12452832, 12452833 | Dependent probe/full adapter for 0.1.2 | Automatically cancelled because the prerequisite failed; no analysis ran. |
 | 12452839 | Pilot annotation/audit, component 0.1.3 | COMPLETED, exit 0; all eight steps passed; see pilot_v013/execution.json |
-| 12452840 | Native SAGE restricted-context probe on the pilot PASS set | Pending scheduling; pilot prerequisite completed |
+| 12452840 | Native SAGE restricted-context probe on the pilot PASS set | FAILED in 5 seconds before calling: default BQR directory was the normal BAM directory, missing the tumour sidecar there |
+| 12452902 | Corrected probe, component 0.1.1 | COMPLETED, exit 0, 2m01s, 24047532 KiB peak batch RSS; context_probe_v014/ |
 | 12452841 | Same adapter on the full DeepSomatic VCF | Pending afterok:12452839:12447881; does not change either prerequisite job |
 
 The first check exposed equivalent QUAL formatting (0.3 versus 0.30) and
@@ -92,6 +93,32 @@ be treated as a sample-wide result.
 - `python3 -m py_compile workflow/benchmark_deepsomatic.py workflow/deepsomatic_adapter.py workflow/run_deepsomatic_adapter.py workflow/probe_sage_context.py`: exit 0.
 - `bash -n workflow/benchmark_deepsomatic.sbatch workflow/deepsomatic_adapter.sbatch workflow/probe_sage_context.sbatch`: exit 0.
 - `git diff --check`: exit 0 after retaining clean line endings for the added draft-contract notice.
+
+Follow-up: the BQR staging correction adds two regression tests. Complete suite:
+50 tests, OK, 3 existing skips. Original BAMs, sidecars and running jobs unchanged.
+`probe_sidecar_submission.json` and `context_package_v0.1.1/release.json` record
+the exact new command and source fingerprints. Missing tumour BQR was a staging
+failure, not evidence against support for the 115 unmatched PASS alleles.
+
+**Completed native context probe:** all 183 DeepSomatic PASS alleles were
+requested. SAGE returned genuine context for exactly the same 68 alleles as
+the original native control: zero additional supported alleles, zero lost
+previous matches, 115 still without matching SAGE context. This was verified
+by allele-key sets, not matching totals alone. Evidence:
+`context_probe_v014/probe_audit.tsv`, its JSON summary, and
+`comparison_to_native_control.json`. Both samples' actual BQR tables loaded
+successfully (1536 records each), and native SAGE/TINC completed. Restricted
+TINC/phasing remains unsuitable as a full-sample result. These findings do not
+establish absent BAM support or false-positive status for the unmatched calls.
+The restricted discovery route cannot supply feature-complete replacement
+context; no variant was removed or synthetic context emitted.
+
+At the follow-up check, distributed job 12452810 was running at approximately
+23 minutes, with both nodes progressing. Full inference 12447880 was running
+at about 2h32m. All 64 completed example summaries total 63898627 main-model
+examples; the inference log had reached 7206656 (11.28%) at about 0.126 seconds
+per 100 examples. Linear extrapolation suggests about 20 hours more inference
+at that rate, excluding postprocessing, and is not a completion guarantee.
 
 Remaining: benchmark completion/timing/equality; pilot/full annotation results;
 native context coverage of DeepSomatic-only alleles; genuine RNA append, NEO,

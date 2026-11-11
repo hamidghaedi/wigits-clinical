@@ -16,6 +16,20 @@ import subprocess
 from deepsomatic_adapter import read_rows,audit
 
 
+def stage_redux_sidecars(config,out):
+    """Native SAGE uses one jitter_bqr_dir for both samples, even with separate BAM dirs."""
+    target=out/'redux_sidecars';target.mkdir()
+    sources={}
+    for role in ('normal','tumor'):
+        sample=config[role+'_id'];parent=Path(config[role+'_bam']).parent
+        for suffix in ('bqr.tsv','jitter_params.tsv','ms_table.tsv.gz'):
+            source=parent/f'{sample}.redux.{suffix}'
+            if not source.is_file():raise FileNotFoundError(source)
+            (target/source.name).symlink_to(source.resolve())
+            sources[source.name]=str(source.resolve())
+    return target,sources
+
+
 def select_probe(vcf):
     rows=[row for _,row in read_rows(vcf) if row[6]=='PASS']
     if any(',' in row[4] for row in rows):raise ValueError('Normalize alleles first')
@@ -28,6 +42,7 @@ def main():
     p.add_argument('--config',type=Path,required=True);p.add_argument('--adapted',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True);a=p.parse_args();c=json.loads(a.config.read_text())
     out=a.out.resolve();out.mkdir(parents=True,exist_ok=False);rows=select_probe(a.adapted)
+    sidecar_dir,sidecars=stage_redux_sidecars(c,out)
     with (out/'requested.csv').open('w') as f:
         w=csv.writer(f);w.writerow(['Chromosome','Position','Ref','Alt'])
         w.writerows([row[0],row[1],row[3],row[4]] for row in rows)
@@ -35,6 +50,7 @@ def main():
     cmd=['apptainer','exec','--cleanenv','--bind','/global',c['sage_image'],'sage','-Xmx24g',
          '-reference',c['normal_id'],'-reference_bam',c['normal_bam'],'-ref_sample_count','1',
          '-tumor',c['tumor_id'],'-tumor_bam',c['tumor_bam'],
+         '-jitter_bqr_dir',str(sidecar_dir)+'/',
          '-ref_genome',c['reference'],'-ref_genome_version','38',
          '-hotspots',str(r/'dna/variants/KnownHotspots.somatic.38.vcf.gz'),
          '-driver_gene_panel',str(r/'common/DriverGenePanel.38.tsv'),
@@ -43,7 +59,7 @@ def main():
          '-pon_file',str(r/'dna/variants/hmf_wgs_sage_pon_1000.38.tsv.gz'),
          '-gnomad_freq_dir',str(r/'dna/variants/gnomad'),'-threads',str(cpus),'-log_level','DEBUG',
          '-specific_var_file',str(out/'requested.csv'),'-output_vcf',str(out/'probe.sage.somatic.vcf.gz')]
-    record=dict(version='0.1.0',job=os.environ['SLURM_JOB_ID'],requested_pass_alleles=len(rows),command=cmd,
+    record=dict(version='0.1.1',job=os.environ['SLURM_JOB_ID'],requested_pass_alleles=len(rows),command=cmd,redux_sidecars=sidecars,
                 started_utc=datetime.now(timezone.utc).isoformat(),
                 limits='Restricted discovery test only; no full-sample TINC/phasing conclusions, no substituted outputs')
     path=out/'execution.json';path.write_text(json.dumps(record,indent=2)+'\n')
