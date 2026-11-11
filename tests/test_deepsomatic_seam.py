@@ -21,6 +21,7 @@ class DeepSomaticSeamTests(unittest.TestCase):
                     '--reads_tumor=/test/t.bam','--reads_normal=/test/n.bam',
                     '--sample_name_tumor=T','--sample_name_normal=N','--num_shards=16',
                     '--regions=chr17:1-10000 chr19:1-10000',
+                    '--call_variants_extra_args=batch_size=256',
                     '--postprocess_variants_extra_args=cpus=16,num_partitions=48',
                     'CUDA_VISIBLE_DEVICES=0']:
             self.assertIn(arg,cmd)

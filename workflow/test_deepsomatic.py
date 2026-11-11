@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 import subprocess
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 
 def command(config, out, cpus, cuda):
@@ -33,6 +33,7 @@ def command(config, out, cpus, cuda):
         f'--output_vcf={out}/deepsomatic.vcf.gz',f'--num_shards={cpus}',
         f'--intermediate_results_dir={out}/intermediate',f'--logging_dir={out}/logs',
         f"--regions={' '.join(config['regions'])}",
+        '--call_variants_extra_args=batch_size=256',
         f'--postprocess_variants_extra_args=cpus={cpus},num_partitions={3*cpus}']
 
 

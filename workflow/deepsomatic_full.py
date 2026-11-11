@@ -14,7 +14,7 @@ from pathlib import Path
 import re
 import subprocess
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 STAGES = ('examples', 'inference', 'postprocess')
 
 
@@ -55,6 +55,7 @@ def dry_command(config, out):
         f"--sample_name_tumor={config['tumor_id']}",f"--sample_name_normal={config['normal_id']}",
         f'--output_vcf={out}/deepsomatic.vcf.gz','--num_shards=64',
         f'--intermediate_results_dir={out}/intermediate',
+        '--call_variants_extra_args=batch_size=256',
         '--postprocess_variants_extra_args=cpus=64,num_partitions=192']
 
 

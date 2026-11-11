@@ -63,6 +63,24 @@ Full caller completion and downstream compatibility remain pending.
 
 ## Still pending
 
+### GPU batch correction,11 November
+
+Whole-genome launcher0.2.1 and bounded launcher0.1.1 explicitly request
+`--call_variants_extra_args=batch_size=256`. Regression assertions cover both
+commands. The complete suite passed34 tests with3 existing integration skips;
+shell syntax and diff checks passed. A container-native dry run on the login node
+could not start because user namespaces were unavailable; no GPU execution is
+claimed by these checks.
+
+For the ongoing full case, the owner authorized changing the pending inference
+command to `--batch_size 256`. Job12447880 was held during the edit and released
+with its original dependency on12447879. The examples job continued running;
+its command, output paths and the postprocessing command are byte-for-byte
+unchanged as JSON values. No replacement jobs or example rerun were submitted.
+The original command JSON and change record are preserved at the runtime root
+documented above (`results/commands.before_batch256.json`, `batch256_update.json`).
+Actual inference execution and memory usage remain pending.
+
 Whole-genome caller completion; paired normal/context
 adaptation using current native resources; PAVE1.9/PURPLE4.4 comparison with
 unchanged SV/CN inputs; exact SAGE side-output consumer resolution; eventual

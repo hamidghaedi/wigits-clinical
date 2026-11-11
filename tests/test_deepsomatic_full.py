@@ -16,6 +16,7 @@ class FullCallerTests(unittest.TestCase):
         cmd=m.dry_command(c,Path('/out'))
         self.assertFalse(any('--regions' in x for x in cmd))
         self.assertIn('--num_shards=64',cmd)
+        self.assertIn('--call_variants_extra_args=batch_size=256',cmd)
         self.assertIn('--postprocess_variants_extra_args=cpus=64,num_partitions=192',cmd)
         with self.assertRaises(ValueError):m.dry_command({**c,'regions':['chr17']},Path('/out'))
 

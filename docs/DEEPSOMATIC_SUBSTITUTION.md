@@ -115,11 +115,15 @@ executor scope error, not an owner-requested substitute. It completed successful
 (12446769,53m37s,183 PASS records, confirmed GPU inference), but is only a pilot.
 
 `workflow/deepsomatic_full.py` and `workflow/deepsomatic_full.sbatch`, component
-**0.2.0**, now run the whole-genome caller on those same full FASTQ-run REDUX
+**0.2.1**, now run the whole-genome caller on those same full FASTQ-run REDUX
 BAMs. There is **no --regions argument, downsampling or new alignment**.
 Google's own `run_deepsomatic --dry_run` generates the three native commands;
 we execute them unchanged in separate dependent Slurm allocations. Native model
-defaults, intermediate filenames and original FILTER values remain intact.
+defaults other than the explicit GPU inference batch size, intermediate filenames
+and original FILTER values remain intact. Both whole-genome and bounded launchers
+pass `--call_variants_extra_args=batch_size=256` to the Google runner. Keep this
+fixed setting for future runs: the native1024 default previously exhausted A30
+memory;256 is the established local setting, not an input-size heuristic.
 
 | Stage | CPUs | Memory | Initial walltime limit | Job |
 |---|---:|---:|---:|---|
@@ -144,6 +148,14 @@ External execution package:
 record the exact inputs, allocation basis, source fingerprints and job commands.
 Results go in `results/`, with separate commands/logs/execution records per stage.
 This executes the full caller; native downstream substitution remains pending.
+
+On11 November, before inference started, the owner authorized batch256 for this
+already-running execution. Only `results/commands.json`'s inference command was
+updated, with its original saved as `commands.before_batch256.json` and the
+change recorded in `batch256_update.json` at the run root. Job12447880 was briefly
+held while pending, then released with its original afterok dependency. All three
+job IDs, original v0.2.0 package, example preparation, intermediates and
+postprocessing command are preserved. No example regeneration is required.
 
 ## Remaining increments
 
