@@ -1,5 +1,59 @@
 # SEQC2 FFPE full-genome comparison
 
+## Current execution: existing 24-hour FFPE pair (12 November)
+
+The owner replaced the slow six-hour download with the existing full 24-hour
+FFPE tumour/normal FASTQs. Jobs 12452929 (download), 12452930 (native) and
+12452931 (DeepSomatic dispatch) were cancelled; Slurm recorded CANCELLED for
+all three. Partial downloads and historical evidence remain. KQ0205 jobs were
+not changed.
+
+| Role | Library / accession | Existing project input directory | Compressed bytes, both mates |
+|---|---|---|---:|
+| Tumour | FFG_IL_T_24h / SRR7890964 | `/global/project/hpcg6049/somatic_pipeline/data/input/SRR7890964/` | 150,008,285,275 |
+| Normal | FFG_IL_N_24h / SRR7890960 | `/global/project/hpcg6049/somatic_pipeline/data/input/SRR7890960/` | 141,075,160,510 |
+
+Four existing regular files, 291,083,445,785 bytes, are used in place. The
+samplesheet binds both mates explicitly. No extraction, copying, trimming or
+downsampling is performed by input preparation. Initial header inspection
+found corresponding Illumina names and mate labels. Full integrity is **pending**;
+file presence and header inspection are not a completed integrity check.
+
+| Stage | Slurm job | Dependency |
+|---|---:|---|
+| Full input integrity scan | 12456383 | None |
+| Native oncoanalyser 3.0.0 | 12456384 | afterok:12456383 |
+| DeepSomatic dispatcher | 12456385 | afterok:12456384 |
+
+`workflow/check_existing_fastqs.py` streams both pairs under Slurm (8 CPUs,
+8 GB, 12-hour limit), checking gzip CRC/truncation, every FASTQ record, paired
+names and counts. The successful completion record is written only after all
+four files pass. No original archive checksum was supplied, so the scan does
+not assert byte identity against ENA or against an earlier download. The native
+job cannot start if the integrity job fails.
+
+Execution roots:
+
+- `/global/scratch/hpc6049/wigits_runs/SEQC2_FFPE24h_native_20261112_onco3.0.0/`
+- `/global/scratch/hpc6049/wigits_runs/SEQC2_FFPE24h_deepsomatic_20261112/`
+
+The native root contains `package_v0.2.0/` (frozen workflow, samplesheet, input
+mapping, existing GRIDSS correction and SHA-256 release manifest),
+`submission.json` (exact commands), and `input_resources_preview.json`.
+Integrity results will be under `input_integrity/`. Heavy CPU tasks retain
+64 CPUs with input-adjusted memory/time; DeepSomatic uses the native run's
+REDUX BAMs, FFPE_WGS and GPU batch size 256. Its separate CPU/GPU jobs are
+submitted only when the dispatcher runs. This is still a full native workflow
+plus a DeepSomatic caller comparison; the downstream replacement adapter has
+not yet been released as a complete second workflow.
+
+The new comparison uses a different fixation duration and library pair than
+the earlier six-hour benchmark. Do not label it a repeat of the same inputs or
+combine the two fixation groups in accuracy claims. No KQ0205 inputs/results
+are reused. The evaluation limitations below continue to apply.
+
+## Historical six-hour package (superseded)
+
 Owner authorized submission on 11 November 2026. Execution package version
 0.1.0, development branch `hartwig_adoptation`. Existing KQ0205 jobs are untouched.
 
