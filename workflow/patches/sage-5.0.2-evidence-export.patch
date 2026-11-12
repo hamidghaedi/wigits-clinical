@@ -1,9 +1,6 @@
 --- a/com/hartwig/hmftools/sage/evidence/ReadContextCounters.java
 +++ b/com/hartwig/hmftools/sage/evidence/ReadContextCounters.java
-@@ -80,7 +80,16 @@
-         {
-             List<ReadContextCounter> readCounters = mSampleCandidateReadCounters.get(i);
- 
+@@ -83 +83,10 @@
 -            if(readCounters.stream().anyMatch(x -> mVariantFilters.passesHardFilters(x)))
 +            String beforeCounts = mVariantFilters.filterCountsStr();
 +            boolean nativePass = readCounters.stream().anyMatch(x -> mVariantFilters.passesHardFilters(x));
@@ -15,25 +12,13 @@
 +                    mCandidates.get(i).variant(), nativePass, beforeCounts, mVariantFilters.filterCountsStr());
 +            }
 +            if(nativePass || evidenceOnly)
-             {
-                 validCandidates.add(mCandidates.get(i));
-                 mFilteredCandidateIndex.add(i);
 --- a/com/hartwig/hmftools/sage/pipeline/RegionTask.java
 +++ b/com/hartwig/hmftools/sage/pipeline/RegionTask.java
-@@ -82,6 +82,9 @@
-         mRegion = region;
-         mResults = results;
-         mConfig = config;
+@@ -84,0 +85,3 @@
 +        if(Boolean.getBoolean("deepsomatic.evidence_only")
 +                && (config.Common.SpecificVariants.isEmpty() || config.RunTinc))
 +            throw new IllegalArgumentException("Evidence export requires explicit alleles and no restricted-scope TINC");
-         mRefGenome = refGenome;
-         mRefData = refData;
-         mFragmentLengths = fragmentLengths;
-@@ -224,7 +227,15 @@
-                 .forEach(x -> mPassingPhaseSets.addAll(x.localPhaseSets()));
- 
-         List<SageVariant> finalVariants = mSageVariants.stream()
+@@ -227 +230,9 @@
 -                .filter(x -> VariantFilters.checkFinalFilters(x, mPassingPhaseSets, mConfig.Common, mConfig.PanelOnly))
 +                .filter(x -> {
 +                    boolean nativePass = VariantFilters.checkFinalFilters(
@@ -44,6 +29,3 @@
 +                                x.variant(), nativePass, x.filtersStringSet());
 +                    return nativePass || evidenceOnly;
 +                })
-                 .collect(Collectors.toList());
- 
-         PhasingUtils.removeUninformativeLps(finalVariants, mPassingPhaseSets);
