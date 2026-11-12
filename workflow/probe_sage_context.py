@@ -10,6 +10,7 @@ import argparse
 import csv
 from datetime import datetime,timezone
 import json
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -37,9 +38,23 @@ def select_probe(vcf):
     return rows
 
 
+def evidence_command(native, jar):
+    """Use actual SAGE evidence code with retention overlay; never synthesize context.
+
+    Restricted-scope TINC is not a sample-wide measurement and must not rewrite
+    this evidence export. The production/control caller command is unaffected.
+    """
+    cmd=list(native)
+    i=cmd.index('sage')
+    cmd[i:i+2]=['java','-Xmx24g','-Ddeepsomatic.evidence_only=true',
+                 '-cp',str(jar),'com.hartwig.hmftools.sage.SageApplication']
+    return [x for x in cmd if x not in ('-run_tinc','-write_fit_variants')]+['-log_candidates']
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--config',type=Path,required=True);p.add_argument('--adapted',type=Path,required=True)
+    p.add_argument('--evidence-jar',type=Path,help='Isolated SAGE evidence-retention build, not the caller image')
     p.add_argument('--out',type=Path,required=True);a=p.parse_args();c=json.loads(a.config.read_text())
     out=a.out.resolve();out.mkdir(parents=True,exist_ok=False);rows=select_probe(a.adapted)
     sidecar_dir,sidecars=stage_redux_sidecars(c,out)
@@ -59,9 +74,15 @@ def main():
          '-pon_file',str(r/'dna/variants/hmf_wgs_sage_pon_1000.38.tsv.gz'),
          '-gnomad_freq_dir',str(r/'dna/variants/gnomad'),'-threads',str(cpus),'-log_level','DEBUG',
          '-specific_var_file',str(out/'requested.csv'),'-output_vcf',str(out/'probe.sage.somatic.vcf.gz')]
-    record=dict(version='0.1.1',job=os.environ['SLURM_JOB_ID'],requested_pass_alleles=len(rows),command=cmd,redux_sidecars=sidecars,
+    evidence_build=None
+    if a.evidence_jar:
+        jar=a.evidence_jar.resolve()
+        evidence_build=dict(path=str(jar),sha256=hashlib.sha256(jar.read_bytes()).hexdigest())
+        cmd=evidence_command(cmd,jar)
+    record=dict(version='0.2.0',job=os.environ['SLURM_JOB_ID'],requested_pass_alleles=len(rows),command=cmd,redux_sidecars=sidecars,
+                evidence_build=evidence_build,
                 started_utc=datetime.now(timezone.utc).isoformat(),
-                limits='Restricted discovery test only; no full-sample TINC/phasing conclusions, no substituted outputs')
+                limits='Restricted native evidence test; no full-sample TINC/phasing conclusions, no substituted outputs')
     path=out/'execution.json';path.write_text(json.dumps(record,indent=2)+'\n')
     with (out/'sage.log').open('w') as log:
         run=subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT)

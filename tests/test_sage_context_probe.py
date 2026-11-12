@@ -4,10 +4,22 @@ import tempfile
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'workflow'))
-from probe_sage_context import stage_redux_sidecars
+from probe_sage_context import stage_redux_sidecars, evidence_command
 
 
 class ProbeStagingTests(unittest.TestCase):
+    def test_evidence_retains_native_measurement_and_separates_tinc(self):
+        cmd=['apptainer','exec','image','sage','-Xmx24g','-run_tinc',
+             '-write_fit_variants','-jitter_bqr_dir','/both/',
+             '-specific_var_file','requested.csv','-output_vcf','evidence.vcf.gz']
+        out=evidence_command(cmd,Path('/isolated/sage.jar'))
+        self.assertIn('-Ddeepsomatic.evidence_only=true',out)
+        self.assertNotIn('-run_tinc',out)
+        self.assertIn('-jitter_bqr_dir',out)
+        self.assertIn('requested.csv',out)
+        self.assertEqual(cmd[3],'sage')
+        self.assertFalse(any('disable' in x for x in out))
+
     def test_separate_bam_dirs_share_native_sidecar_directory(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);config={}

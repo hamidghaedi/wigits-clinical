@@ -110,6 +110,12 @@ supersede those shortcuts in the earlier draft wiring contract.
 
 ## Evidence and execution
 
+The subsequent [native evidence adapter](DEEPSOMATIC_EVIDENCE_ADAPTER.md)
+recovers all115 initially unmatched PASS contexts using genuine native evidence
+export and three observed exact-CIGAR contexts. It preserves the complete
+DeepSomatic candidate list. Count discrepancies and full-feature integration are
+explicitly tracked there; the earlier unmodified probe remains the control.
+
 Runtime packages and job IDs are recorded in
 `tests/results/deepsomatic-distributed/EXECUTION.md`.
 

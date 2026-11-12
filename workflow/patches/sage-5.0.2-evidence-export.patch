@@ -1,0 +1,49 @@
+--- a/com/hartwig/hmftools/sage/evidence/ReadContextCounters.java
++++ b/com/hartwig/hmftools/sage/evidence/ReadContextCounters.java
+@@ -80,7 +80,16 @@
+         {
+             List<ReadContextCounter> readCounters = mSampleCandidateReadCounters.get(i);
+ 
+-            if(readCounters.stream().anyMatch(x -> mVariantFilters.passesHardFilters(x)))
++            String beforeCounts = mVariantFilters.filterCountsStr();
++            boolean nativePass = readCounters.stream().anyMatch(x -> mVariantFilters.passesHardFilters(x));
++            boolean evidenceOnly = Boolean.getBoolean("deepsomatic.evidence_only");
++            if(evidenceOnly)
++            {
++                com.hartwig.hmftools.sage.SageCommon.SG_LOGGER.info(
++                    "DS_EVIDENCE_HARD variant={} passed={} before=[{}] after=[{}]",
++                    mCandidates.get(i).variant(), nativePass, beforeCounts, mVariantFilters.filterCountsStr());
++            }
++            if(nativePass || evidenceOnly)
+             {
+                 validCandidates.add(mCandidates.get(i));
+                 mFilteredCandidateIndex.add(i);
+--- a/com/hartwig/hmftools/sage/pipeline/RegionTask.java
++++ b/com/hartwig/hmftools/sage/pipeline/RegionTask.java
+@@ -82,6 +82,9 @@
+         mRegion = region;
+         mResults = results;
+         mConfig = config;
++        if(Boolean.getBoolean("deepsomatic.evidence_only")
++                && (config.Common.SpecificVariants.isEmpty() || config.RunTinc))
++            throw new IllegalArgumentException("Evidence export requires explicit alleles and no restricted-scope TINC");
+         mRefGenome = refGenome;
+         mRefData = refData;
+         mFragmentLengths = fragmentLengths;
+@@ -224,7 +227,15 @@
+                 .forEach(x -> mPassingPhaseSets.addAll(x.localPhaseSets()));
+ 
+         List<SageVariant> finalVariants = mSageVariants.stream()
+-                .filter(x -> VariantFilters.checkFinalFilters(x, mPassingPhaseSets, mConfig.Common, mConfig.PanelOnly))
++                .filter(x -> {
++                    boolean nativePass = VariantFilters.checkFinalFilters(
++                            x, mPassingPhaseSets, mConfig.Common, mConfig.PanelOnly);
++                    boolean evidenceOnly = Boolean.getBoolean("deepsomatic.evidence_only");
++                    if(evidenceOnly)
++                        SG_LOGGER.info("DS_EVIDENCE_FINAL variant={} passed={} filters={}",
++                                x.variant(), nativePass, x.filtersStringSet());
++                    return nativePass || evidenceOnly;
++                })
+                 .collect(Collectors.toList());
+ 
+         PhasingUtils.removeUninformativeLps(finalVariants, mPassingPhaseSets);
