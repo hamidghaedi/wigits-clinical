@@ -38,7 +38,9 @@ everything downstream stay native (Option A, two-pass, in the contract).
    with `panel-bed`) and kept only when `TierSelector` returns HOTSPOT or PANEL **and** the tumour GT calls the allele
    (in the KQ0205 VCF these are `GERMLINE` calls; `RefCall`/`NoCall` have no called ALT). Their DeepSomatic FILTER
    string is kept as the VCF FILTER (declared in the header) and copied to `INFO/DS_FILTER`.
-   PAVE keeps HOTSPOT/PANEL non-PASS records (`pave/ChromosomeTask.java:185-188`) exactly as it does for SAGE output.
+   Note (verified on KQ0205, 2026-11-13): oncoanalyser invokes PAVE without `-filter_type`, so `PaveConfig.Filter = PASS` and
+   `ChromosomeTask.processVariant` drops every non-PASS record; the HOTSPOT/PANEL clause (`ChromosomeTask.java:185-188`) applies
+   only under `-filter_type PANEL`. Retaining them keeps the adapter contract-conformant but has no downstream effect.
 4. PASS records are never removed for low ALT support; `low_alt_support` (ALT < 3) is a ledger flag only.
 
 ## Output (`<out_dir>/sage_dir/<tumor_id>.sage.somatic.vcf.gz` + `.tbi`)
@@ -78,6 +80,11 @@ build disposition). The bulk classes (RefCall, NoCall, GERMLINE outside the pane
 `ledger_summary.json`: FILTER counts of the whole DeepSomatic VCF, dispositions, retained tiers, VCF validation result,
 TIER parity against the native SAGE VCF on the exact-allele intersection, and (after `purple-summary`) PURPLE PASS /
 REPORTED / PON-filtered counts and the driver catalog.
+
+## Observed on KQ0205 (2026-11-13)
+
+See `docs/DEEPSOMATIC_SUBSTITUTION_KQ0205_20261113.md`: 14,436 PASS → 15,193 adapter records → PAVE 6,980 PASS / 7,455 PON-or-gnomAD →
+PURPLE purity 0.25 / ploidy 2.92, 0 REPORTED. The normal pileup exposed ALT support in 5,826 PASS alleles (3,813 with DeepSomatic NAD = 0).
 
 ## Running pass 2
 

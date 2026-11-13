@@ -1,0 +1,34 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##FILTER=<ID=GERMLINE,Description="DeepSomatic: Non somatic variants">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths (tumour: DeepSomatic AD; normal: pileup of the normal REDUX BAM)">
+##FORMAT=<ID=AF,Number=A,Type=Float,Description="Allelic frequency (tumour: DeepSomatic VAF; normal: pileup ALT/DP)">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth (tumour: DeepSomatic DP; normal: usable reads spanning POS in the normal REDUX BAM)">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype (tumour: DeepSomatic call; normal: not called, ./.)">
+##INFO=<ID=DS_FILTER,Number=1,Type=String,Description="Original DeepSomatic FILTER for retained non-PASS records (HOTSPOT/PANEL tier only)">
+##INFO=<ID=DS_NAD,Number=R,Type=Integer,Description="DeepSomatic FORMAT/NAD of the original record projected to this allele (normal counts as computed by DeepSomatic; informational)">
+##INFO=<ID=DS_NDP,Number=1,Type=Integer,Description="DeepSomatic FORMAT/NDP of the original record (informational)">
+##INFO=<ID=DS_ORIGINAL_ALLELE,Number=1,Type=String,Description="Original DeepSomatic record when the representation changed (bcftools norm old-rec-tag): CHR|POS|REF|ALT|USED_ALT_IDX">
+##INFO=<ID=MH,Number=1,Type=String,Description="Microhomology (SAGE Microhomology.findHomology on reference/ALT haplotype)">
+##INFO=<ID=REP_C,Number=1,Type=Integer,Description="Repeat sequence count (reference-only RepeatInfo.findMaxRepeat as SAGE setMaxRefRepeat)">
+##INFO=<ID=REP_S,Number=1,Type=String,Description="Repeat sequence">
+##INFO=<ID=TIER,Number=1,Type=String,Description="Tier: [HOTSPOT, PANEL, HIGH_CONFIDENCE, LOW_CONFIDENCE] (SAGE 5.0.2 TierSelector with native resources)">
+##INFO=<ID=TNC,Number=1,Type=String,Description="Tri-nucleotide context (reference, centred on POS)">
+##sage_compat_adapter_annotator_version=0.1.0
+##sage_compat_adapter_date=2026-11-13T18:23:46Z
+##sage_compat_adapter_filter_policy=FILTER=PASS for DeepSomatic PASS; non-PASS records retained only when TIER is HOTSPOT or PANEL (DS_FILTER carries the original filter); RefCall/NoCall/other records dropped
+##sage_compat_adapter_normal_bam=/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/alignments/KQ0205-gDNA/KQ0205-gDNA.redux.bam
+##sage_compat_adapter_normal_pileup=bam=/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/alignments/KQ0205-gDNA/KQ0205-gDNA.redux.bam;min_mapq=10;min_baseq_substitutions=20;excluded=unmapped,secondary,supplementary,duplicate,qcfail;DP=usable reads spanning POS;indel/complex alleles matched between aligned anchors POS-1 and POS+len(REF) without base-quality filter
+##sage_compat_adapter_normalisation=bcftools norm -f ref -m -any -c e --old-rec-tag DS_ORIGINAL_ALLELE; alleles retained only when the DeepSomatic tumour GT calls them
+##sage_compat_adapter_not_emitted=LPS,LPS_RC,RC_INFO,RC_CNT,RC_QUAL,RC_JIT,RC_IPC,RC_NM,RC_MH,RC_REPC,RC_REPS,UMI_CNT,AED,AFBQ,AFMQ,ARCBQ,ARMQ,ASBQ,FSB,MUC,RSB,SAC,PON_COUNT,PON_MAX,PON_MULTI,PON_READS,GND_FREQ,MQF,TQP,MED,MSG,NEARBY_INDEL,TINC_RECOVERED (not fabricated; see README)
+##sage_compat_adapter_reference=/global/project/hpcg6049/somatic_pipeline/data/references/oncoanalyser/3.0.0/genomes/GRCh38_hmf/GRCh38_masked_exclusions_alts_hlas.fasta dict_sha256=3fc739f04ff92156e9fa6d7ba3ed562f08e4f6a77ae3e37b9531d15394be91ae
+##sage_compat_adapter_resources=hotspots=KnownHotspots.somatic.38.vcf.gz sha256=4381ed54ac42877d62fa4afe080463c476fc393a6516fe6ca4ac9aa3ea945aca;driver_gene_panel=DriverGenePanel.38.tsv sha256=1a5d01c17f8d954d323af71b30159efada46771e96512c93d6a5a6926cf7b8f3;high_confidence_bed=HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed.gz sha256=bd38220c2c8cadfa4f9b8ba2cfb50dc1b38fec758fb3b79cb44c16fdce59635b;ensembl_data_dir=/global/project/hpcg6049/somatic_pipeline/data/references/oncoanalyser/3.0.0/hmf_pipeline_resources.38_v3.0.0--8/common/ensembl_data
+##sage_compat_adapter_slurm_job=12466791
+##sage_compat_adapter_source_vcf=/global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_native_20261110/results/deepsomatic.vcf.gz sha256=bf24cdea92b03cb2c332fd73031d1c3855dfaaabb1bac03d405b6516aad20132 deepvariant_version=1.10.0
+##sage_compat_adapter_tools=sage_image=quay.io-biocontainers-hmftools-sage-5.0.2--hdfd78af_0.img;bcftools=1.22;java=openjdk version 21-internal 2023-09-19
+##sage_compat_adapter_tumor_bam=/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/alignments/KQ0205-DNA/KQ0205-DNA.redux.bam
+##sage_compat_adapter_version=0.1.0 (wigits-clinical workflow/sage_compat; annotator uses hmftools sage 5.0.2 classes TierSelector,RepeatInfo,Microhomology)
+##source=deepsomatic-1.10.0+sage-compat-adapter-0.1.0
+##bcftools_viewVersion=1.22+htslib-1.22
+##bcftools_viewCommand=view -h /global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/adapter/sage_dir/KQ0205-DNA.sage.somatic.vcf.gz; Date=Fri Nov 13 13:27:28 2026
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	KQ0205-gDNA	KQ0205-DNA
