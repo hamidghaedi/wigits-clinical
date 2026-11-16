@@ -55,6 +55,14 @@ class CompletedCleanupTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 cleanup.preserve_results(run, root / 'release', libraries + [dict(sample_id='N')])
 
+    def test_native_report_omission_does_not_block_preservation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); run, plan, libraries = self.fixture(root)
+            (run / 'results/C/orange/T.orange.pdf').unlink()
+            (run / 'results/multiqc_report.html').unlink()
+            retained = cleanup.preserve_results(run, root / 'release', libraries)
+            self.assertEqual(len(retained), 1)
+
     def test_apply_is_repeatable_and_preserves_results_and_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); run, inputs, libraries = self.fixture(root)

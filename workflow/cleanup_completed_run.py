@@ -16,7 +16,7 @@ import shutil
 import stat
 import subprocess
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 
 def completed(job):
@@ -67,8 +67,8 @@ def candidates(root, inputs):
 
 def preserve_results(root, release, libraries):
     results = root / 'results'
-    if not any(results.glob('*/orange/*.orange.pdf')) or not (results / 'multiqc_report.html').is_file():
-        raise ValueError('Native report and MultiQC must be present')
+    if not results.is_dir():
+        raise ValueError('Published result directory is missing')
     alignments = list(results.glob('*/alignments/*/*.bam')) + list(results.glob('*/alignments/*/*.cram'))
     if not alignments or any(p.is_symlink() for p in alignments):
         raise ValueError('Published final alignments must be independently retained regular files')
