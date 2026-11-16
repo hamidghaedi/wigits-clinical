@@ -12,6 +12,13 @@ Its `docs/NATIVE_HARTWIG_TRACKER.md` documents automatic native analysis and
 ORANGE status collection from issued queue/head bindings. That read-only
 observer leaves analytical launches and frozen run packages unchanged.
 
+The subsequent November16 report contract assigns completed native fresh-frozen
+results to native ORANGE reporting. Completed legacy-pipeline analyses use
+Hartwig variant selection and the finalized SomaReport template. The coordinator
+selects the matching route on every report request, binds actual sources and
+records the choice in the manifest. Its `docs/REPORTING_CONTRACT.md` owns the
+report-route table. New FFPE analytical routing remains an open decision.
+
 Current staged-FASTQ entry: `input-resources/v0.3.0`, policy `input-v2`.
 The earlier `input-resources/v0.1.0`/`input-v1` recovery-based execution below
 is historical source, superseded for the current original-FASTQ run.
