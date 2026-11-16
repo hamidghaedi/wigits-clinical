@@ -20,7 +20,7 @@ SHEET="$PREPARED_SHEET"
 python3 "$HERE/build_input_resources.py" --samplesheet "$SHEET" \
     --out "$RUN_ROOT/$RUN_ID/state/input_resources.config" \
     --evidence "$RUN_ROOT/$RUN_ID/state/input_resources.json"
-export ONCO_SOURCE=nf-core/oncoanalyser ONCO_REV=3.0.0 ONCO_GENOME=GRCh38_d1_vd1
+export ONCO_SOURCE="${ONCO_SOURCE:-$ONCO_SOURCE_DIR}" ONCO_REV=3.0.0 ONCO_GENOME=GRCh38_d1_vd1
 export WIGITS_WORKFLOW_DIR="$HERE"
 # Existing Nextflow cache may still be held while a failed attempt finishes
 # reference preparation. Wait without cancelling or replacing that work.

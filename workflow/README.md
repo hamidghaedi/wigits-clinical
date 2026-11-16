@@ -1,5 +1,10 @@
 # workflow
 
+Source-aware reporting corrections for missing TINC and coordinate-derived
+deletion extent are maintained in [ORANGE source-value mapping](../docs/ORANGE_SOURCE_VALUES.md).
+The explicit display-only source release preserves native report eligibility
+and the finalized report prose.
+
 Read-only allocation/use reporting: `report_resources.py --run-dir <run>`.
 It writes CSV and standalone HTML summaries; see
 [resource reporting](../docs/RESOURCE_REPORTING.md). Future site launches run
@@ -43,7 +48,11 @@ workflow/
     templates/         report templates
 ```
 
-The default pipeline is unmodified `nf-core/oncoanalyser` 3.0.0 in `wgts` mode.
+New site packages use oncoanalyser 3.0.0 with the source-value reporting
+corrections in `3.0.0-qlmp.2.2`. Analytical tools, reference and native report
+eligibility retain the native 3.0.0 implementation. Existing frozen packages
+retain their recorded source. `ONCO_SOURCE=nf-core/oncoanalyser` selects the
+upstream control explicitly.
 The chromosome-subset run does not establish a production pipeline defect.
 An isolated experimental `3.0.0-qlmp.1` source release can be selected explicitly
 to render QC-failed ORANGE reports when a failed PURPLE fit has no circos plot. It retains
@@ -59,8 +68,8 @@ scientific outputs are unchanged. `prepare_oncoanalyser_qc_report.sh` builds a
 new, committed/tagged local source release from the pinned upstream checkout;
 it never modifies the shared Nextflow asset cache or an installed image.
 
-For the experimental renderer only, set `ONCO_SOURCE` to the local versioned
-checkout in `ONCO_SOURCE_DIR`. It is not the default or a validated production fix.
+For the experimental QC-failure renderer, set `ONCO_SOURCE` to its historical
+`3.0.0-qlmp.1` checkout explicitly. It is outside the current source-value fix.
 
 See [QC-failed report recovery](../docs/ORANGE_QC_REPORT_RECOVERY.md) for the
 exact build/test/launch instructions and real-data execution evidence.

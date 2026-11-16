@@ -39,12 +39,15 @@ Cluster: Frontenac (CAC, Queen's). Account `hpc6049`, group `hpcg6049`. Verified
 | `RUN_ROOT` | `/global/scratch/hpc6049/wigits_runs` | scratch | **new.** One directory per run (§4). Work dirs, intermediate files, Slurm logs. Regenerable |
 | `RELEASE_ROOT` | `${PIPELINE_ROOT}/wigits_releases` | project | **new.** Durable copy of what a finished run produced that we keep: ORANGE JSON/PDF, clinical-layer outputs, provenance. No BAM/CRAM |
 | `SOFTWARE_ROOT` | `${PIPELINE_ROOT}/software` | project | **new, reserved.** Pinned checkouts of external pipelines (§5) |
-| `ONCO_SOURCE_DIR` | `${SOFTWARE_ROOT}/oncoanalyser/3.0.0-qlmp.1` | project | Isolated, tagged local QC-report fix; upstream asset cache stays unchanged |
+| `ONCO_SOURCE_DIR` | `${SOFTWARE_ROOT}/oncoanalyser/3.0.0-qlmp.2.2` | project | Tagged ORANGE source-value corrections; native analytical code and eligibility retained |
 
-`ONCO_SOURCE_VERSION=3.0.0-qlmp.1` and `ONCO_REFERENCE_VERSION=3.0.0` deliberately
-distinguish the patched reporting interface from the unchanged native reference
-bundle. The launcher defaults to unmodified native 3.0.0. The patched source
-is experimental and requires an explicit `ONCO_SOURCE` override; see the workflow runbook.
+`ONCO_SOURCE_VERSION=3.0.0-qlmp.2.2` and `ONCO_REFERENCE_VERSION=3.0.0`
+distinguish the source-value reporting corrections from the native reference
+bundle. New site packages use this display-only release. An explicit
+`ONCO_SOURCE=nf-core/oncoanalyser` retains the upstream control. Frozen packages
+and prior executions retain their recorded source. The earlier `3.0.0-qlmp.1`
+QC-failure eligibility experiment remains separately selected by its exact path.
+See [source-value mapping](ORANGE_SOURCE_VALUES.md).
 
 Agent scratch (`/global/home/hpc6049/.claude-science-scratch`, `/global/scratch/hpc6049/.claude-science-scratch`)
 is harness-internal: per-job wrappers and logs for jobs an assistant submitted. Nothing we rely on lives there.

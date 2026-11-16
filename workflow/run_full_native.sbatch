@@ -16,7 +16,8 @@ python3 "$PACKAGE/workflow/build_input_resources.py" \
     --out "$RUN_DIR/state/input_resources.config" \
     --evidence "$RUN_DIR/state/input_resources.json"
 
-export ONCO_SOURCE=nf-core/oncoanalyser ONCO_REV=3.0.0 ONCO_GENOME=GRCh38_hmf
+source "$PACKAGE/workflow/conf/frontenac_paths.env"
+export ONCO_SOURCE="${ONCO_SOURCE:-$ONCO_SOURCE_DIR}" ONCO_REV=3.0.0 ONCO_GENOME=GRCh38_hmf
 export WIGITS_WORKFLOW_DIR="$PACKAGE/workflow"
 bash "$PACKAGE/workflow/run_oncoanalyser_frontenac.sh" \
     "$RUN_ID" "$PACKAGE/samplesheet.csv" -c "$RUN_DIR/state/input_resources.config"

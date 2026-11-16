@@ -24,6 +24,8 @@ class ResourceTests(unittest.TestCase):
             root = Path(tmp)
             package = root/'package'
             (package/'workflow').mkdir(parents=True)
+            (package/'workflow/conf').mkdir()
+            (package/'workflow/conf/frontenac_paths.env').write_text('ONCO_SOURCE_DIR=/synthetic/source-values\n')
             # A sentinel proves this entry consumes the CSV, rather than
             # requiring BAM-recovery completion.json files for original FASTQs.
             (package/'samplesheet.csv').write_text('original lane inputs\n')
@@ -40,12 +42,16 @@ class ResourceTests(unittest.TestCase):
                 'import json,os,pathlib,sys\n'
                 f'pathlib.Path({str(marker)!r}).write_text(json.dumps(dict(args=sys.argv[1:],'
                 'genome=os.environ["ONCO_GENOME"],source=os.environ["ONCO_SOURCE"])))\nPY\n')
-            subprocess.run(['bash',str(ROOT/'workflow/run_full_native.sbatch'),str(package),'synthetic'],check=True)
+            command = ['bash',str(ROOT/'workflow/run_full_native.sbatch'),str(package),'synthetic']
+            env = {k: v for k, v in os.environ.items() if k != 'ONCO_SOURCE'}
+            subprocess.run(command, check=True, env=env)
             data = json.loads(marker.read_text())
             self.assertEqual(data['genome'],'GRCh38_hmf')
-            self.assertEqual(data['source'],'nf-core/oncoanalyser')
+            self.assertEqual(data['source'],'/synthetic/source-values')
             self.assertEqual(data['args'][:2],['synthetic',str(package/'samplesheet.csv')])
             self.assertEqual((root/'state/input_resources.config').read_text(),'sized')
+            subprocess.run(command, check=True, env={**env, 'ONCO_SOURCE': 'nf-core/oncoanalyser'})
+            self.assertEqual(json.loads(marker.read_text())['source'], 'nf-core/oncoanalyser')
 
     def test_existing_input_lanes_are_sized_without_inventing_read_counts(self):
         module = load('build_input_resources')
