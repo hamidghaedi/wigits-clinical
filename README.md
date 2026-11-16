@@ -14,6 +14,11 @@ original FASTQs and the native HMF reference or existing BAMs and their custom
 reference. It provides input-adjusted resources and read-only efficiency
 reports. The clinical layers described below remain proposed work.
 
+For new routine work, the owner selected native Oncoanalyser for fresh-frozen
+tumours. FFPE routing remains an open decision. See
+[the execution contract](docs/FULL_NATIVE_EXECUTION.md) for that policy and
+the coordinator-owned native analysis/ORANGE tracker integration.
+
 The earlier DNA-branch adaptation inputs and metadata work are now maintained
 here; see [the migration record](docs/migrations/DNA_HARTWIG_ADOPTATION_20261110.md).
 

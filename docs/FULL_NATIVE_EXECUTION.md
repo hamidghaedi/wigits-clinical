@@ -1,5 +1,17 @@
 # Full-input native execution and initial resources
 
+## Routine route selection, owner direction November16
+
+Fresh-frozen tumour samples use native nf-core/oncoanalyser with the native
+Hartwig reference, caller chain and compatible resources for new routine work.
+The FFPE route remains open, including possible substitution of official Google
+DeepSomatic FFPE. Determine preservation from the laboratory record. Preserve
+existing issued experiments and running jobs under their actual source releases.
+The coordinator's `docs/WORKFLOW_ROUTE_CONTRACT.md` owns this route contract.
+Its `docs/NATIVE_HARTWIG_TRACKER.md` documents automatic native analysis and
+ORANGE status collection from issued queue/head bindings. That read-only
+observer leaves analytical launches and frozen run packages unchanged.
+
 Current staged-FASTQ entry: `input-resources/v0.3.0`, policy `input-v2`.
 The earlier `input-resources/v0.1.0`/`input-v1` recovery-based execution below
 is historical source, superseded for the current original-FASTQ run.
