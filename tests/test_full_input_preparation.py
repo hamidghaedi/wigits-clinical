@@ -42,13 +42,14 @@ class ResourceTests(unittest.TestCase):
                 'import json,os,pathlib,sys\n'
                 f'pathlib.Path({str(marker)!r}).write_text(json.dumps(dict(args=sys.argv[1:],'
                 'genome=os.environ["ONCO_GENOME"],source=os.environ["ONCO_SOURCE"])))\nPY\n')
-            command = ['bash',str(ROOT/'workflow/run_full_native.sbatch'),str(package),'synthetic']
+            command = ['bash',str(ROOT/'workflow/run_full_native.sbatch'),str(package),'synthetic', '-c', 'runtime.config']
             env = {k: v for k, v in os.environ.items() if k != 'ONCO_SOURCE'}
             subprocess.run(command, check=True, env=env)
             data = json.loads(marker.read_text())
             self.assertEqual(data['genome'],'GRCh38_hmf')
             self.assertEqual(data['source'],'/synthetic/source-values')
             self.assertEqual(data['args'][:2],['synthetic',str(package/'samplesheet.csv')])
+            self.assertEqual(data['args'][-2:], ['-c', 'runtime.config'])
             self.assertEqual((root/'state/input_resources.config').read_text(),'sized')
             subprocess.run(command, check=True, env={**env, 'ONCO_SOURCE': 'nf-core/oncoanalyser'})
             self.assertEqual(json.loads(marker.read_text())['source'], 'nf-core/oncoanalyser')
