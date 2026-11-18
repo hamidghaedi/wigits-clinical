@@ -19,7 +19,34 @@ selects the matching route on every report request, binds actual sources and
 records the choice in the manifest. Its `docs/REPORTING_CONTRACT.md` owns the
 report-route table. New FFPE analytical routing remains an open decision.
 
-Current staged-FASTQ entry: `input-resources/v0.3.0`, policy `input-v2`.
+Current staged-FASTQ entry: `input-resources/v0.4.0`, policy `input-v2`.
+The November18 release permits an explicit `WIGITS_RUN_ROOT` for new execution
+packages. It retains the historical default when unset and changes no native
+analytical tool or resource coefficient.
+
+## Staged FASTQ scope, owner direction November18
+
+Native Oncoanalyser takes a lane samplesheet; native demultiplexing counts are
+not a prerequisite. The owner relaxed the coordinator's additional mandatory
+count requirement for new native launches. Bind every available FASTQ belonging
+to the laboratory-assigned tumour/normal libraries, preserving all recorded
+lanes and both mates. Missing mates, recorded lanes, ambiguous sample bindings
+or incomplete transfers still prevent submission. Do not silently select lane1,
+shrink scope, invent counts, or add a full FASTQ counting/integrity pass.
+Use demultiplexing counts as supporting QC when available. Existing RUN19
+correction packages and already executing releases retain their own settings.
+
+The current seven-case Phase2 batch is explicitly authorized to use the native
+Hartwig route, including its FFPE cases; this is a batch-specific choice and
+does not settle the standing FFPE route decision. Original inputs remain in
+shared staging, with paths bound directly in the samplesheet. New packages use
+`WIGITS_RUN_ROOT=/global/scratch/hpc6049/mohcc_runs/runs`; the existing native
+entry sizes those files and launches the full native stack. No DeepSomatic
+substitution, BAM recovery or process exclusion is introduced.
+
+The earlier `input-resources/v0.3.0` original-FASTQ release remains valid for its
+issued runs. The implementation continues below.
+
 The earlier `input-resources/v0.1.0`/`input-v1` recovery-based execution below
 is historical source, superseded for the current original-FASTQ run.
 Scientific source: unmodified nf-core/oncoanalyser3.0.0,

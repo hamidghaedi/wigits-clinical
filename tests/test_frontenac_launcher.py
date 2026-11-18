@@ -7,6 +7,16 @@ import unittest
 
 
 class LauncherConfigTests(unittest.TestCase):
+    def test_explicit_run_root_and_historical_default(self):
+        config = Path(__file__).resolve().parents[1] / 'workflow/conf/frontenac_paths.env'
+        base = {k: v for k, v in os.environ.items() if k != 'WIGITS_RUN_ROOT'}
+        for extra, expected in [({}, '/global/scratch/hpc6049/wigits_runs'),
+                                ({'WIGITS_RUN_ROOT': '/synthetic/new/runs'}, '/synthetic/new/runs')]:
+            result = subprocess.run(['bash', '-c', 'source "$1"; printf "%s" "$RUN_ROOT"',
+                                     'bash', str(config)], env={**base, **extra},
+                                    check=True, capture_output=True, text=True)
+            self.assertEqual(result.stdout, expected)
+
     def test_checkout_and_slurm_spool_paths(self):
         launcher = Path(__file__).resolve().parents[1] / "workflow/run_oncoanalyser_frontenac.sh"
         prefix = launcher.read_text().split("source /cvmfs/", 1)[0]
