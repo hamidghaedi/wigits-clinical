@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generate initial site resources from measured existing inputs or recovery records.
 
-Policy input-v3: BWA-MEM2 uses each task's actual FASTQ pair. REDUX uses its
+Policy input-v3.1: BWA-MEM2 keeps64CPUs/224GiB fixed; only walltime uses
+each task's actual FASTQ pair. REDUX uses its
 own complete sample. Paired callers retain their combined workload sizing.
 For sample/case steps, units = ceil(primary reads / 250 million), or compressed
 input GiB / 10 when a verified read count is unavailable. Heavy threaded
@@ -20,22 +21,21 @@ import math
 from pathlib import Path
 
 
-POLICY = 'input-v3'
+POLICY = 'input-v3.1'
 
 
 def alignment_allocation(input_bytes):
     """Lane preview matching conf/lane_alignment_resources.config exactly.
 
     Observed 64CPU alignment jobs: 0.69–2.51h, batch RSS67.68–144.52GiB,
-    from32 completed lanes. Allow8GiB/h at64CPUs (linear CPU allowance),
-    minimum4h, rounded up to2h. RAM:64GiB index/sort floor +2GiB per compressed
-    input GiB +0.5GiB per CPU, rounded up to32GiB. These conservative limits
+    from32 completed lanes. Keep64CPUs/224GiB fixed by owner direction.
+    Allow8GiB/h, minimum4h, rounded up to2h. These conservative time limits
     are not fitted predictions or universally validated bounds.
     """
     gib = input_bytes / 1024**3
-    cpus = 64 if gib > 10 else 16
-    memory = 32 * math.ceil((64 + 2 * gib + 0.5 * cpus) / 32)
-    hours = 2 * math.ceil(max(4, gib / 8 * 64 / cpus) / 2)
+    cpus = 64
+    memory = 224
+    hours = 2 * math.ceil(max(4, gib / 8) / 2)
     if memory > 768 or hours > 336:
         raise ValueError('Lane exceeds input-v3 eligible resource envelope')
     return dict(cpus=cpus, memory_gb=memory, time_hours=hours, input_bytes=input_bytes,
@@ -98,7 +98,7 @@ def redux_plan(libraries):
 
 
 def render_config(resources, redux):
-    lines = ['// input-v3: task-local alignment, sample-local REDUX, case-local paired steps.',
+    lines = ['// input-v3.1: lane-local alignment time, fixed alignment CPU/RAM, sample-local REDUX.',
              'process {', '    resourceLimits = [cpus: 64, memory: 768.GB, time: 14.d]']
     for name, v in resources.items():
         lines.extend([f"    withName: '{name}' {{", f"        cpus = {v['cpus']}",

@@ -1,5 +1,18 @@
 # Lane-local resource release validation
 
+## Owner clarification: v0.5.1
+
+The owner subsequently specified fixed64CPUs/224GiB for alignment and only
+lane-scaled walltime. Release `input-resources/v0.5.1` / input-v3.1 implements
+that rule. The77tests pass with3existing skips; whitespace checks pass.
+Metadata-only Nextflow canary12487226 COMPLETED exit0:0, elapsed6s:
+normal lane64CPU/224GiB/4h; tumour lane64CPU/224GiB/6h. REDUX sample allocations
+remain64/144/16h and64/224/44h. Existing active issued runs retain their settings;
+the coordinator binds the new release to subsequent submissions. The v0.5.0
+evidence below is preserved as history.
+
+## Initial v0.5.0 validation
+
 Release `input-resources/v0.5.0`, November19,2026. See
 [policy and coefficients](../../../docs/LANE_RESOURCE_SIZING.md).
 

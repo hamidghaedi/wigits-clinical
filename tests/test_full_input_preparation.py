@@ -101,12 +101,12 @@ class ResourceTests(unittest.TestCase):
         module = load('build_input_resources')
         normal = module.alignment_allocation(5 * 1024**3)
         tumour = module.alignment_allocation(34 * 1024**3)
-        self.assertEqual((normal['cpus'], normal['memory_gb'], normal['time_hours']), (16, 96, 4))
-        self.assertEqual((tumour['cpus'], tumour['memory_gb'], tumour['time_hours']), (64, 192, 6))
-        self.assertLess(module.alignment_allocation(10 * 1024**3)['cpus'],
-                        module.alignment_allocation(11 * 1024**3)['cpus'])
+        self.assertEqual((normal['cpus'], normal['memory_gb'], normal['time_hours']), (64, 224, 4))
+        self.assertEqual((tumour['cpus'], tumour['memory_gb'], tumour['time_hours']), (64, 224, 6))
+        self.assertEqual(module.alignment_allocation(10 * 1024**3)['cpus'],
+                         module.alignment_allocation(11 * 1024**3)['cpus'])
         with self.assertRaises(ValueError):
-            module.alignment_allocation(1000 * 1024**3)
+            module.alignment_allocation(10000 * 1024**3)
 
     def test_other_lanes_do_not_inflate_lane_allocation(self):
         module = load('build_input_resources')
@@ -131,7 +131,8 @@ class ResourceTests(unittest.TestCase):
             config = module.render_config(module.plan(libraries), redux)
             self.assertIn('reads_fwd.size() + reads_rev.size()', config)
             self.assertIn('[meta.sample_id]', config)
-            self.assertNotIn("withName: 'BWAMEM2_ALIGN' {\n        cpus = 64", config)
+            self.assertIn("withName: 'BWAMEM2_ALIGN' {\n        cpus = 64", config)
+            self.assertIn('memory = 224.GB', config)
 
     def test_unpaired_or_subset_input_rejected(self):
         module = load('build_input_resources')

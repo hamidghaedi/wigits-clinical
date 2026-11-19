@@ -19,9 +19,10 @@ selects the matching route on every report request, binds actual sources and
 records the choice in the manifest. Its `docs/REPORTING_CONTRACT.md` owns the
 report-route table. New FFPE analytical routing remains an open decision.
 
-Current staged-FASTQ entry: `input-resources/v0.5.0`, policy `input-v3`.
+Current staged-FASTQ entry: `input-resources/v0.5.1`, policy `input-v3.1`.
 The November19 [lane sizing correction](LANE_RESOURCE_SIZING.md) sizes each
-BWA-MEM2 task from its own R1/R2 pair and REDUX from its complete sample.
+BWA-MEM2 walltime from its own R1/R2 pair and REDUX from its complete sample.
+Alignment CPU/memory are fixed at64CPUs/224GiB by the subsequent owner clarification.
 Paired caller scope/coefficients and native scientific settings are unchanged.
 Earlier packages below retain their declared input-v2 settings.
 The November18 v0.4.0 release permits an explicit `WIGITS_RUN_ROOT` for new execution
