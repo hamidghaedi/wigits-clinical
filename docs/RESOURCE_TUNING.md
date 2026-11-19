@@ -1,10 +1,10 @@
 # Diagnose speed before changing allocations
 
 November19 update: new staged-FASTQ packages use
-[`input-resources/v0.5.1` / input-v3.1](LANE_RESOURCE_SIZING.md). It corrects the
+[`input-resources/v0.6.0` / input-v4](LANE_RESOURCE_SIZING.md). It corrects the
 whole-library allocation mistakenly reused for each alignment lane and binds
-REDUX to its own sample. The owner retains fixed64CPUs/224GiB for alignment;
-only its walltime scales with lane size. The measured performance diagnosis below remains
+REDUX to its own sample. The owner retains fixed64CPUs and now permits memory
+and walltime adjustment using the completed-lane observations. The measured performance diagnosis below remains
 historical evidence; existing earlier experiments retain their declared settings.
 
 Owner clarification,10 November2026: prioritize faster computation and investigate

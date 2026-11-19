@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate initial site resources from measured existing inputs or recovery records.
 
-Policy input-v3.1: BWA-MEM2 keeps64CPUs/224GiB fixed; only walltime uses
-each task's actual FASTQ pair. REDUX uses its
+Policy input-v4: BWA-MEM2 keeps64CPUs fixed; RAM and walltime use
+each task's actual FASTQ pair and documented observed allowances. REDUX uses its
 own complete sample. Paired callers retain their combined workload sizing.
 For sample/case steps, units = ceil(primary reads / 250 million), or compressed
 input GiB / 10 when a verified read count is unavailable. Heavy threaded
@@ -21,25 +21,32 @@ import math
 from pathlib import Path
 
 
-POLICY = 'input-v3.1'
+POLICY = 'input-v4'
 
 
 def alignment_allocation(input_bytes):
     """Lane preview matching conf/lane_alignment_resources.config exactly.
 
-    Observed 64CPU alignment jobs: 0.69–2.51h, batch RSS67.68–144.52GiB,
-    from32 completed lanes. Keep64CPUs/224GiB fixed by owner direction.
-    Allow8GiB/h, minimum4h, rounded up to2h. These conservative time limits
-    are not fitted predictions or universally validated bounds.
+    Keep64CPUs fixed. Recent 64CPU normal lanes sustained4.27–4.59M pairs/min,
+    with up to45.71GiB batch RSS. Estimate pairs at120compressed bytes/pair
+    (observed normal range142.96–148.15), allow4M pairs/min with2x time margin
+    plus15minutes, round up to hours, minimum1hour. Memory48+2*compressed GiB,
+    rounded up to16GiB, retains extra room for larger tumour inputs; historical
+    ~67GiB tumour lanes reached144.52GiB RSS. These are conservative allowances,
+    not fitted predictions, measured tumour counts or validated minimum RAM.
     """
     gib = input_bytes / 1024**3
     cpus = 64
-    memory = 224
-    hours = 2 * math.ceil(max(4, gib / 8) / 2)
+    memory = 16 * math.ceil((48 + 2 * gib) / 16)
+    estimated_pairs = input_bytes / 120
+    hours = math.ceil(max(60, 2 * estimated_pairs / 4_000_000 + 15) / 60)
     if memory > 768 or hours > 336:
-        raise ValueError('Lane exceeds input-v3 eligible resource envelope')
+        raise ValueError('Lane exceeds input-v4 eligible resource envelope')
     return dict(cpus=cpus, memory_gb=memory, time_hours=hours, input_bytes=input_bytes,
-                workload_basis='task_FASTQ_pair_compressed_bytes')
+                workload_basis='task_FASTQ_pair_compressed_bytes',
+                estimated_read_pairs=estimated_pairs, read_pairs_are_estimated=True,
+                assumed_compressed_bytes_per_pair=120, pairs_per_minute_allowance=4_000_000,
+                time_safety_multiplier=2, additional_minutes=15)
 
 
 def units(rows):
@@ -97,8 +104,8 @@ def redux_plan(libraries):
             for row in libraries if row['role'] in ('tumor', 'normal')}
 
 
-def render_config(resources, redux):
-    lines = ['// input-v3.1: lane-local alignment time, fixed alignment CPU/RAM, sample-local REDUX.',
+def render_config(resources, redux, completed_cpus=None):
+    lines = ['// input-v4: fixed alignment CPU, measured-allowance lane RAM/time, sample-local REDUX.',
              'process {', '    resourceLimits = [cpus: 64, memory: 768.GB, time: 14.d]']
     for name, v in resources.items():
         lines.extend([f"    withName: '{name}' {{", f"        cpus = {v['cpus']}",
@@ -110,6 +117,13 @@ def render_config(resources, redux):
                      "if (value == null) throw new IllegalArgumentException('Unbound REDUX sample'); value }")
     lines.extend(['    }', '}'])
     lines.append((Path(__file__).parent / 'conf/lane_alignment_resources.config').read_text())
+    if completed_cpus:
+        # Preserve old command hashes so completed16CPU lanes remain CACHED.
+        # New alignment tasks always use64CPUs; this is explicit resume history.
+        values = ', '.join(json.dumps(tag) + ':' + str(cpu) for tag, cpu in completed_cpus.items())
+        lines.extend(["process { withName: 'BWAMEM2_ALIGN' {",
+            f"    cpus = {{ def old = [{values}][meta.id]; old == null ? 64 : old }}",
+            '} }'])
     return '\n'.join(lines) + '\n'
 
 
@@ -176,15 +190,21 @@ def main():
     inputs.add_argument('--samplesheet', type=Path)
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--evidence', type=Path, required=True)
+    p.add_argument('--completed-alignment-cpus', type=Path,
+                   help='Explicit completed task tags/CPU assignments for cache-preserving resume only')
     a = p.parse_args()
     libraries = (load_samplesheet(a.samplesheet) if a.samplesheet else
                  [load_library(role, Path(path)) for role, path in a.library])
     resources = plan(libraries)
     redux = redux_plan(libraries)
-    a.out.write_text(render_config(resources, redux))
+    completed_cpus = json.loads(a.completed_alignment_cpus.read_text()) if a.completed_alignment_cpus else {}
+    if any(not isinstance(cpu, int) or cpu < 1 or cpu > 64 for cpu in completed_cpus.values()):
+        raise ValueError('Invalid completed alignment CPU assignment')
+    a.out.write_text(render_config(resources, redux, completed_cpus))
     a.evidence.write_text(json.dumps(dict(policy=POLICY, status='conservative measured-range allowance',
         created_at=datetime.now(timezone.utc).isoformat(), libraries=libraries, resources=resources,
-        redux_samples=redux, alignment_lanes=[lane for row in libraries for lane in row.get('lanes', [])]), indent=2) + '\n')
+        redux_samples=redux, completed_alignment_cpus=completed_cpus,
+        alignment_lanes=[lane for row in libraries for lane in row.get('lanes', [])]), indent=2) + '\n')
 
 
 if __name__ == '__main__':

@@ -97,12 +97,22 @@ class ResourceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             load('build_input_resources').allocation(1000, 48, 2, 128, 6)
 
+    def test_completed_cpu_history_preserves_old_command_only(self):
+        module = load('build_input_resources')
+        config = module.render_config({}, {'N': dict(cpus=64, memory_gb=144, time_hours=16)},
+                                      {'CASE_N_L001':16})
+        self.assertIn('"CASE_N_L001":16', config)
+        self.assertIn('old == null ? 64 : old', config)
+        self.assertEqual(module.alignment_allocation(5 * 1024**3)['cpus'], 64)
+
     def test_lane_allocations_use_pair_size(self):
         module = load('build_input_resources')
         normal = module.alignment_allocation(5 * 1024**3)
         tumour = module.alignment_allocation(34 * 1024**3)
-        self.assertEqual((normal['cpus'], normal['memory_gb'], normal['time_hours']), (64, 224, 4))
-        self.assertEqual((tumour['cpus'], tumour['memory_gb'], tumour['time_hours']), (64, 224, 6))
+        self.assertEqual((normal['cpus'], normal['memory_gb'], normal['time_hours']), (64, 64, 1))
+        self.assertEqual((tumour['cpus'], tumour['memory_gb'], tumour['time_hours']), (64, 128, 3))
+        self.assertTrue(tumour['read_pairs_are_estimated'])
+        self.assertEqual(tumour['assumed_compressed_bytes_per_pair'], 120)
         self.assertEqual(module.alignment_allocation(10 * 1024**3)['cpus'],
                          module.alignment_allocation(11 * 1024**3)['cpus'])
         with self.assertRaises(ValueError):
@@ -125,14 +135,14 @@ class ResourceTests(unittest.TestCase):
             sheet.write_text(header + normal + tumour)
             libraries = module.load_samplesheet(sheet)
             self.assertEqual(before, libraries[0]['lanes'][0])
-            self.assertEqual(libraries[1]['lanes'][0]['time_hours'], 6)
+            self.assertEqual(libraries[1]['lanes'][0]['time_hours'], 3)
             redux = module.redux_plan(libraries)
             self.assertLess(redux['N']['memory_gb'], redux['T']['memory_gb'])
             config = module.render_config(module.plan(libraries), redux)
             self.assertIn('reads_fwd.size() + reads_rev.size()', config)
             self.assertIn('[meta.sample_id]', config)
             self.assertIn("withName: 'BWAMEM2_ALIGN' {\n        cpus = 64", config)
-            self.assertIn('memory = 224.GB', config)
+            self.assertIn('48d + 2d * gib', config)
 
     def test_unpaired_or_subset_input_rejected(self):
         module = load('build_input_resources')

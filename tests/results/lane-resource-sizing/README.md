@@ -1,5 +1,18 @@
 # Lane-local resource release validation
 
+## Throughput/RAM update: v0.6.0
+
+Owner direction: fixed64CPUs, reduced RAM with headroom, time based on observed
+complete-task throughput. Release `input-resources/v0.6.0` / input-v4.
+The78tests pass with3existing skips. Real Nextflow metadata canary12487296
+COMPLETED0:0 in6s: normal5GiB→64CPU/64GiB/1h;
+tumour34GiB→64CPU/128GiB/3h. REDUX remains64/144/16h and64/224/44h.
+The explicit completed-task CPU-history regression preserves cache command
+identity for old16CPU lanes while keeping new alignment tasks at64CPUs.
+Original work/cache and all32completed normal alignments are retained for
+native resume. Actual new job IDs, cache hits and resource scripts are recorded
+in the coordinator's private Phase2 queue. Native science/input scope unchanged.
+
 ## Owner clarification: v0.5.1
 
 The owner subsequently specified fixed64CPUs/224GiB for alignment and only

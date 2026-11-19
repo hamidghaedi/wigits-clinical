@@ -12,10 +12,14 @@ RUN_DIR="$(dirname "$PACKAGE")"
 # Original FASTQs are already staged. Keep one native row per lane and size
 # the libraries from the existing inputs; no BAM recovery or recovery receipts.
 mkdir -p "$RUN_DIR/state"
+resource_resume=()
+if [[ -f "$PACKAGE/completed_alignment_cpus.json" ]]; then
+    resource_resume=(--completed-alignment-cpus "$PACKAGE/completed_alignment_cpus.json")
+fi
 python3 "$PACKAGE/workflow/build_input_resources.py" \
     --samplesheet "$PACKAGE/samplesheet.csv" \
     --out "$RUN_DIR/state/input_resources.config" \
-    --evidence "$RUN_DIR/state/input_resources.json"
+    --evidence "$RUN_DIR/state/input_resources.json" "${resource_resume[@]}"
 
 source "$PACKAGE/workflow/conf/frontenac_paths.env"
 export ONCO_SOURCE="${ONCO_SOURCE:-$ONCO_SOURCE_DIR}" ONCO_REV=3.0.0 ONCO_GENOME=GRCh38_hmf
