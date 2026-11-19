@@ -77,9 +77,9 @@ class ResourceTests(unittest.TestCase):
 
     def test_bam_byte_proxy_changes_allocation(self):
         module = load('build_input_resources')
-        rows = [dict(role=r, read_pairs=None, input_bytes=200*1024**3) for r in ['tumor','normal']]
+        rows = [dict(role=r, sample_id=r, read_pairs=None, input_bytes=200*1024**3) for r in ['tumor','normal']]
         result = module.plan(rows)
-        self.assertEqual(result['REDUX']['cpus'], 64)
+        self.assertEqual(module.redux_plan(rows)['tumor']['cpus'], 64)
         self.assertEqual(result['ESVEE']['workload_units'], 40)
 
     def test_workload_increases_initial_resources(self):
@@ -87,7 +87,7 @@ class ResourceTests(unittest.TestCase):
         small = [dict(role=r, read_pairs=50_000_000) for r in ['tumor', 'normal', 'rna']]
         large = [dict(role=r, read_pairs=3_000_000_000) for r in ['tumor', 'normal', 'rna']]
         low, high = module.plan(small), module.plan(large)
-        for name in ['BWAMEM2_ALIGN', 'REDUX', 'ESVEE', 'SAGE_SOMATIC', 'ISOFOX']:
+        for name in ['ESVEE', 'SAGE_SOMATIC', 'ISOFOX']:
             self.assertEqual(high[name]['cpus'], 64)
             self.assertGreater(high[name]['memory_gb'], low[name]['memory_gb'])
         self.assertGreater(high['ESVEE']['time_hours'], low['ESVEE']['time_hours'])
@@ -96,6 +96,42 @@ class ResourceTests(unittest.TestCase):
     def test_oversized_input_is_not_silently_clamped(self):
         with self.assertRaises(ValueError):
             load('build_input_resources').allocation(1000, 48, 2, 128, 6)
+
+    def test_lane_allocations_use_pair_size(self):
+        module = load('build_input_resources')
+        normal = module.alignment_allocation(5 * 1024**3)
+        tumour = module.alignment_allocation(34 * 1024**3)
+        self.assertEqual((normal['cpus'], normal['memory_gb'], normal['time_hours']), (16, 96, 4))
+        self.assertEqual((tumour['cpus'], tumour['memory_gb'], tumour['time_hours']), (64, 192, 6))
+        self.assertLess(module.alignment_allocation(10 * 1024**3)['cpus'],
+                        module.alignment_allocation(11 * 1024**3)['cpus'])
+        with self.assertRaises(ValueError):
+            module.alignment_allocation(1000 * 1024**3)
+
+    def test_other_lanes_do_not_inflate_lane_allocation(self):
+        module = load('build_input_resources')
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for sample, size in [('N', 5), ('T', 34)]:
+                for mate in (1, 2):
+                    with (root / f'{sample}{mate}.fastq.gz').open('wb') as stream:
+                        stream.truncate(size * 1024**3 // 2)  # Sparse metadata-only fixture.
+            sheet = root / 'samplesheet.csv'
+            header = 'sample_id,sample_type,sequence_type,filetype,filepath\n'
+            normal = f'N,normal,dna,fastq,{root}/N1.fastq.gz;{root}/N2.fastq.gz\n'
+            tumour = f'T,tumor,dna,fastq,{root}/T1.fastq.gz;{root}/T2.fastq.gz\n'
+            sheet.write_text(header + normal)
+            before = module.load_samplesheet(sheet)[0]['lanes'][0]
+            sheet.write_text(header + normal + tumour)
+            libraries = module.load_samplesheet(sheet)
+            self.assertEqual(before, libraries[0]['lanes'][0])
+            self.assertEqual(libraries[1]['lanes'][0]['time_hours'], 6)
+            redux = module.redux_plan(libraries)
+            self.assertLess(redux['N']['memory_gb'], redux['T']['memory_gb'])
+            config = module.render_config(module.plan(libraries), redux)
+            self.assertIn('reads_fwd.size() + reads_rev.size()', config)
+            self.assertIn('[meta.sample_id]', config)
+            self.assertNotIn("withName: 'BWAMEM2_ALIGN' {\n        cpus = 64", config)
 
     def test_unpaired_or_subset_input_rejected(self):
         module = load('build_input_resources')

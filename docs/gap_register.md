@@ -1,5 +1,11 @@
 # Gap register
 
+November19 resource correction: alignment was sized from the larger whole DNA
+library and applied to each lane. This also gave small normal lanes the tumour
+allocation. Correction tracked in [lane resource sizing](LANE_RESOURCE_SIZING.md):
+task-local FASTQ-pair sizing, sample-local REDUX allocation, unchanged paired
+caller scope. Runtime release and validation are recorded there.
+
 Features of the Hartwig clinical workflow that are no longer public, were discontinued, or exist only in the private oncoact repository. Each entry records what is known, where that knowledge comes from, and what this project intends to do about it. Add rows as gaps are found; close rows by linking the commit or directory that fills them.
 
 Status values. `open`, `in progress`, `done`, `wontfix`.
