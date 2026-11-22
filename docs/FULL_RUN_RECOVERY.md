@@ -1,5 +1,48 @@
 # Full-run runtime recovery
 
+## Native ESVEE recovery, 21 November 2026
+
+Release `runtime-recovery/v0.3.0` adds `prepare_run_recovery.py --route esvee`
+for native-reference runs. It uses the existing method-specific JVM exclusion
+without the custom-reference CIDER dictionary alias. No shared container,
+native source, reference, resource model or caller argument changes.
+
+The observed crash is Java 22 SIGSEGV in C2-compiled
+`htsjdk.samtools.AbstractBAMFileIndex.query`. This is a narrow runtime
+workaround, not proof of the JVM's underlying defect or full-run success.
+The first failure also showed a HashSet iterator frame; the repeated failure
+identified the BAM-index query directly. Retain both crash logs.
+
+```bash
+python3 workflow/prepare_run_recovery.py \
+  --route esvee --run /path/to/original/run --session ORIGINAL_SESSION_UUID \
+  --native-source /path/to/recorded/oncoanalyser/source \
+  --out /path/to/original/run/package_esvee_recovery
+
+sbatch --account=YOUR_CPU_ACCOUNT \
+  /path/to/original/run/package_esvee_recovery/resume_completed_run.sbatch \
+  /path/to/original/run/package_esvee_recovery
+```
+
+Optional `--kraken-work /path/to/completed/virusbreakend.working --tumor-id ID`
+reuses the completed read-name list, Kraken report and selected viral-reference
+list, using the existing native completed-file checks. Supply this only after
+the old execution has stopped and its log establishes those phases completed.
+Incomplete viral alignment/assembly products are not promoted or reused.
+The original VirusBreakend JAR argument remains in the original config.
+
+The saved command/session/samplesheet/resources are replayed with one final
+configuration. Completed alignments and REDUX must be CACHED. Aborted tasks
+may run again; record them separately from completed cached tasks.
+
+Validation: 85 unit tests pass, 3 existing integration skips; shell syntax and
+diff checks pass. Slurm smoke 12506443 used the existing ESVEE 2.0.1 container,
+1 CPU/2GiB, completed 0:0 in 4 seconds, and printed the exact JVM exclusion plus
+the unchanged ESVEE version. Full-size success remains an execution outcome,
+not a claim made by that version-only smoke test.
+
+## Historical multi-tool recovery, 10 November 2026
+
 Recovery component **0.1.0**, prepared 10 November 2026. Owner request: repair
 both failed workflows using completed work, without repeating alignment or
 interrupting the separate full-genome DeepSomatic jobs.
