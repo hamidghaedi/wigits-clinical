@@ -11,12 +11,13 @@ from pathlib import Path
 import shlex
 import shutil
 
-VERSION='0.1.0'
+VERSION='0.2.0'
 
 
-def resume_command(original, session, config):
+def resume_command(original, session, config, native_source=None):
     args=shlex.split(original)
-    if args[:3]!=['nextflow','run','nf-core/oncoanalyser']:
+    allowed = ['nf-core/oncoanalyser'] + ([str(native_source)] if native_source else [])
+    if args[:2]!=['nextflow','run'] or len(args)<3 or args[2] not in allowed:
         raise ValueError('Expected the native pinned launcher')
     i=args.index('-resume')
     if i+1<len(args) and not args[i+1].startswith('-'):
@@ -31,15 +32,19 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--run',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
-    p.add_argument('--route',choices=('bam','native'),required=True)
+    p.add_argument('--route',choices=('bam','native','rna'),required=True)
     p.add_argument('--session',required=True)
+    p.add_argument('--native-source',type=Path,
+                   help='Explicit existing native source path from the saved release; must match the original launch')
     p.add_argument('--patched-jar',type=Path)
     p.add_argument('--kraken-work',type=Path)
     p.add_argument('--tumor-id')
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
     here=Path(__file__).resolve().parent
     config=a.out/'recovery.config'
-    if a.route=='bam':
+    if a.route=='rna':
+        config.write_text((here/'conf/rna_duplicate_marking.config').read_text())
+    elif a.route=='bam':
         env_file=a.out/'esvee_jvm_recovery.env'
         shutil.copyfile(here/'conf/esvee_jvm_recovery.env',env_file)
         config.write_text((here/'conf/bam_runtime_recovery.config').read_text().replace('@ESVEE_ENV_FILE@',str(env_file.resolve())))
@@ -60,7 +65,7 @@ def main():
             f"        ext.args = '--jar {a.patched_jar}'\n"
             f"        beforeScript = '''\n{script}\n'''\n    }}\n}}\n")
     original=[l for l in (a.run/'launch.sh').read_text().splitlines() if l.startswith('nextflow run ')][-1]
-    (a.out/'resume_command.sh').write_text('#!/usr/bin/env bash\nset -euo pipefail\nexec '+resume_command(original,a.session,config.resolve())+'\n')
+    (a.out/'resume_command.sh').write_text('#!/usr/bin/env bash\nset -euo pipefail\nexec '+resume_command(original,a.session,config.resolve(),a.native_source)+'\n')
     (a.out/'run_directory.txt').write_text(str(a.run.resolve())+'\n')
     shutil.copyfile(here/'resume_completed_run.sbatch',a.out/'resume_completed_run.sbatch')
     evidence=dict(version=VERSION,route=a.route,session=a.session,

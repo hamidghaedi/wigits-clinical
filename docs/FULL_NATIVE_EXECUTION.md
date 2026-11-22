@@ -1,5 +1,11 @@
 # Full-input native execution and initial resources
 
+The `rna-duplicates/v0.1.0` launcher adds the RNA-only Picard optical-comparison
+correction described in [RNA duplicate marking](RNA_DUPLICATE_MARKING.md).
+Input-v4 resource sizing and native callers remain unchanged. Frozen earlier
+packages are not edited; a failed existing RNA stage uses the explicit recovery
+entry with its original session/cache.
+
 ## Routine route selection, owner direction November16
 
 Fresh-frozen tumour samples use native nf-core/oncoanalyser with the native

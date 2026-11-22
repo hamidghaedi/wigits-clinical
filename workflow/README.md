@@ -1,5 +1,10 @@
 # workflow
 
+RNA duplicate marking uses [the documented optical-comparison policy](../docs/RNA_DUPLICATE_MARKING.md)
+in `rna-duplicates/v0.1.0`. The full-input entry loads its shared config; existing
+failed stages can use `prepare_run_recovery.py --route rna` to preserve the
+original session, resources and completed alignments.
+
 Source-aware reporting corrections for missing TINC and coordinate-derived
 deletion extent are maintained in [ORANGE source-value mapping](../docs/ORANGE_SOURCE_VALUES.md).
 The explicit display-only source release preserves native report eligibility

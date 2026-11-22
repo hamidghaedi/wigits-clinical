@@ -25,4 +25,5 @@ source "$PACKAGE/workflow/conf/frontenac_paths.env"
 export ONCO_SOURCE="${ONCO_SOURCE:-$ONCO_SOURCE_DIR}" ONCO_REV=3.0.0 ONCO_GENOME=GRCh38_hmf
 export WIGITS_WORKFLOW_DIR="$PACKAGE/workflow"
 bash "$PACKAGE/workflow/run_oncoanalyser_frontenac.sh" \
-    "$RUN_ID" "$PACKAGE/samplesheet.csv" -c "$RUN_DIR/state/input_resources.config" "$@"
+    "$RUN_ID" "$PACKAGE/samplesheet.csv" -c "$RUN_DIR/state/input_resources.config" \
+    -c "$PACKAGE/workflow/conf/rna_duplicate_marking.config" "$@"

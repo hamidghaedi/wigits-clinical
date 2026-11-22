@@ -21,3 +21,18 @@ class RecoveryTests(unittest.TestCase):
 
     def test_rejects_unrelated_launch(self):
         with self.assertRaises(ValueError):m.resume_command('nextflow run other -resume','id',Path('/fix'))
+
+    def test_local_source_requires_explicit_original_source_binding(self):
+        original='nextflow run /synthetic/oncoanalyser/3.0.0 -c original -resume'
+        with self.assertRaises(ValueError):
+            m.resume_command(original,'saved',Path('/fix'))
+        args=shlex.split(m.resume_command(original,'saved',Path('/fix'),
+                                         Path('/synthetic/oncoanalyser/3.0.0')))
+        self.assertEqual(args[:3],shlex.split(original)[:3])
+        self.assertEqual(args[-2:],['-c','/fix'])
+        self.assertEqual(args[args.index('-resume')+1],'saved')
+
+    def test_explicit_local_source_does_not_accept_a_different_checkout(self):
+        with self.assertRaises(ValueError):
+            m.resume_command('nextflow run /other/main.nf -resume','id',Path('/fix'),
+                             Path('/synthetic/oncoanalyser/3.0.0'))
