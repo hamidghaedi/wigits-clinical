@@ -185,10 +185,13 @@ class Exporter:
 
     # -- proximal variants -----------------------------------------------------------------
     def write_proximal(self, kept_keys, phase_sets):
+        """Single-sample VCF: pVACseq rejects a proximal VCF carrying more than one sample."""
         out_vcf = os.path.join(self.outdir, f"{self.case}.proximal.vcf")
         positions = {(c, int(p)) for c, p, _, _ in kept_keys}
         n_som = n_germ = 0
         src = self.layout.files["purple_somatic_vcf"]
+        samples = ni.vcf_samples(src)
+        t_idx = samples.index(self.layout.tumour_dna)
         with open(out_vcf, "w") as out:
             with ni._open(src) as fh:
                 for line in fh:
@@ -196,7 +199,8 @@ class Exporter:
                         out.write(line)
                         continue
                     if line.startswith("#CHROM"):
-                        out.write(line)
+                        cols = line.rstrip("\n").split("\t")
+                        out.write("\t".join(cols[:9] + [self.layout.tumour_dna]) + "\n")
                         continue
                     f = line.rstrip("\n").split("\t")
                     if f[6] != "PASS":
@@ -207,10 +211,12 @@ class Exporter:
                     info = ni.parse_info(f[7])
                     lps = set(ni.int_list(info.get("LPS"), default=[]) or [])
                     if lps & phase_sets:
-                        out.write(line)
+                        out.write("\t".join(f[:9] + [f[9 + t_idx]]) + "\n")
                         n_som += 1
             germ = self.layout.files.get("purple_germline_vcf")
             if germ:
+                g_samples = ni.vcf_samples(germ)
+                g_idx = g_samples.index(self.layout.tumour_dna) if self.layout.tumour_dna in g_samples else 0
                 with ni._open(germ) as fh:
                     for line in fh:
                         if line.startswith("#"):
@@ -220,7 +226,7 @@ class Exporter:
                             continue
                         pos = int(f[1])
                         if any(f[0] == c and abs(pos - p) <= PEPTIDE_WINDOW_BP for c, p in positions):
-                            out.write(line)
+                            out.write("\t".join(f[:9] + [f[9 + g_idx]]) + "\n")
                             n_germ += 1
         self.counts.update({"proximal_somatic": n_som, "proximal_germline": n_germ})
         return out_vcf

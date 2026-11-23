@@ -94,3 +94,15 @@ def test_immune_escape_is_captured(exported):
     if not manifest["immune_escape"]:
         pytest.skip("fixture has no ORANGE json")
     assert "hasHlaEscape" in manifest["immune_escape"]
+
+
+def test_proximal_vcf_has_exactly_one_sample(exported):
+    """pVACseq rejects a proximal VCF with more than one sample column."""
+    _, manifest = exported
+    for line in open(manifest["outputs"]["proximal_vcf"]):
+        if line.startswith("#CHROM"):
+            assert len(line.rstrip("\n").split("\t")) == 10
+            assert line.rstrip("\n").split("\t")[9] == manifest["samples"]["tumour_dna"]
+            break
+    else:
+        raise AssertionError("no #CHROM line in the proximal VCF")

@@ -14,7 +14,9 @@
 #   * the merged offline cache is BAM-edited, so --use_given_ref is mandatory, otherwise VEP
 #     replaces the VCF's REF allele with the transcript reference;
 #   * pVACseq requires the Wildtype and Frameshift plugins, which ship with pVACtools and are
-#     installed into $VEP_PLUGINS by tools/install_vep_plugins.sh, not with the VEP image.
+#     installed into $VEP_PLUGINS by `pvacseq install_vep_plugin`, not with the VEP image;
+#   * pVACseq also requires --tsl and --biotype, and it rejects the run unless the PROXIMAL
+#     variants VCF is itself VEP-annotated, bgzipped, tabixed and carries exactly one sample.
 set -eo pipefail
 source /cvmfs/soft.computecanada.ca/config/profile/bash.sh
 module load apptainer/1.3.5
@@ -43,7 +45,7 @@ apptainer exec -B /global -B "${TMPDIR}" "${VEP_SIF}" vep \
   --input_file "${SEL}" --output_file "${OUTDIR}/${CASE}.vep.vcf" --format vcf --vcf --force_overwrite \
   --offline --cache --dir_cache "${VEP_CACHE}" --cache_version 115 --merged --assembly GRCh38 \
   --fasta "${FASTA}" --use_given_ref \
-  --symbol --terms SO --transcript_version --hgvs --flag_pick \
+  --symbol --terms SO --tsl --biotype --transcript_version --hgvs --flag_pick \
   --pick_order canonical,tsl,biotype,rank,ccds,length \
   --plugin Wildtype --plugin Frameshift --dir_plugins "${VEP_PLUGINS}" \
   --fork "${SLURM_CPUS_PER_TASK:-4}"
@@ -51,8 +53,15 @@ apptainer exec -B /global -B "${TMPDIR}" "${VEP_SIF}" vep \
 grep -q "WildtypeProtein" "${OUTDIR}/${CASE}.vep.vcf" \
   || { echo "[neo_export] ERROR: Wildtype plugin produced no annotation; pVACseq would reject this VCF" >&2; exit 2; }
 
-bgzip -f "${OUTDIR}/${CASE}.vep.vcf" && tabix -f -p vcf "${OUTDIR}/${CASE}.vep.vcf.gz" 2>/dev/null || true
-for f in "${OUTDIR}/${CASE}.somatic.selected.vcf" "${OUTDIR}/${CASE}.proximal.vcf"; do
-  [ -f "$f" ] && { bgzip -f "$f"; tabix -f -p vcf "$f.gz" 2>/dev/null || true; }
-done
+# The proximal VCF needs the same annotation; pVACseq checks its CSQ header, not only the input's.
+apptainer exec -B /global -B "${TMPDIR}" "${VEP_SIF}" vep \
+  --input_file "${OUTDIR}/${CASE}.proximal.vcf" --output_file "${OUTDIR}/${CASE}.proximal.vep.vcf" \
+  --format vcf --vcf --force_overwrite --offline --cache --dir_cache "${VEP_CACHE}" --cache_version 115 \
+  --merged --assembly GRCh38 --fasta "${FASTA}" --use_given_ref \
+  --symbol --terms SO --tsl --biotype --transcript_version --hgvs \
+  --plugin Wildtype --plugin Frameshift --dir_plugins "${VEP_PLUGINS}" --fork "${SLURM_CPUS_PER_TASK:-4}"
+
+# bgzip/tabix come from the samtools image: htslib is not on the pVACtools or VEP image PATH.
+apptainer exec -B /global "${CONTAINER_DIR}/samtools-1.22.1--h96c455f_0.sif" sh -c \
+  "cd ${OUTDIR} && for v in ${CASE}.vep ${CASE}.proximal.vep; do bgzip -kf \$v.vcf; tabix -fp vcf \$v.vcf.gz; done"
 ls -lh "${OUTDIR}"
