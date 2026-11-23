@@ -29,6 +29,7 @@ here; see [the migration record](docs/migrations/DNA_HARTWIG_ADOPTATION_20261110
 | `docs/djerba_wgts_dataflow.md` | The same analysis for OICR's Djerba, kept here as the comparison point that motivated this work. |
 | `docs/gap_register.md` | The running list of features that are missing or private, with what is known and what we intend to do about each. |
 | `docs/directory_layout.md` | **Canonical directory-layout contract.** Where every kind of file lives on the HPC side (git / shared project storage / scratch), what already exists where, and the machine-readable `workflow/conf/frontenac_paths.env`. |
+| `docs/neoantigen_extension_proposal.md` | Neoantigen discovery and review extension on top of native oncoanalyser outputs (NEO, LILAC, SAGE_APPEND, ISOFOX): what is already covered, what is added, phased plan. Gap G28. |
 | `workflow/` | Native Oncoanalyser launch profiles, optional BAM mate preparation, input-size resource planning, transfers and read-only resource reports. |
 | `test_data/hartwig_adaptation/` | Migrated chromosome-test input preparation, samplesheet, metadata probes and native-run evidence. |
 | `docs/FULL_NATIVE_EXECUTION.md` | Full original-FASTQ entry using the native HMF reference and all DNA lanes. |
