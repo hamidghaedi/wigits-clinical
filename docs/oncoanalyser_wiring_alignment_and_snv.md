@@ -1,5 +1,14 @@
 # oncoanalyser wiring around the alignment file and the SNV VCF
 
+Current site BAM entry and verification status: [NATIVE_BAM_ENTRY.md](NATIVE_BAM_ENTRY.md).
+Current DeepSomatic experiment and verified/prior-versus-pending boundaries:
+[DEEPSOMATIC_SUBSTITUTION.md](DEEPSOMATIC_SUBSTITUTION.md). Its rules supersede
+the historical suggestion below to map DeepSomatic filters to PASS: original
+filters must be preserved, and no SAGE side outputs or clean normal counts may
+be fabricated. Earlier estimates are not current execution evidence.
+This wiring assessment includes hypotheses and historical estimates; its blanket
+BQSR statements do not establish the processing history of every current BAM.
+
 **Purpose.** Map, from source, exactly what oncoanalyser 3.0.0 does with (a) the DNA alignment file and
 (b) the small-variant (SNV/indel) VCF, so that replacing the aligner with Parabricks-aligned BAMs and the
 small-variant caller with DeepSomatic can be done as deliberate rewiring rather than guesswork. For each

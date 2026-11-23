@@ -1,0 +1,57 @@
+tag	module	file:line	source_line
+TIER	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/PaveConfig.java:157	configBuilder.addConfigItem(PON_FILTERS, "PON filters per tier, format: TIER:MAX_SAMPLES:MAX_COUNT separated by ';'");
+TIER	purple	purple/src/main/java/com/hartwig/hmftools/purple/fittingsnv/SomaticPurityFitter.java:94	TIER,
+LPS	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/VariantData.java:187	List<Integer> localPhaseSets = variantContext.getAttributeAsIntList(LOCAL_PHASE_SET, NO_LOCAL_PHASE_SET);
+LPS	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/SomaticStream.java:324	List<Integer> localPhaseSets = variant.context().getAttributeAsIntList(LOCAL_PHASE_SET, 0);
+LPS	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/SomaticStream.java:354	List<Integer> nextLocalPhaseSets = nextVariant.context().getAttributeAsIntList(LOCAL_PHASE_SET, 0);
+REP_C	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/VariantData.java:190	int repeatCount = variantContext.getAttributeAsInt(REPEAT_COUNT, 0);
+REP_C	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/pon_gen/RegionPonTask.java:241	variant.setRepeatCount(variantContext.getAttributeAsInt(SageVcfTags.REPEAT_COUNT, 0));
+REP_C	purple	purple/src/main/java/com/hartwig/hmftools/purple/fittingsnv/SomaticPurityFitter.java:92	REPEAT_COUNT,
+REP_C	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/MicrosatelliteIndels.java:69	int repeatCount = variant.context().getAttributeAsInt(REPEAT_COUNT, 0);
+REP_C	cuppa	cuppa/src/main/java/com/hartwig/hmftools/cup/somatics/SomaticVariant.java:83	variantContext.getAttributeAsInt(REPEAT_COUNT, 0));
+REP_S	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/VariantData.java:189	String repeatSequence = variantContext.getAttributeAsString(REPEAT_SEQUENCE, Strings.EMPTY);
+REP_S	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/MicrosatelliteIndels.java:70	int repeatSequenceLength = variant.context().getAttributeAsString(REPEAT_SEQUENCE, Strings.EMPTY).length();
+RC_REPC	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/VariantData.java:196	int rcRepeatCount = variantContext.getAttributeAsInt(READ_CONTEXT_REPEAT_COUNT, 0);
+RC_REPS	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/VariantData.java:195	String rcRepeatSequence = variantContext.getAttributeAsString(READ_CONTEXT_REPEAT_SEQUENCE, Strings.EMPTY);
+MH	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/VariantData.java:208	variantContext.getAttributeAsString(MICROHOMOLOGY, Strings.EMPTY), repeatSequence, repeatCount);
+MH	chord	chord/src/main/java/com/hartwig/hmftools/chord/indel/ContextType.java:6	MICROHOMOLOGY(".mh.bimh."),
+MH	chord	chord/src/main/java/com/hartwig/hmftools/chord/indel/IndelContext.java:47	int lengthTypeCap = (contextType == ContextType.MICROHOMOLOGY) ? HOM_BASES_COUNT_CAP : INDEL_LENGTH_CAP;
+MH	chord	chord/src/main/java/com/hartwig/hmftools/chord/indel/IndelContext.java:62	int lenthTypeValueCapped = (mContextType == ContextType.MICROHOMOLOGY) ?
+MH	chord	chord/src/main/java/com/hartwig/hmftools/chord/indel/IndelDetails.java:120	contextType = ContextType.MICROHOMOLOGY;
+MH	chord	chord/src/main/java/com/hartwig/hmftools/chord/indel/IndelDetails.java:125	contextType = ContextType.MICROHOMOLOGY;
+MH	chord	chord/src/main/java/com/hartwig/hmftools/chord/indel/IndelDetails.java:129	contextType = ContextType.MICROHOMOLOGY;
+TNC	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/KataegisEnrichment.java:50	final String triContext = context.getAttributeAsString(TRINUCLEOTIDE_CONTEXT, Strings.EMPTY);
+TNC	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/KataegisEnrichment.java:63	final String triContext = context.getAttributeAsString(TRINUCLEOTIDE_CONTEXT, Strings.EMPTY);
+TNC	cuppa	cuppa/src/main/java/com/hartwig/hmftools/cup/somatics/SomaticVariant.java:82	variantContext.getAttributeAsString(TRINUCLEOTIDE_CONTEXT, ""),
+RC_CNT	neo	neo/src/main/java/com/hartwig/hmftools/neo/score/SomaticVariant.java:69	final String[] qualCounts = genotype.getExtendedAttribute(READ_CONTEXT_COUNT, 0).toString()
+MQF	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/pon_gen/RegionPonTask.java:162	double mqf = variantContext.getAttributeAsDouble(MAP_QUAL_FACTOR, 0);
+,	neo	neo/src/main/java/com/hartwig/hmftools/neo/score/SomaticVariant.java:70	.split(LIST_SEPARATOR, -1);
+PASS	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/VcfWriter.java:146	builder.getFilters().remove(PASS_FILTER);
+PASS	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/VcfWriter.java:150	builder.getFilters().add(PASS_FILTER);
+PASS	purple	purple/src/main/java/com/hartwig/hmftools/purple/germline/GermlineAmpDelFinder.java:480	String filter = filters.isEmpty() ? PASS_FILTER : String.join(";", filters);
+PASS	purple	purple/src/main/java/com/hartwig/hmftools/purple/germline/GermlineGenotypeEnrichment.java:97	variant.filters().remove(PASS_FILTER);
+PASS	purple	purple/src/main/java/com/hartwig/hmftools/purple/germline/GermlineRescueLowVAF.java:32	variant.filters().add(PASS_FILTER);
+PASS	purple	purple/src/main/java/com/hartwig/hmftools/purple/germline/GermlineVariant.java:53	public boolean isPass() { return mFilters.isEmpty() || (mFilters.size() == 1 && mFilters.contains(PASS_FILTER)); }
+PASS	purple	purple/src/main/java/com/hartwig/hmftools/purple/sv/SomaticSvCache.java:339	.filter(x -> x.filter() == null || Objects.equals(x.filter(), PASS_FILTER))
+PASS	orange	orange/src/main/java/com/hartwig/hmftools/orange/algo/purple/PurpleDataLoader.java:108	.filter(x -> x.Filter.equals(CommonVcfTags.PASS_FILTER)).collect(Collectors.toList());
+PASS	orange	orange/src/main/java/com/hartwig/hmftools/orange/report/tables/HLAAlleleTable.java:40	boolean hasWarnings = alleles.stream().anyMatch(x -> !x.qcStatus().equals(CommonVcfTags.PASS_FILTER));
+PASS	cuppa	cuppa/src/main/java/com/hartwig/hmftools/cup/svs/StructuralVariantPrep.java:99	.filter(x -> x.filter().isEmpty() || x.filter().equals(PASS_FILTER))
+PASS	linx	linx/src/main/java/com/hartwig/hmftools/linx/SvFileLoader.java:142	if(filter.isEmpty() || filter.equals(PASS_FILTER) || filter.equals(INFERRED) || config.IsGermline)
+PASS	linx	linx/src/main/java/com/hartwig/hmftools/linx/germline/GermlineDisruptions.java:414	allFilters.remove(PASS_FILTER);
+PASS	linx	linx/src/main/java/com/hartwig/hmftools/linx/germline/GermlineDisruptions.java:524	if(!var.getSvData().filter().equals(PASS_FILTER))
+PASS	linx	linx/src/main/java/com/hartwig/hmftools/linx/germline/GermlineFilter.java:22	return record.getFilters().stream().anyMatch(x -> x.equals(PASS_FILTER) || x.equals(PON_FILTER_PON));
+PASS	lilac	lilac/src/main/java/com/hartwig/hmftools/lilac/variant/SomaticVariantAnnotation.java:220	if(variantContext.isFiltered() && !variantContext.getFilters().contains(PASS_FILTER))
+REPORTED	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/annotation/Reportability.java:61	variant.context().getCommonInfo().putAttribute(REPORTED_FLAG, true);
+REPORTED	pave	../pave-v1.9/pave/src/main/java/com/hartwig/hmftools/pave/annotation/Reportability.java:68	header.addMetaDataLine(new VCFInfoHeaderLine(REPORTED_FLAG, 0, VCFHeaderLineType.Flag, REPORTED_DESC));
+REPORTED	purple	purple/src/main/java/com/hartwig/hmftools/purple/germline/GermlineReportedEnrichment.java:57	header.addMetaDataLine(new VCFInfoHeaderLine(REPORTED_FLAG, 0, VCFHeaderLineType.Flag, REPORTED_DESC));
+REPORTED	purple	purple/src/main/java/com/hartwig/hmftools/purple/germline/GermlineReportedEnrichment.java:114	variant.context().getCommonInfo().putAttribute(REPORTED_FLAG, true);
+REPORTED	purple	purple/src/main/java/com/hartwig/hmftools/purple/germline/GermlineVariant.java:62	return mContext.hasAttribute(REPORTED_FLAG);
+REPORTED	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/SomaticGenotypeEnrichment.java:79	if(variant.context().hasAttribute(REPORTED_FLAG))
+REPORTED	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/SomaticGenotypeEnrichment.java:80	builder.rmAttribute(REPORTED_FLAG);
+REPORTED	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/SomaticStream.java:297	variant.context().getCommonInfo().putAttribute(REPORTED_FLAG, true);
+REPORTED	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/SomaticStream.java:321	if(!variant.context().hasAttribute(REPORTED_FLAG) || !hasPhasedEffect(variant))
+REPORTED	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/SomaticStream.java:347	if(!nextVariant.isPass() || nextVariant.context().hasAttribute(REPORTED_FLAG) || !hasPhasedEffect(variant))
+REPORTED	purple	purple/src/main/java/com/hartwig/hmftools/purple/somatic/SomaticStream.java:363	nextVariant.context().getCommonInfo().putAttribute(REPORTED_FLAG, true);
+TINC_RECOVERED	purple	purple/src/main/java/com/hartwig/hmftools/purple/sv/SomaticSvCache.java:135	variant.startContext().getCommonInfo().putAttribute(TINC_RECOVERED_FLAG, true);
+TINC_RECOVERED	purple	purple/src/main/java/com/hartwig/hmftools/purple/sv/SomaticSvCache.java:146	variant.endContext().getCommonInfo().putAttribute(TINC_RECOVERED_FLAG, true);
+TINC_RECOVERED	purple	purple/src/main/java/com/hartwig/hmftools/purple/sv/SomaticSvCache.java:352	outputVCFHeader.addMetaDataLine(new VCFInfoHeaderLine(TINC_RECOVERED_FLAG, 0, VCFHeaderLineType.Flag, TINC_RECOVERED_DESC));

@@ -1,0 +1,8 @@
+group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath
+KQ0205_full_deepsomatic_substituted,KQ0205,KQ0205-DNA,tumor,dna,redux_dir,cancer_type:Carcinoid,/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/alignments/KQ0205-DNA/
+KQ0205_full_deepsomatic_substituted,KQ0205,KQ0205-gDNA,normal,dna,redux_dir,,/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/alignments/KQ0205-gDNA/
+KQ0205_full_deepsomatic_substituted,KQ0205,KQ0205-DNA,tumor,dna,sage_dir,,/global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/adapter/sage_dir/
+KQ0205_full_deepsomatic_substituted,KQ0205,KQ0205-DNA,tumor,dna,amber_dir,,/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/amber/
+KQ0205_full_deepsomatic_substituted,KQ0205,KQ0205-DNA,tumor,dna,cobalt_dir,,/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/cobalt/
+KQ0205_full_deepsomatic_substituted,KQ0205,KQ0205-DNA,tumor_normal,dna,esvee_dir,,/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/esvee/
+KQ0205_full_deepsomatic_substituted,KQ0205,KQ0205-DNA,tumor,dna,virusinterpreter_dir,,/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/virusinterpreter/

@@ -1,0 +1,17 @@
+{
+  "case_id": "KQ0205",
+  "source_dir": "/global/project/hpcg6049/somatic_pipeline/wigits-clinical/workflow/sage_compat",
+  "out_dir": "/global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/adapter",
+  "deepsomatic_vcf": "/global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_native_20261110/results/deepsomatic.vcf.gz",
+  "reference_fasta": "/global/project/hpcg6049/somatic_pipeline/data/references/oncoanalyser/3.0.0/genomes/GRCh38_hmf/GRCh38_masked_exclusions_alts_hlas.fasta",
+  "hmf_resources": "/global/project/hpcg6049/somatic_pipeline/data/references/oncoanalyser/3.0.0/hmf_pipeline_resources.38_v3.0.0--8",
+  "tumor_id": "KQ0205-DNA",
+  "normal_id": "KQ0205-gDNA",
+  "tumor_bam": "/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/alignments/KQ0205-DNA/KQ0205-DNA.redux.bam",
+  "normal_bam": "/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/alignments/KQ0205-gDNA/KQ0205-gDNA.redux.bam",
+  "sage_image": "/global/project/hpcg6049/somatic_pipeline/containers/NXF_SINGULARITY_CACHEDIR/quay.io-biocontainers-hmftools-sage-5.0.2--hdfd78af_0.img",
+  "bcftools_image": "/global/project/hpcg6049/somatic_pipeline/containers/NXF_SINGULARITY_CACHEDIR/bcftools-1.22--h3a4d415_1.sif",
+  "native_sage_somatic_vcf": "/global/scratch/hpc6049/wigits_runs/KQ0205_full_native_20261109_onco3.0.0/results/KQ0205_full_native/sage/somatic/KQ0205-DNA.sage.somatic.vcf.gz",
+  "min_mapq": 10,
+  "min_baseq": 20
+}

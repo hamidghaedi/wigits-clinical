@@ -1,0 +1,2 @@
+chromosome	chromosomeBand	gene	transcript	isCanonical	driver	category	likelihoodMethod	reportedStatus	driverLikelihood	missense	nonsense	splice	inframe	frameshift	biallelic	minCopyNumber	maxCopyNumber
+chrX	q21.1	ATRX	ENST00000373344	true	LOH	TSG	DEL	NOT_REPORTED	0.0000	0	0	0	0	0	false	1.5326	1.5326

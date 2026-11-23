@@ -1,0 +1,12 @@
+# 2026-11-13T18:40:07Z Slurm job 12466868 on frnt130.frontenac.local
+# nextflow       version 26.04.4 build 12445 | apptainer version 1.3.5
+# samplesheet sha256: 949afc91ff5087faf165b5af76919d2ea0cbe5d89c0be7d3291ac19640fd42ff
+# reference config: /global/project/hpcg6049/somatic_pipeline/data/references/oncoanalyser/3.0.0/reference_data.config
+# source: nf-core/oncoanalyser
+nextflow run nf-core/oncoanalyser -r 3.0.0 -profile apptainer -c /global/project/hpcg6049/somatic_pipeline/wigits-clinical/workflow/conf/frontenac.config -c /global/project/hpcg6049/somatic_pipeline/wigits-clinical/workflow/conf/frontenac_limits.config -c /global/project/hpcg6049/somatic_pipeline/data/references/oncoanalyser/3.0.0/reference_data.config --mode wgts --genome GRCh38_hmf --input /global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/samplesheet.csv --outdir /global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/results -work-dir /global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/work -resume -c /global/project/hpcg6049/somatic_pipeline/wigits-clinical/workflow/conf/deepsomatic_substituted.config --processes_exclude neo\,sage_visualiser 
+# 2026-11-13T20:04:55Z Slurm job 12467530 on frnt116.frontenac.local
+# nextflow       version 26.04.4 build 12445 | apptainer version 1.3.5
+# samplesheet sha256: 949afc91ff5087faf165b5af76919d2ea0cbe5d89c0be7d3291ac19640fd42ff
+# reference config: /global/project/hpcg6049/somatic_pipeline/data/references/oncoanalyser/3.0.0/reference_data.config
+# source: nf-core/oncoanalyser
+nextflow run nf-core/oncoanalyser -r 3.0.0 -profile apptainer -c /global/project/hpcg6049/somatic_pipeline/wigits-clinical/workflow/conf/frontenac.config -c /global/project/hpcg6049/somatic_pipeline/wigits-clinical/workflow/conf/frontenac_limits.config -c /global/project/hpcg6049/somatic_pipeline/data/references/oncoanalyser/3.0.0/reference_data.config --mode wgts --genome GRCh38_hmf --input /global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/samplesheet.csv --outdir /global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/results -work-dir /global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/work -resume -c /global/project/hpcg6049/somatic_pipeline/wigits-clinical/workflow/conf/deepsomatic_substituted.config --processes_exclude neo\,sage_visualiser 

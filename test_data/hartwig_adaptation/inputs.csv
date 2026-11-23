@@ -1,0 +1,4 @@
+sample_id,analyte,role,preservation,bam
+KQ0205-DNA,DNA,tumour,FFPE,/global/scratch/hpc6049/mohcc_runs/gi_frontenac_20261103/KQ0205/inputs/KQ0205-DNA.analysis_ready.bam
+KQ0205-gDNA,DNA,normal,blood,/global/scratch/hpc6049/mohcc_runs/gi_frontenac_20261103/KQ0205/inputs/KQ0205-gDNA.analysis_ready.bam
+KQ0205-RNA,RNA,tumour,Frozen,/global/scratch/hpc6049/mohcc_runs/rna_runs/QUEEN001/KQ0205-RNA/KQ0205-RNA.analysis_ready.bam

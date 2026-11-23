@@ -1,0 +1,116 @@
+{
+  "version": "0.1.0",
+  "deepsomatic_records_by_filter": {
+    "GERMLINE": 4443224,
+    "NoCall": 1330600,
+    "PASS": 14436,
+    "RefCall": 68374623
+  },
+  "deepsomatic_records_total": 74162883,
+  "ledger_rows": 51318,
+  "dispositions": {
+    "retained_pass": 14436,
+    "dropped_alt_not_in_called_gt": 19,
+    "dropped_nonpass_no_variant_call": 36106,
+    "retained_nonpass_PANEL": 757
+  },
+  "flags": {
+    "retained_with_normal_pileup_alt_support": 6579,
+    "retained_pass_low_alt_support_lt3": 31,
+    "retained_representation_multiallelic_split": 26,
+    "retained_representation_realigned_or_trimmed": 1,
+    "retained_representation_multiallelic_split+realigned_or_trimmed": 2
+  },
+  "retained_total": 15193,
+  "retained_tiers": {
+    "LOW_CONFIDENCE": 5233,
+    "HIGH_CONFIDENCE": 9202,
+    "PANEL": 758
+  },
+  "bulk_classes_note": "RefCall/NoCall records and GERMLINE records outside the SAGE panel/hotspot regions are represented by the FILTER counts only (dropped_nonpass_filter); every PASS record and every non-PASS record inside the panel regions has its own ledger row.",
+  "final_vcf": "/global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/adapter/sage_dir/KQ0205-DNA.sage.somatic.vcf.gz",
+  "validation": {
+    "records": 15193,
+    "problems": [],
+    "declared": {
+      "INFO": [
+        "DS_FILTER",
+        "DS_NAD",
+        "DS_NDP",
+        "DS_ORIGINAL_ALLELE",
+        "MH",
+        "REP_C",
+        "REP_S",
+        "TIER",
+        "TNC"
+      ],
+      "FORMAT": [
+        "AD",
+        "AF",
+        "DP",
+        "GT"
+      ],
+      "FILTER": [
+        "GERMLINE",
+        "PASS"
+      ]
+    },
+    "used": {
+      "INFO": [
+        "DS_FILTER",
+        "DS_NAD",
+        "DS_NDP",
+        "DS_ORIGINAL_ALLELE",
+        "MH",
+        "REP_C",
+        "REP_S",
+        "TIER",
+        "TNC"
+      ],
+      "FORMAT": [
+        "AD",
+        "AF",
+        "DP",
+        "GT"
+      ],
+      "FILTER": [
+        "GERMLINE",
+        "PASS"
+      ]
+    },
+    "samples": [
+      "KQ0205-gDNA",
+      "KQ0205-DNA"
+    ]
+  },
+  "tier_parity_vs_sage": {
+    "intersection": 6459,
+    "tier_agree": 6459,
+    "tier_disagree": 0,
+    "tier_changes": {},
+    "sage_pass_total": 7347,
+    "sage_pass_in_adapter": 1305,
+    "adapter_records": 15193
+  },
+  "purple": {
+    "purple_vcf": "/global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_substituted_20261113/results/KQ0205_full_deepsomatic_substituted/purple/KQ0205-DNA.purple.somatic.vcf.gz",
+    "counts": {
+      "purple_records": 14435,
+      "purple_filter:PONGnomad": 5081,
+      "purple_pass": 6980,
+      "purple_filter:PON": 6614,
+      "adapter_retained_missing_from_purple": 758
+    },
+    "driver_catalog_rows": 1,
+    "drivers": [
+      {
+        "gene": "ATRX",
+        "driver": "LOH",
+        "category": "TSG",
+        "likelihoodMethod": "DEL",
+        "driverLikelihood": "0.0000",
+        "reportedStatus": "NOT_REPORTED"
+      }
+    ]
+  }
+}

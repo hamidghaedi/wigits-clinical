@@ -1,0 +1,12 @@
+{
+  "com/hartwig/hmftools/sage/evidence/ReadContextCounters.java": {
+    "tag": "sage-v5.0.2",
+    "sha256": "44c084ddcf2e6ee09eec86ecbe0c3d0624dc53327d0b3a8765fb03d6e828e371",
+    "url": "https://raw.githubusercontent.com/hartwigmedical/hmftools/sage-v5.0.2/sage/src/main/java/com/hartwig/hmftools/sage/evidence/ReadContextCounters.java"
+  },
+  "com/hartwig/hmftools/sage/pipeline/RegionTask.java": {
+    "tag": "sage-v5.0.2",
+    "sha256": "68dd83c3403079bd3803d2fb050185c04f749cb826b10de879328441998b5b98",
+    "url": "https://raw.githubusercontent.com/hartwigmedical/hmftools/sage-v5.0.2/sage/src/main/java/com/hartwig/hmftools/sage/pipeline/RegionTask.java"
+  }
+}

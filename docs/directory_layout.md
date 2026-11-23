@@ -10,6 +10,13 @@ in step: a change to one is a change to both, in the same commit.
 
 Cluster: Frontenac (CAC, Queen's). Account `hpc6049`, group `hpcg6049`. Verified 2026-10-15.
 
+November23 release consolidation: reviewed source is maintained on `main` and
+published as numbered tags; see [RELEASING.md](RELEASING.md). This promotion
+does not migrate data or change existing packages. The current oncoanalyser
+source/reference roots below are deployed. Temporary release-review worktrees
+can live under `RUN_ROOT/main_promotion_<YYYYMMDD>/source/`; Git history remains
+in the canonical repository and no execution may depend on that temporary tree.
+
 ## 1. Principles
 
 1. **Three tiers, three filesystems.** Versioned text lives in this git repository. Shared, immutable,
@@ -39,6 +46,15 @@ Cluster: Frontenac (CAC, Queen's). Account `hpc6049`, group `hpcg6049`. Verified
 | `RUN_ROOT` | `/global/scratch/hpc6049/wigits_runs` | scratch | **new.** One directory per run (§4). Work dirs, intermediate files, Slurm logs. Regenerable |
 | `RELEASE_ROOT` | `${PIPELINE_ROOT}/wigits_releases` | project | **new.** Durable copy of what a finished run produced that we keep: ORANGE JSON/PDF, clinical-layer outputs, provenance. No BAM/CRAM |
 | `SOFTWARE_ROOT` | `${PIPELINE_ROOT}/software` | project | **new, reserved.** Pinned checkouts of external pipelines (§5) |
+| `ONCO_SOURCE_DIR` | `${SOFTWARE_ROOT}/oncoanalyser/3.0.0-qlmp.2.2` | project | Tagged ORANGE source-value corrections; native analytical code and eligibility retained |
+
+`ONCO_SOURCE_VERSION=3.0.0-qlmp.2.2` and `ONCO_REFERENCE_VERSION=3.0.0`
+distinguish the source-value reporting corrections from the native reference
+bundle. New site packages use this display-only release. An explicit
+`ONCO_SOURCE=nf-core/oncoanalyser` retains the upstream control. Frozen packages
+and prior executions retain their recorded source. The earlier `3.0.0-qlmp.1`
+QC-failure eligibility experiment remains separately selected by its exact path.
+See [source-value mapping](ORANGE_SOURCE_VALUES.md).
 
 Agent scratch (`/global/home/hpc6049/.claude-science-scratch`, `/global/scratch/hpc6049/.claude-science-scratch`)
 is harness-internal: per-job wrappers and logs for jobs an assistant submitted. Nothing we rely on lives there.
@@ -65,12 +81,14 @@ data/references/oncoanalyser/
 
 Rules: populated once by `--mode prepare_reference` (or verified manual download), then read-only
 (`chmod -R a-w`). Never symlinked from a run `work/` directory. The older
-`${REF_ROOT}/hmf_pipeline_resources.38_v2.3.0--2/` belongs to `dnaseq_nf` (AMBER/COBALT/PURPLE 4.x) and
-is not an oncoanalyser 3.0.0 input; it stays where it is.
+`${REF_ROOT}/hmf_pipeline_resources.38_v2.3.0--2/` is retired and was deleted
+under the owner's November13 instruction. Do not recreate it or aliases to it.
+Historical results retain their recorded version identities.
 
-Current state (2026-10-15): the 3.0.0 set exists only inside the smoke-test work dir
-(`/global/scratch/hpc6049/oncoanalyser/test_3.0.0/work/`). Staging it into `ONCO_REF_DIR` is the next
-step; until then that work dir must not be deleted.
+Current state (November23): the3.0.0 reference set is staged under
+`${REF_ROOT}/oncoanalyser/3.0.0/` and used by completed native runs. The October
+smoke-test work directory is not the current reference authority. Historical
+work-directory cleanup still needs its own custody/consumer evidence.
 
 ## 4. Runs — `RUN_ROOT` and `RELEASE_ROOT`
 
@@ -87,6 +105,14 @@ step; until then that work dir must not be deleted.
 `<run_id>` = `<label>_<YYYYMMDD>_onco<version>`, e.g. `test_20261014_onco3.0.0`,
 `KQ0315_20261101_onco3.0.0`. `<label>` is a case id, cohort name or `test`.
 
+Bounded component experiments also live under the existing `RUN_ROOT`, using
+`<case>_<component>_<YYYYMMDD>/`. They hold explicit input JSON, a frozen
+`package_v<version>/`, source hashes, submission JSON, logs and separate result
+subdirectories for each tested version. They do not masquerade as complete
+oncoanalyser runs or publish to `RELEASE_ROOT`. The November 11 DeepSomatic
+distributed and adapter experiments follow this convention; see
+`DEEPSOMATIC_DISTRIBUTED_TEST.md`. No root variable or shared asset is changed.
+
 Scratch is volatile. Anything a run produced that must outlive it is copied to
 `${RELEASE_ROOT}/<run_id>/` together with `samplesheet.csv`, `launch.sh`, `pipeline_info/` and a
 `RELEASE.md` naming the oncoanalyser version, pipeline commit, reference directory and container cache
@@ -97,18 +123,24 @@ is the legacy location of `test_20261014_onco3.0.0` and is retired once §3 stag
 
 ## 5. Software — `SOFTWARE_ROOT`
 
-Today the oncoanalyser clone lives in `~/.nextflow/assets/` because `nextflow pull` put it there. That is
-a user home directory and violates principle 3. Target state:
+The current default uses the versioned source checkout selected in
+`frontenac_paths.env`:
 
 ```
 software/
-  nf-core-oncoanalyser/
-    3.0.0/        git checkout of tag 3.0.0 (commit 7c74c87a43)
+  oncoanalyser/
+    3.0.0-qlmp.2.2/   commit 05b8ec3ac953248d1f025528f03fe647c6f8ce30
+  wigits-clinical/
+    <component-release>/   existing frozen operational component checkouts
 ```
 
-with the launcher calling `nextflow run ${SOFTWARE_ROOT}/nf-core-oncoanalyser/3.0.0 ...` so a run never
-depends on network access to GitHub or on one user's home. Nextflow itself and Apptainer come from
-cluster modules (`nextflow/26.04.4`, `apptainer/1.3.5`), recorded in `VERSIONS.md` once it exists.
+The launcher calls that exact local source, derived from pinned upstream3.0.0
+(`7c74c87a43749952b38c9a18915947570f0595a0`). Explicit
+`ONCO_SOURCE=nf-core/oncoanalyser` selects an upstream control; that is not
+the installed-source default. Existing attempts retain their recorded source.
+Nextflow and Apptainer use the site modules in [`VERSIONS.md`](../VERSIONS.md).
+Upstream updates create new versioned source directories rather than editing
+the selected checkout in place.
 
 ## 6. In this repository
 

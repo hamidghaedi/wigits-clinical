@@ -15,6 +15,14 @@
 set -eo pipefail   # -u only after the cvmfs profile is sourced (it reads unset SKIP_CC_CVMFS)
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ ! -f "$HERE/conf/frontenac_paths.env" ]]; then
+    # sbatch copies this script to its spool; configuration stays in the checkout.
+    HERE="${WIGITS_WORKFLOW_DIR:-${SLURM_SUBMIT_DIR:?submit from the repository root}/workflow}"
+fi
+[[ -f "$HERE/conf/frontenac_paths.env" ]] || {
+    echo "workflow configuration not found in $HERE; set WIGITS_WORKFLOW_DIR" >&2
+    exit 2
+}
 source "$HERE/conf/frontenac_paths.env"
 source /cvmfs/soft.computecanada.ca/config/profile/bash.sh
 module load "$NEXTFLOW_MODULE" "$APPTAINER_MODULE"
@@ -23,8 +31,10 @@ set -u
 RUN_ID="${1:?usage: $0 <run_id> <samplesheet.csv> [extra args]}"
 SAMPLESHEET="$(readlink -f "${2:?usage: $0 <run_id> <samplesheet.csv> [extra args]}")"
 shift 2
-ONCO_REV="${ONCO_REV:-3.0.0}"
-REF_CONFIG="${REF_CONFIG:-$ONCO_REF_ROOT/$ONCO_REV/reference_data.config}"
+ONCO_REV="${ONCO_REV:-$ONCO_REFERENCE_VERSION}"
+ONCO_SOURCE="${ONCO_SOURCE:-$ONCO_SOURCE_DIR}"
+ONCO_GENOME="${ONCO_GENOME:-GRCh38_hmf}"
+REF_CONFIG="${REF_CONFIG:-$ONCO_REF_ROOT/$ONCO_REFERENCE_VERSION/reference_data.config}"
 RUN_DIR="$RUN_ROOT/$RUN_ID"
 
 export NXF_SINGULARITY_CACHEDIR="$CONTAINER_DIR"
@@ -39,12 +49,17 @@ cd "$RUN_DIR"
 cp -f "$SAMPLESHEET" samplesheet.csv
 [ -f "$REF_CONFIG" ] || { echo "reference config not found: $REF_CONFIG" >&2; exit 2; }
 
-CMD=(nextflow run nf-core/oncoanalyser -r "$ONCO_REV"
-     -profile apptainer
+if [[ "$ONCO_SOURCE" == nf-core/oncoanalyser ]]; then
+    CMD=(nextflow run "$ONCO_SOURCE" -r "$ONCO_REV")
+else
+    [[ -f "$ONCO_SOURCE/main.nf" ]] || { echo "pipeline source not found: $ONCO_SOURCE" >&2; exit 2; }
+    CMD=(nextflow run "$ONCO_SOURCE")
+fi
+CMD+=(-profile apptainer
      -c "$HERE/conf/frontenac.config"
      -c "$HERE/conf/frontenac_limits.config"
      -c "$REF_CONFIG"
-     --mode wgts --genome GRCh38_hmf
+     --mode wgts --genome "$ONCO_GENOME"
      --input "$RUN_DIR/samplesheet.csv"
      --outdir "$RUN_DIR/results"
      -work-dir "$RUN_DIR/work"
@@ -54,10 +69,17 @@ CMD=(nextflow run nf-core/oncoanalyser -r "$ONCO_REV"
   echo "# nextflow $(nextflow -version 2>/dev/null | grep -i version) | $(apptainer --version)";
   echo "# samplesheet sha256: $(sha256sum samplesheet.csv | cut -d' ' -f1)";
   echo "# reference config: $REF_CONFIG";
+  echo "# source: $ONCO_SOURCE";
+  if [[ -d "$ONCO_SOURCE/.git" || -f "$ONCO_SOURCE/.git" ]]; then
+      echo "# source commit: $(git -C "$ONCO_SOURCE" rev-parse HEAD)";
+  fi;
   printf '%q ' "${CMD[@]}"; echo; } | tee -a launch.sh
 
-"${CMD[@]}"
-status=$?
+status=0
+"${CMD[@]}" || status=$?
 echo "nextflow exit=$status"
 cp -f .nextflow.log "logs/nextflow_head_$(date -u +%Y%m%dT%H%M%SZ).log" 2>/dev/null || true
+# Reporting observes accounting only; its failure never changes the native exit.
+python3 "$HERE/report_resources.py" --run-dir "$RUN_DIR" \
+    ${SLURM_JOB_ID:+--job-id "$SLURM_JOB_ID"} || echo 'Resource report could not be written; native exit preserved' >&2
 exit $status

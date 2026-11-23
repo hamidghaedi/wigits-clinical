@@ -1,0 +1,13 @@
+QCStatus	WARN_DELETED_GENES,WARN_HIGH_COPY_NUMBER_NOISE
+Method	NORMAL
+CopyNumberSegments	1307
+UnsupportedCopyNumberSegments	911
+Purity	0.2500
+AmberGender	MALE
+CobaltGender	MALE
+DeletedGenes	649
+Contamination	0.0080
+GermlineAberrations	NONE
+AmberMeanDepth	122
+LohPercent	0.0010
+TincLevel	0.0000

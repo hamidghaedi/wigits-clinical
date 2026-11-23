@@ -1,0 +1,184 @@
+# Replace the somatic call producer, preserve native downstream tools
+
+Owner direction,10 November2026. Development branch: `hartwig_adoptation`.
+This is an isolated experiment, not a default caller change or a report release.
+Both full native KQ0205 workflows keep running unchanged.
+
+**November 11 execution update:** the owner approved the distributed example
+test and measured-count/native-annotation adapter development while preserving
+all downstream features. See [current experiment](DEEPSOMATIC_DISTRIBUTED_TEST.md)
+and its execution evidence. The earlier draft wiring contract's feature-disabling
+and synthetic-context suggestions are not adopted. Full-feature substitution
+remains unproven until genuine read context/phasing and all consumers work.
+
+## Smallest boundary
+
+```mermaid
+flowchart TD
+    A[Native FASTQ alignment and full REDUX] --> B[Same tumour and normal BAMs]
+    B --> C[Google DeepSomatic1.10 FFPE_WGS]
+    C --> D[Paired evidence and native genomic-context adapter]
+    D --> E[Native PAVE1.9]
+    E --> F[Native PURPLE4.4 and downstream consumers]
+    G[Unchanged AMBER, COBALT, ESVEE and germline inputs] --> F
+```
+
+Only **SAGE_SOMATIC's variant-discovery output** is proposed for replacement.
+SAGE_GERMLINE remains native. PAVE, PURPLE, structural calling, RNA and other
+native branches retain their tools, references and resource bundle. DeepSomatic
+does not replace SAGE with a differently named SAGE file alone.
+
+Native source: nf-core/oncoanalyser3.0.0,
+`7c74c87a43749952b38c9a18915947570f0595a0`:
+
+- `subworkflows/local/sage_calling/main.nf`: `SAGE_DIR_TUMOR` skips somatic
+  discovery independently of germline discovery.
+- `subworkflows/local/pave_annotation/main.nf`: resolves the compatibility
+  filename `<tumour>.sage.somatic.vcf.gz` and passes it as generic `-input_vcf`
+  to `modules/local/pave/somatic/main.nf`. PAVE1.9 remains the annotator.
+- `subworkflows/local/orange_reporting/main.nf`: requires a somatic SAGE
+  directory as well as PURPLE and other native products. A valid VCF is not
+  proof that every SAGE side file exists or is meaningful for a new caller.
+- `modules/local/sage/append/main.nf`: native append measures additional
+  samples, normally RNA after PURPLE. Its ability to accept a DeepSomatic VCF
+  and preserve caller tumour fields is not yet established; do not assume it
+  can replace the previously tested paired-count adapter.
+
+## Reuse established work, verify the new version boundary
+
+The November9 experiment already prepared actual paired DeepSomatic counts,
+native SAGE ReferenceData tiers/hotspots and native reference-repeat context,
+then ran PAVE1.9/PURPLE4.3 on three GI cases. Corrected native-reference inputs
+gave4207/5198/4783 fitting variants. That is useful prior evidence, not an
+end-to-end Oncoanalyser3.0/PURPLE4.4 demonstration.
+
+Reference and source:
+`somatic_pipeline_sm/docs/qc/gi_esvee_comparison_20261109/HARTWIG_NF_IMPORT_REVIEW.md`;
+`../dnaseq_nf-purple-adapter-20261109/research/purple_adapter/`, component0.6.1,
+`7093033`. Read-only reuse/review; no modification of that scientific checkout.
+Do not import its old2.3.0 process definitions into this3.0.0 experiment.
+
+| Dependency | Handling |
+|---|---|
+| Matched reference/BAMs | Use the new full FASTQ route's REDUX tumour/normal and exact HMF masked FASTA; old d1.vd1 callsets cannot stand in for this caller comparison. |
+| FFPE caller | Existing official Google1.10.0 GPU image, `--model_type=FFPE_WGS`; no Parabricks engine substitution. |
+| Normal evidence | Raw caller output has one tumour sample, but the completed Google1.10 test also emits NDP/NAD/NAF normal evidence. Preserve those fields and verify their semantics before deciding whether additional measurement is needed; never synthesize clean0/0. |
+| Region/hotspot/repeat annotations | Reuse native5.0.2 helper logic with the current3.0 bundle. No blanket tier, zero repeat, or invented phasing/read-context values. |
+| DeepSomatic FILTER/GT/AD/DP/VAF | Preserve raw output. A downstream accepted-somatic view can select real PASS/non-reference calls; never convert non-PASS calls to PASS. |
+| PAVE population/PON/effects | Use real current native resources and preserve its actual added filters. Earlier no-filter experimental flags are not silently transferred. |
+| Germline calls | Keep native SAGE germline; normal counts at somatic loci are not a germline callset. |
+| TINC, coverage, phasing and report side files | Inventory exact native reader requirements before full substitution. Do not fabricate SAGE outputs, assume absent TINC means measured zero, or use a SAGE control's caller-dependent metric as a DeepSomatic result. |
+| REDUX preprocessing/model domain | Preserve native REDUX for this surgical comparison. Software completion does not establish that the FFPE model's accuracy is unchanged on consensus/unmapped REDUX reads; compare callsets and appropriate truth material separately. |
+
+## First actual caller test
+
+Additional exact-reader review: SAGE5.0.2 (`ae912dbe0dcb27627a9d2d45e735e77d9a7c0368`),
+PURPLE4.4 (`99290c0cadb723d1786ec8026bc7c7c74b446d75`) and ORANGE5.0.1
+(`5fb9c98d488eb8f2daabe550b3a1b51f0f7d8cd1`) sources are recorded externally
+under `source/refs.json`.
+
+- `SageAppendApplication.validateInputHeader` requires a prior SAGE version;
+  `RegionAppendTask` reconstructs SAGE read context through
+  `CandidateSerialisation`. Native append is **not** a drop-in normal-count
+  annotator for a raw DeepSomatic VCF. Do not fake a SAGE header to bypass it.
+- `SomaticPurityFitter.isFittingCandidate` in4.4 still needs real tiers,
+  population/repeat/mappability and normal evidence. Its frequency exceptions
+  include hotspot/panel cases; do not copy4.3 fitting counts/rules as4.4 results.
+- The ORANGE5.0.1 config accepts `sage_dir` arguments, but inspecting its config
+  and main algorithm has not established that all earlier-mentioned coverage
+  side files are required. Distinguish the Nextflow directory guard from actual
+  reader use; the remaining consumer inventory is pending, not a proven failure.
+
+Maintained entry: `workflow/test_deepsomatic.py` with
+`workflow/test_deepsomatic.sbatch`, component0.1.0. It runs Google's official
+`run_deepsomatic` directly on explicit paths, preserving all output FILTERs.
+No new environment, image download, alignment or original-BAM modification.
+
+The first test calls20Mb: chr17:1–10000000 and chr19:1–10000000, using the **full
+FASTQ run's** completed REDUX BAMs with indexed regional reads. It is not a
+downsampled BAM or a whole-genome caller result. The bounded scope uses16 CPUs,
+128GiB, one GPU and4h. Twenty Mb is about0.6% of a human genome; compressed
+whole-BAM bytes are recorded as context, not misrepresented as measured regional
+read counts. These are conservative small-test limits, not full-WGS sizing.
+Future whole-genome example preparation must be input-sized and use64 CPUs on
+CPU nodes, with GPU inference allocated separately if eligible GPU hardware
+cannot supply64 CPUs.
+
+The GPU mask is passed explicitly through Apptainer's clean environment.
+Postprocessing is bounded to allocated CPUs and3times as many partitions.
+`execution.json` records inputs, model, exact command, Slurm ID, exit code and
+raw VCF sample/FILTER/FORMAT/INFO summaries. A valid zero-call result remains
+a valid observation. No report, annotation adapter or native rerun is triggered.
+
+Execution root:
+`/global/scratch/hpc6049/wigits_runs/deepsomatic_seam_20261110/`.
+Exact issued source, input JSON and scheduler evidence are external. Completion
+and downstream compatibility are recorded in the results note.
+
+## Whole-genome execution (owner correction, 10 November)
+
+The owner requested the full caller run. The earlier20Mb restriction was an
+executor scope error, not an owner-requested substitute. It completed successfully
+(12446769,53m37s,183 PASS records, confirmed GPU inference), but is only a pilot.
+
+`workflow/deepsomatic_full.py` and `workflow/deepsomatic_full.sbatch`, component
+**0.2.1**, now run the whole-genome caller on those same full FASTQ-run REDUX
+BAMs. There is **no --regions argument, downsampling or new alignment**.
+Google's own `run_deepsomatic --dry_run` generates the three native commands;
+we execute them unchanged in separate dependent Slurm allocations. Native model
+defaults other than the explicit GPU inference batch size, intermediate filenames
+and original FILTER values remain intact. Both whole-genome and bounded launchers
+pass `--call_variants_extra_args=batch_size=256` to the Google runner. Keep this
+fixed setting for future runs: the native1024 default previously exhausted A30
+memory;256 is the established local setting, not an input-size heuristic.
+
+| Stage | CPUs | Memory | Initial walltime limit | Job |
+|---|---:|---:|---:|---|
+| Example preparation |64|256GiB|60h|12447879|
+| GPU inference |16 +1GPU|128GiB|72h|12447880|
+| Postprocessing |64|256GiB|12h|12447881|
+
+Resource sizing records433,692,554,748 paired BAM bytes and3,217,352,303 FASTA
+bases. The function scales the measured20Mb stage times by reference length,
+uses estimated4x CPU scaling from16 to64 threads for preparation/postprocessing,
+adds a2x uncertainty margin, and rounds up to12-hour limits. These are conservative
+allocation estimates, **not validated whole-genome completion predictions**.
+CPU memory has a256GiB floor with128GiB increments per400GiB paired BAM workload;
+inference retains128GiB. BAM bytes are a workload proxy, not a fitted memory model.
+The scheduler accepted these requests using automatic partition routing after
+rejecting explicit partition selection. Dependencies use afterok and cancel if
+the preceding job fails; no automatic whole-run retry or source mutation.
+
+External execution package:
+`/global/scratch/hpc6049/wigits_runs/KQ0205_full_deepsomatic_native_20261110/`.
+`case.json`, `resources.json`, `package_v0.2.0/release.json` and `submission.json`
+record the exact inputs, allocation basis, source fingerprints and job commands.
+Results go in `results/`, with separate commands/logs/execution records per stage.
+This executes the full caller; native downstream substitution remains pending.
+
+On11 November, before inference started, the owner authorized batch256 for this
+already-running execution. Only `results/commands.json`'s inference command was
+updated, with its original saved as `commands.before_batch256.json` and the
+change recorded in `batch256_update.json` at the run root. Job12447880 was briefly
+held while pending, then released with its original afterok dependency. All three
+job IDs, original v0.2.0 package, example preparation, intermediates and
+postprocessing command are preserved. No example regeneration is required.
+
+## Remaining increments
+
+1. Confirm the official model runs on these native-reference REDUX BAMs and
+   record observed GPU use and raw output contract.
+2. Apply the established paired/context adapter using current resources;
+   prove tumour payload preservation and real normal counts.
+3. Run native PAVE1.9/PURPLE4.4 in a separate directory, reusing unchanged
+   native AMBER/COBALT/ESVEE and germline products. First reproduce the same
+   native control with current versions, then change only somatic VCF input.
+4. Resolve every SAGE side-output consumer through real measurements or an
+   explicit supported absence. Do not silently disable branches to claim success.
+5. Only after the comparison, add an optional caller selector at this single
+   boundary and perform full-scope integration tests. SAGE stays the default
+   until an explicit adoption decision. Caller concordance is not clinical
+   validation or evidence of identical sensitivity.
+
+Primary Google source: [DeepSomatic1.10 runner](https://github.com/google/deepvariant/blob/r1.10/scripts/run_deepsomatic.py)
+and [FFPE paired-WGS example](https://github.com/google/deepsomatic/blob/r1.10/docs/deepsomatic-case-study-ffpe-wgs.md).
