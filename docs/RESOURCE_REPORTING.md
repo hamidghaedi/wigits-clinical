@@ -1,6 +1,6 @@
 # Resource-use reporting
 
-Reporter release: **resource-report/v0.2.0**. Source:
+Reporter release: **resource-report/v0.2.1**. Source:
 `workflow/report_resources.py`. Python standard library only; no installation,
 analysis rerun or additional compute allocation is required.
 
@@ -20,6 +20,12 @@ Default outputs under `<run>/results/pipeline_info/resource_usage/`:
 - `resource_usage.html`: standalone readable summary, per-stage totals and job table.
 - `sacct.psv`: parent and step accounting used in that snapshot.
 - `sstat.psv`: provisional live batch measurements where available.
+- `case_timing.json`: scientific-task window and non-overlapping active,
+  queue-only and other intervals across all discovered attempts; null if the
+  scientific snapshot lacks submit/end times. Head/controller jobs do not
+  count as analysis activity. This is not clinical turnaround or an estimate
+  of what the pipeline would take with zero queue waits. Earlier cancelled,
+  replaced and failed attempts are included, with originals preserved.
 
 Re-run the same command to refresh these report files. It does not read BAM or
 FASTQ contents. Job discovery uses native trace/log submissions, bounded

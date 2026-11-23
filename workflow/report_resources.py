@@ -18,7 +18,7 @@ import statistics
 import subprocess
 from zoneinfo import ZoneInfo
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 FIELDS = ['cluster','job_id','kind','step','task','attempt','state','exit_code',
           'allocated_cpus','allocated_memory_gib','elapsed_seconds','cpu_seconds',
           'average_busy_cpus','cpu_use_percent','cpu_measurement','allocated_core_hours',
@@ -42,6 +42,64 @@ def duration(value):
         return 'Unavailable'
     value = round(float(value))
     return f'{value//3600}:{value%3600//60:02d}:{value%60:02d}'
+
+
+def case_timing(rows, accounting):
+    """Union of scientific-task intervals; controllers are not analysis activity.
+
+    Include failed/cancelled attempts. A queued interval ends at start or at
+    cancellation when it never started. The resulting window is not clinical
+    turnaround or a counterfactual critical path. A terminal complete snapshot
+    is required: missing submit/end times return unavailable rather than a
+    misleading short window. No new scheduler query or workflow change.
+    """
+    scientific = {r['job_id'] for r in rows if r['kind'] == 'workflow_task'}
+    parents = {r['JobIDRaw']: r for r in accounting if r['JobIDRaw'] in scientific}
+    if not scientific or set(parents) != scientific:
+        return None
+    parsed = []
+    for job in scientific:
+        p = parents[job]
+        def stamp(field):
+            try:
+                return datetime.fromisoformat(p[field])
+            except (KeyError, TypeError, ValueError):
+                return None
+        submit, eligible, start, end = (stamp(f) for f in ('Submit','Eligible','Start','End'))
+        if submit is None or end is None or end < submit:
+            return None
+        parsed.append((submit, eligible, start, end, float(p.get('ElapsedRaw') or 0)))
+    lo = min(p[0] for p in parsed)
+    hi = max(p[3] for p in parsed)
+    events = collections.defaultdict(lambda: [0, 0])
+    events[lo]; events[hi]
+    for submit, eligible, start, end, elapsed in parsed:
+        if start and lo <= start < end <= hi and elapsed > 0:
+            events[start][0] += 1
+            events[end][0] -= 1
+        pending_end = start or end
+        if eligible and lo <= eligible < pending_end <= hi:
+            events[eligible][1] += 1
+            events[pending_end][1] -= 1
+    running = pending = 0
+    last = lo
+    active = queued_only = other = 0
+    for stamp in sorted(events):
+        span = (stamp - last).total_seconds()
+        if running > 0:
+            active += span
+        elif pending > 0:
+            queued_only += span
+        else:
+            other += span
+        running += events[stamp][0]
+        pending += events[stamp][1]
+        last = stamp
+    return dict(first_submit=lo.isoformat(), last_end=hi.isoformat(),
+                scientific_attempts=len(scientific), window_seconds=(hi-lo).total_seconds(),
+                any_analysis_running_seconds=active,
+                no_analysis_running_while_eligible_pending_seconds=queued_only,
+                neither_running_nor_eligible_pending_seconds=other)
 
 
 def seconds(value):
@@ -290,6 +348,8 @@ def main():
     output.mkdir(parents=True,exist_ok=True)
     (output/'sacct.psv').write_text(accounting)
     (output/'sstat.psv').write_text(live)
+    timing = case_timing(rows, parsed)
+    (output/'case_timing.json').write_text(json.dumps(timing, indent=2)+'\n')
     with (output/'resource_usage.csv').open('w',newline='') as handle:
         writer = csv.DictWriter(handle,fieldnames=FIELDS,lineterminator='\n')
         writer.writeheader();writer.writerows(rows)

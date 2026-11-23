@@ -76,6 +76,28 @@ class ResourceReportTests(unittest.TestCase):
         self.assertIn('0:00:20',rendered)
         self.assertIn('Parallel job waits overlap',rendered)
 
+    def test_case_timing_uses_interval_union_not_sum_of_parallel_waits(self):
+        a=parent(job='101',elapsed='60')
+        a.update(Submit='2026-01-01T00:00:00',Eligible='2026-01-01T00:00:00',
+                 Start='2026-01-01T00:01:00',End='2026-01-01T00:02:00')
+        b={**a,'JobIDRaw':'102'}
+        c={**a,'JobIDRaw':'103','State':'CANCELLED','ElapsedRaw':'0',
+           'Start':'Unknown','End':'2026-01-01T00:01:30'}
+        head={**a,'JobIDRaw':'104','Start':a['Submit']}
+        rows=[{'job_id':j,'kind':'workflow_task'} for j in ['101','102','103']]
+        rows.append({'job_id':'104','kind':'support'})
+        result=report.case_timing(rows,[a,b,c,head])
+        self.assertEqual(result['window_seconds'],120)
+        self.assertEqual(result['any_analysis_running_seconds'],60)
+        self.assertEqual(result['no_analysis_running_while_eligible_pending_seconds'],60)
+        self.assertEqual(result['scientific_attempts'],3)
+
+    def test_case_timing_missing_end_is_unavailable(self):
+        p=parent()
+        rows=[{'job_id':'101','kind':'workflow_task'}]
+        self.assertIsNone(report.case_timing(rows,[p]))
+        self.assertIsNone(report.case_timing(rows,[]))
+
     def test_parent_not_added_to_steps_and_memory_uses_batch(self):
         p=parent()
         batch={**p,'JobIDRaw':'101.batch','MaxRSS':'12G'}
