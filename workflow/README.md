@@ -1,5 +1,13 @@
 # workflow
 
+Current repository release: [v0.1.0](../docs/releases/v0.1.0.md), maintained on
+`main`. Production uses the frozen-package `run_full_native.sbatch` entry and
+its generated resource config. The lower-level launcher and its historical
+32-CPU ceiling are not a substitute for that input-adjusted entry. New BWA
+tasks retain64CPUs; memory and walltime use each actual lane pair. See
+[lane sizing](../docs/LANE_RESOURCE_SIZING.md) and [version bindings](../VERSIONS.md).
+No defaults or deployed run packages change in this source consolidation.
+
 RNA duplicate marking uses [the documented optical-comparison policy](../docs/RNA_DUPLICATE_MARKING.md)
 in `rna-duplicates/v0.1.0`. The full-input entry loads its shared config; existing
 failed stages can use `prepare_run_recovery.py --route rna` to preserve the
@@ -21,7 +29,8 @@ Full-size native runs use [the input-adjusted execution entry](../docs/FULL_NATI
 `run_full_native.sbatch`, with a frozen package and the already staged FASTQ
 lane samplesheet. It generates initial resources before launching stock Oncoanalyser,
 including64-core heavy CPU tasks, and overrides the historical32-core ceiling.
-The model is a conservative first-full-case extrapolation pending runtime evidence.
+The current input-v4 policy uses documented completed-lane observations and
+conservative margins. Broader workload-dependent runtime validation remains open.
 
 The [SEQC2 FFPE comparison](../docs/SEQC2_FFPE_COMPARISON_20261111.md) uses
 `run_reference_native.sbatch` for its full native control, followed by

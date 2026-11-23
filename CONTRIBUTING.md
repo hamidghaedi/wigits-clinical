@@ -6,12 +6,18 @@ How work moves through this repository.
 
 `main` holds reviewed work only. Everything else happens on a branch named for what it does, for example `docs/clinical-layer`, `evidence/serve-directory`, `reporter/qc-fail-templates`. Branches merge to `main` through a pull request.
 
-For the ongoing Hartwig adaptation, the canonical development branch is
-**`hartwig_adoptation` in this repository**. It consolidates the earlier native
-BAM, full-input resource and ORANGE experiment branch histories. New related
-work is committed here. `dna-seq-nf` has a separate branch with the same name;
-that repository owns changes to its own DNA workflow, not this native
-Oncoanalyser launcher. Published tags and frozen runtime packages remain intact.
+**Owner direction November23: `main` is the maintained integration branch.**
+The work consolidated in `hartwig_adoptation` is promoted through a pull request;
+that branch remains historical rather than the default destination for new work.
+Use short-lived branches from current `main` (for example
+`codex/update-oncoanalyser-X.Y.Z`), run the relevant tests, and merge through a
+pull request. Preserve existing commit history; do not rebase or force-push
+published releases. A sibling DNA repository owns its own workflow and releases.
+
+Production packages use numbered tags or exact commits, not the moving `main`
+branch. Experimental DeepSomatic/BAM/QC-renderer paths remain explicitly selected;
+merging their source does not enable them. See [release and upstream update
+procedure](docs/RELEASING.md), [VERSION](VERSION) and [VERSIONS.md](VERSIONS.md).
 
 ## Where things are tested
 
@@ -33,4 +39,8 @@ When you find something missing, discontinued or private, add a row to `docs/gap
 
 ## Versions
 
-Every tool version this project depends on is pinned in `VERSIONS.md` once that file exists. Until then, state versions in the document or pull request that relies on them.
+`VERSION` identifies the repository-wide release. `VERSIONS.md` records its
+upstream, local-source, reference and maintained component bindings. Existing
+component tags retain their independent versions. Every execution package must
+record the actual selected source/commit, containers, resource version and panel
+hash; optional experiments retain their own explicit inputs and bindings.

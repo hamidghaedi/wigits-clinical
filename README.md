@@ -8,11 +8,19 @@ Hartwig's WiGiTS tools (PURPLE, LINX, SAGE, ORANGE and the rest) are open source
 
 ## What is here now
 
-The canonical development branch is **`hartwig_adoptation`**. Current working
-code launches unmodified nf-core/oncoanalyser3.0.0 on Frontenac, using either
-original FASTQs and the native HMF reference or existing BAMs and their custom
-reference. It provides input-adjusted resources and read-only efficiency
-reports. The clinical layers described below remain proposed work.
+The maintained branch is **`main`**; the first consolidated repository release
+is **v0.1.0**. Production uses a numbered release or exact commit. The previous
+`hartwig_adoptation` development history is retained in this baseline. New work
+uses short-lived branches and pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The implemented workflow launches nf-core/oncoanalyser 3.0.0's native Hartwig
+analytical stack on Frontenac. The default installed source is
+`3.0.0-qlmp.2.2`, with the documented ORANGE source-value corrections; it is
+not described as byte-identical upstream source. It provides native original-
+FASTQ execution, input-adjusted resources, read-only QC and efficiency reports.
+Existing-BAM intake, DeepSomatic substitution and the QC-failed renderer are
+separately selected routes/experiments. Their source being present does not
+change the native default. The clinical layers described below remain proposed.
 
 For new routine work, the owner selected native Oncoanalyser for fresh-frozen
 tumours. FFPE routing remains an open decision. See
@@ -38,6 +46,8 @@ here; see [the migration record](docs/migrations/DNA_HARTWIG_ADOPTATION_20261110
 | `docs/DEEPSOMATIC_SUBSTITUTION.md` | Isolated Google caller test and the minimal somatic-VCF substitution boundary; native defaults unchanged. |
 | `docs/DEEPSOMATIC_DISTRIBUTED_TEST.md` | Two-node example-generation benchmark, measured-count/native-annotation adapter and genuine SAGE context probe. |
 | `CONTRIBUTING.md` | How work moves between this repository and the HPC side where testing happens. |
+| `VERSIONS.md` | Current repository release, upstream/source/resource bindings and component tags. |
+| `docs/RELEASING.md` | How reviewed changes reach main, and how an upstream Oncoanalyser update becomes a new tested release. |
 
 ## Intended shape
 
@@ -47,8 +57,14 @@ Three parts, in the order they will be built.
 2. **Interpretation layer.** A ROSE-style rules table and a germline consent model, both versioned in this repository.
 3. **Reporting layer.** A reporter that reads the ORANGE JSON plus the two layers above and writes a PDF and a JSON record, including the QC-fail report variants.
 
-All three sit downstream of oncoanalyser and never modify it. A thin Nextflow wrapper in `workflow/` will run oncoanalyser and then the three layers.
+These proposed clinical layers sit downstream of oncoanalyser. They are not
+implemented or enabled by this release. Existing ORANGE source corrections and
+explicit experimental patches are documented separately in `workflow/`.
 
 ## Status
 
-Documentation only. See `docs/gap_register.md` for what is open.
+Native execution and the listed operational tools are implemented and have
+recorded tests/runs. This is a research workflow release, not clinical assay
+validation. See [the v0.1.0 release record](docs/releases/v0.1.0.md) for exact
+scope, checks and limitations, and [the gap register](docs/gap_register.md) for
+unfinished work. Report templates remain owned by the reporting repositories.
