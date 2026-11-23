@@ -41,6 +41,41 @@ class ResourceReportTests(unittest.TestCase):
         self.assertEqual(report.gib('1048576K'),1)
         self.assertIsNone(report.gib(''))
 
+    def test_queue_separates_dependency_hold_from_eligible_wait(self):
+        p=parent()
+        p.update(Submit='2026-01-01T00:00:00',Eligible='2026-01-01T01:00:00',
+                 Start='2026-01-01T01:05:00')
+        row=report.usage_rows({'101':{}},[p],[])[0]
+        self.assertEqual(row['queue_seconds'],300)
+        self.assertEqual(row['pre_eligible_seconds'],3600)
+        self.assertEqual(row['submitted_to_start_seconds'],3900)
+
+    def test_unknown_and_reversed_queue_times_do_not_become_zero(self):
+        p=parent();p.update(Submit='Unknown',Eligible='Unknown')
+        row=report.usage_rows({'101':{}},[p],[])[0]
+        self.assertEqual(row['queue_seconds'],'')
+        self.assertEqual(row['pre_eligible_seconds'],'')
+        self.assertEqual(row['submitted_to_start_seconds'],'')
+        p=parent();p['Start']='2025-12-31T23:00:00'
+        self.assertEqual(report.usage_rows({'101':{}},[p],[])[0]['queue_seconds'],'')
+
+    def test_actual_zero_queue_wait_is_kept(self):
+        p=parent();p.update(Submit=p['Eligible'],Start=p['Eligible'])
+        row=report.usage_rows({'101':{}},[p],[])[0]
+        self.assertEqual(row['queue_seconds'],0)
+        self.assertEqual(row['pre_eligible_seconds'],0)
+        self.assertEqual(report.duration(0),'0:00:00')
+        self.assertEqual(report.duration(''),'Unavailable')
+
+    def test_html_shows_queue_durations_and_overlap_limit(self):
+        p=parent();p['Submit']='2026-01-01T00:00:00'
+        rows=report.usage_rows({'101':{}},[p],[])
+        rendered=report.render(Path('/synthetic'),rows,[],'2026-01-01')
+        self.assertIn('Eligible queue wait',rendered)
+        self.assertIn('Median eligible queue wait',rendered)
+        self.assertIn('0:00:20',rendered)
+        self.assertIn('Parallel job waits overlap',rendered)
+
     def test_parent_not_added_to_steps_and_memory_uses_batch(self):
         p=parent()
         batch={**p,'JobIDRaw':'101.batch','MaxRSS':'12G'}

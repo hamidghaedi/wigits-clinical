@@ -14,17 +14,34 @@ import io
 import json
 from pathlib import Path
 import re
+import statistics
 import subprocess
 from zoneinfo import ZoneInfo
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 FIELDS = ['cluster','job_id','kind','step','task','attempt','state','exit_code',
           'allocated_cpus','allocated_memory_gib','elapsed_seconds','cpu_seconds',
           'average_busy_cpus','cpu_use_percent','cpu_measurement','allocated_core_hours',
           'observed_maxrss_gib','rss_fraction_percent','memory_source','queue_seconds',
           'allocated_gpus','gpu_card_hours','nextflow_cpu_percent','nextflow_peak_rss',
-          'source','notes']
+          'source','notes','pre_eligible_seconds','submitted_to_start_seconds']
 ACTIVE = {'RUNNING','COMPLETING','SUSPENDED'}
+
+
+def interval(row, earlier, later):
+    """Slurm timestamp difference; unknown or reversed timestamps stay unknown."""
+    try:
+        delta = (datetime.fromisoformat(row[later]) - datetime.fromisoformat(row[earlier])).total_seconds()
+        return delta if delta >= 0 else None
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def duration(value):
+    if value in ('', None):
+        return 'Unavailable'
+    value = round(float(value))
+    return f'{value//3600}:{value%3600//60:02d}:{value%60:02d}'
 
 
 def seconds(value):
@@ -164,11 +181,9 @@ def usage_rows(jobs, accounting, live):
         if ':' in stage:
             stage = stage.rsplit(':',1)[-1]
         kind = 'workflow_task' if task.startswith('NFCORE_') or parent.get('JobName','').startswith('nf-') else 'support'
-        queue = None
-        try:
-            queue = (datetime.fromisoformat(parent['Start'])-datetime.fromisoformat(parent['Eligible'])).total_seconds()
-        except (KeyError,ValueError):
-            pass
+        queue = interval(parent, 'Eligible', 'Start')
+        pre_eligible = interval(parent, 'Submit', 'Eligible')
+        submitted_to_start = interval(parent, 'Submit', 'Start')
         values = dict(cluster=parent.get('Cluster',''),job_id=job,kind=kind,step=stage,
             task=task,attempt=details.get('attempt',''),state=state,exit_code=parent.get('ExitCode',''),
             allocated_cpus=cpus or None,allocated_memory_gib=memory,elapsed_seconds=elapsed,
@@ -177,7 +192,8 @@ def usage_rows(jobs, accounting, live):
             observed_maxrss_gib=observed,rss_fraction_percent=100*observed/memory if observed is not None and memory else None,
             memory_source=memory_source,queue_seconds=queue,allocated_gpus=gpu,gpu_card_hours=gpu*elapsed/3600,
             nextflow_cpu_percent=details.get('nextflow_cpu_percent',''),nextflow_peak_rss=details.get('nextflow_peak_rss',''),
-            source=details.get('source',''),notes='; '.join(notes))
+            source=details.get('source',''),notes='; '.join(notes),
+            pre_eligible_seconds=pre_eligible,submitted_to_start_seconds=submitted_to_start)
         result.append({k:('' if v is None else round(v,4) if isinstance(v,float) else v) for k,v in values.items()})
     return result
 
@@ -191,21 +207,27 @@ def render(root, rows, warnings, generated):
     table_columns = [('job_id','Job'),('step','Step'),('state','State'),('allocated_cpus','CPUs'),
         ('average_busy_cpus','Avg busy CPUs'),('cpu_use_percent','CPU use %'),('cpu_measurement','CPU source'),
         ('allocated_memory_gib','RAM GiB'),('observed_maxrss_gib','Observed RSS GiB'),('rss_fraction_percent','RSS / RAM %'),
-        ('elapsed_seconds','Runtime'),('allocated_core_hours','Core-hours'),('notes','Notes')]
+        ('elapsed_seconds','Runtime'),('queue_seconds','Eligible queue wait'),
+        ('pre_eligible_seconds','Before eligibility (dependency / other holds)'),
+        ('submitted_to_start_seconds','Submit to start'),
+        ('allocated_core_hours','Core-hours'),('notes','Notes')]
     table = '<tr>'+''.join('<th>'+label+'</th>' for _,label in table_columns)+'</tr>'
     for row in rows:
-        runtime = int(row['elapsed_seconds'])
-        duration = f'{runtime//3600}:{runtime%3600//60:02d}:{runtime%60:02d}'
-        table += '<tr>'+''.join('<td>'+(duration if key=='elapsed_seconds' else fmt(row[key]))+'</td>' for key,_ in table_columns)+'</tr>'
+        timed = {'elapsed_seconds','queue_seconds','pre_eligible_seconds','submitted_to_start_seconds'}
+        table += '<tr>'+''.join('<td>'+(duration(row[key]) if key in timed else fmt(row[key]))+'</td>' for key,_ in table_columns)+'</tr>'
     stage_rows = collections.defaultdict(list)
     for row in rows:
         stage_rows[row['kind'],row['step']].append(row)
-    stages = '<tr><th>Kind / step</th><th>Jobs</th><th>Completed CPU use %</th><th>Metric coverage</th><th>Core-hours, all attempts</th></tr>'
+    stages = '<tr><th>Kind / step</th><th>Jobs</th><th>Completed CPU use %</th><th>Metric coverage</th><th>Median eligible queue wait</th><th>Maximum eligible queue wait</th><th>Queue coverage</th><th>Core-hours, all attempts</th></tr>'
     for (kind,stage), group in sorted(stage_rows.items()):
         measured = [r for r in group if r in completed]
         denom = sum(r['allocated_cpus']*r['elapsed_seconds'] for r in measured)
         pct = 100*sum(r['cpu_seconds'] for r in measured)/denom if denom else ''
-        stages += '<tr>'+''.join('<td>'+fmt(v)+'</td>' for v in [kind+' / '+stage,len(group),pct,f'{len(measured)}/{len(group)}',sum(r['allocated_core_hours'] for r in group)])+'</tr>'
+        queues = [r['queue_seconds'] for r in group if r['queue_seconds'] != '']
+        stages += '<tr>'+''.join('<td>'+fmt(v)+'</td>' for v in [kind+' / '+stage,len(group),pct,f'{len(measured)}/{len(group)}',
+            duration(statistics.median(queues)) if queues else 'Unavailable',
+            duration(max(queues)) if queues else 'Unavailable',f'{len(queues)}/{len(group)}',
+            sum(r['allocated_core_hours'] for r in group)])+'</tr>'
     warning_text = ''.join('<li>'+esc(v)+'</li>' for v in warnings)
     workload = ''
     plan_path = root/'state/input_resources.json'
@@ -222,6 +244,7 @@ def render(root, rows, warnings, generated):
     return f'''<!doctype html><html lang="en"><meta charset="utf-8"><title>Resource use — {esc(root.name)}</title>
 <style>body{{font:15px system-ui,sans-serif;margin:28px;color:#172b40;background:#f6f8fb}}h1{{font-size:24px}}p{{max-width:1100px;line-height:1.5}}.box{{background:white;padding:16px;margin:15px 0;border:1px solid #dce3ed;border-radius:8px}}.scroll{{overflow:auto}}table{{border-collapse:collapse;width:100%;font-size:13px}}td,th{{padding:9px;border-bottom:1px solid #e0e6ee;text-align:left;vertical-align:top}}th{{background:#eaf0f8;white-space:nowrap}}td{{max-width:340px;overflow-wrap:anywhere}}.stats{{display:flex;gap:24px;flex-wrap:wrap}}.stats b{{display:block;font-size:23px}}</style>
 <h1>Job resource use: {esc(root.name)}</h1><p>Generated {esc(generated)} · Reporter v{VERSION} · Read-only snapshot. Running-job figures are provisional; refresh after completion.</p>
+<p>Runtime excludes queue wait. Eligible queue wait is Start minus Eligible; time before eligibility is Eligible minus Submit and may include dependencies or other holds. Missing times remain unavailable. Parallel job waits overlap: their sum is not case turnaround or time added to the critical path.</p>
 <div class="box stats"><div><b>{len(rows)}</b>Distinct jobs</div><div><b>{sum(r['state']=='COMPLETED' for r in rows)}</b>Completed</div><div><b>{sum(r['state'] in ACTIVE for r in rows)}</b>Active</div><div><b>{fmt(sum(r['allocated_core_hours'] for r in rows))}</b>Core-hours, all attempts</div><div><b>{fmt(weighted)}</b>Completed CPU use % ({len(completed)}/{len(rows)} jobs)</div></div>
 <p>CPU use = actual CPU seconds / (allocated CPUs × elapsed seconds). Stage percentages are weighted by allocated CPU time. Controllers/support jobs are shown separately from workflow steps. Failed and cancelled attempts contribute to occupancy costs. Each job ID is counted once; parent totals are not added to their step totals. Native Nextflow CPU percentages count busy cores and are retained separately in the CSV.</p>
 <p>Memory observations are labelled step-level RSS proxies, not guaranteed whole-job peaks. No automatic resource changes or pass/fail thresholds are applied. GPU card-hours describe allocation only; unavailable GPU activity is not zero activity.</p>

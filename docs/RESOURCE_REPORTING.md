@@ -1,6 +1,6 @@
 # Resource-use reporting
 
-Reporter release: **resource-report/v0.1.0**. Source:
+Reporter release: **resource-report/v0.2.0**. Source:
 `workflow/report_resources.py`. Python standard library only; no installation,
 analysis rerun or additional compute allocation is required.
 
@@ -54,6 +54,16 @@ python3 workflow/report_resources.py --run-dir /path/to/run \
   and native workflow steps have separate stage rows.
 - GPU card-hours describe allocation only; no GPU activity is invented.
   Generic and typed TRES entries for the same GPUs are not added together.
+- Queue time is `Start - Eligible` (`queue_seconds`, retained from v0.1.0).
+  New `pre_eligible_seconds` measures `Eligible - Submit` (dependency/other
+  holds), and `submitted_to_start_seconds` measures the complete pending
+  interval. Missing or reversed timestamps remain unavailable, not zero.
+  The HTML now displays these alongside execution time and shows median/max
+  eligible queue waits by stage. CSV adds the two new fields at the end.
+  Dependency time is not scheduler resource wait. Nextflow may submit jobs
+  only after inputs are ready, so absent Slurm dependency holds do not mean
+  there were no workflow dependencies. Parallel queues overlap: summing waits
+  does not measure wall-clock case delay or establish the critical path.
 - Blank metrics mean unavailable. CPU figures above100% are flagged for review,
   not capped. Signal-killed job accounting may omit descendant CPU time.
 
