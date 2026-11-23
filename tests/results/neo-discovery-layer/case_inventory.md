@@ -25,7 +25,7 @@ purity TSV, which does not carry that column in 4.4 (it is in `*.purple.qc`); fi
    LILAC (PASS, except KQ0005 `WARN_UNMATCHED_INDEL`), SAGE_APPEND with the RNA sample appended, ISOFOX, LINX
    neoepitopes and ORANGE JSON all present. Purity 0.46–0.92. Plus KQ0205 (native, purity 0.24, ploidy 2.9,
    best RNA coverage of the set) and subject_a (LILAC `FAIL` — tiny test data, class I only).
-2. **KQ0017 is incomplete:** NEO finder ran but no scorer output, no LILAC, no ISOFOX, no SAGE_APPEND, no ORANGE.
+2. **KQ0017 was still running** when the inventory was taken (Slurm job `KQ0017-native-WGTS`), which is why only `neo/finder` output existed. Not a failure.
    Excluded until the run is finished or re-run.
 3. **LILAC 2.0 types class II DP and DQ natively** (`DPA1/DPB1/DQA1/DQB1`, with tumour copy number and RNA
    fragment counts per allele) in addition to class I `A/B/C`. It does not report `DRB1/3/4/5`. The class II
