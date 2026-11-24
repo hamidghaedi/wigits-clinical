@@ -1,6 +1,6 @@
 # Laboratory sequencing-run QC
 
-Component `lab-qc/v0.1.0`, owner direction November24,2026. Separate
+Component `lab-qc/v0.1.1`, owner direction November24,2026. Separate
 `LAB_RUN_QC` Nextflow entry: existing BAMs and original FASTQs to one branded
 MultiQC per **sequencing run**, without running callers or changing native
 results. Use after all-lane BAM preparation, not after clinical reporting.

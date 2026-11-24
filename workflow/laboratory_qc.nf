@@ -5,7 +5,7 @@ params.outdir = null
 params.picard_image = null
 params.fastp_image = null
 params.multiqc_image = null
-params.release_tag = 'lab-qc/v0.1.0'
+params.release_tag = 'lab-qc/v0.1.1'
 params.release_commit = null
 
 process LAB_FASTQ_QC {

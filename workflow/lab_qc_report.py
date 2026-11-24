@@ -13,6 +13,7 @@ parser input. Original source paths and small-file hashes remain in provenance.
 There is no specimen clearance, caller/filter change or BAM rewrite here.
 """
 import argparse
+import base64
 import csv
 import hashlib
 import html
@@ -173,11 +174,23 @@ def finalize(args):
     archives=list(Path('.').glob('*_data.zip'))
     if len(archives)!=1: raise ValueError('Expected one MultiQC data ZIP')
     with zipfile.ZipFile(archives[0]) as z:
-        name=next(n for n in z.namelist() if n.endswith('/multiqc_general_stats.txt'))
+        name=next(n for n in z.namelist() if n.endswith('multiqc_general_stats.txt'))
         rows=list(csv.DictReader(z.read(name).decode().splitlines(),delimiter='\t'))
         ids={r['Sample'] for r in rows}
     expected={s['sample_id'] for s in samples}
     if ids!=expected: raise ValueError(f'General Statistics membership differs: {ids} vs {expected}')
+    required=['MEAN_COVERAGE','MEDIAN_COVERAGE','picard_target_bases_30X',
+              'raw_reads','raw_q30_pct','bam_duplicate_pct','mean_insert_size']
+    for suffix in required:
+        col=next((k for k in rows[0] if k.endswith('-'+suffix)),None)
+        if col is None or any(r.get(col) in ('',None) for r in rows):
+            raise ValueError('Missing populated summary metric: '+suffix)
+    release=json.loads(Path('provenance/release.json').read_text())
+    images=re.findall(r'data:image/[^;]+;base64,([A-Za-z0-9+/=]+)',text)
+    if not any(hashlib.sha256(base64.b64decode(x)).hexdigest()==release['logo_sha256'] for x in images):
+        raise ValueError('Expected branding image not embedded')
+    if not re.search(r'#page_title\s+\.custom_logo\s*\{[^}]*width:\s*50px',text):
+        raise ValueError('Missing 50px branding CSS')
     Path('_SUCCESS').write_text(json.dumps(dict(run_id=args.run,samples=sorted(expected),
         release_tag=args.release_tag,release_commit=args.release_commit,report_sha256=digest(report),
         data_sha256=digest(archives[0])),indent=2)+'\n')

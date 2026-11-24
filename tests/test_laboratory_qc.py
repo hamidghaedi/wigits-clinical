@@ -1,8 +1,13 @@
 import importlib.util
+import base64
+import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
+import zipfile
 
 SPEC=importlib.util.spec_from_file_location('labqc',Path(__file__).parents[1]/'workflow/lab_qc_report.py')
 lab=importlib.util.module_from_spec(SPEC);SPEC.loader.exec_module(lab)
@@ -39,6 +44,24 @@ class LaboratoryQcTests(unittest.TestCase):
                  dict(run_id='N_RUN',sample_id='TEST-gDNA',fastqs=[dict(label='S2_L001')])]
         self.assertEqual([s['sample_id'] for s in lab.load_samples(dict(samples=samples),'T_RUN')],['TEST-DNA'])
         with self.assertRaises(ValueError):lab.load_samples(dict(samples=samples+samples),'T_RUN')
+
+    def test_finalizer_accepts_flat_and_nested_zip_and_requires_summary_cells(self):
+        for prefix in ['', 'data/']:
+            with self.subTest(prefix=prefix),tempfile.TemporaryDirectory() as tmp:
+                previous=Path.cwd();os.chdir(tmp)
+                try:
+                    Path('manifest.json').write_text(json.dumps(dict(samples=[dict(run_id='R',sample_id='S',fastqs=[dict(label='L001')])])) )
+                    Path('provenance').mkdir();logo=b'synthetic-logo'
+                    Path('provenance/release.json').write_text(json.dumps(dict(logo_sha256=hashlib.sha256(logo).hexdigest())))
+                    Path('R.multiqc_report.html').write_text('S TAG <style>#page_title .custom_logo {width: 50px !important;}</style><img src="data:image/jpeg;base64,'+base64.b64encode(logo).decode()+'">')
+                    cols=['MEAN_COVERAGE','MEDIAN_COVERAGE','picard_target_bases_30X','raw_reads','raw_q30_pct','bam_duplicate_pct','mean_insert_size']
+                    headers='Sample\t'+'\t'.join('qc-'+c for c in cols)+'\n'
+                    with zipfile.ZipFile('R_data.zip','w') as z:z.writestr(prefix+'multiqc_general_stats.txt',headers+'S\t40\t40\t90\t100\t90\t10\t300\n')
+                    args=SimpleNamespace(manifest='manifest.json',run='R',release_tag='TAG',release_commit='a'*40)
+                    lab.finalize(args);self.assertTrue(Path('_SUCCESS').exists())
+                    with zipfile.ZipFile('R_data.zip','w') as z:z.writestr(prefix+'multiqc_general_stats.txt',headers+'S\t40\t40\t90\t100\t\t10\t300\n')
+                    with self.assertRaisesRegex(ValueError,'raw_q30_pct'):lab.finalize(args)
+                finally:os.chdir(previous)
 
 
 if __name__=='__main__':unittest.main()
