@@ -16,6 +16,7 @@ not rename or replace their immutable tags.
 | Read-only allocation/queue reporting | `resource-report/v0.2.1` |
 | Native somatic output review | `native-qc/v0.1.0` |
 | Bounded indexed SNP support | `snp-support/v0.1.0` |
+| Laboratory sequencing-run QC | `lab-qc/v0.1.0`; separate BAM-ready Nextflow entry, Picard3.1.0 / fastp1.0.1 / MultiQC1.32; execution versions remain task-recorded |
 | Explicit runtime recovery | `runtime-recovery/v0.3.0`; select only for the diagnosed failure and original attempt |
 
 The analytical component/container versions are bound by that upstream source's

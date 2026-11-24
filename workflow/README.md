@@ -1,5 +1,9 @@
 # workflow
 
+Laboratory sequencing-run QC uses the separate [BAM-ready entry](../docs/LABORATORY_QC.md),
+`laboratory_qc.nf -entry LAB_RUN_QC`. It produces one MultiQC per sequencing run
+from existing BAMs and all FASTQ lane pairs, without invoking callers.
+
 Current repository release: [v0.1.0](../docs/releases/v0.1.0.md), maintained on
 `main`. Production uses the frozen-package `run_full_native.sbatch` entry and
 its generated resource config. The lower-level launcher and its historical
