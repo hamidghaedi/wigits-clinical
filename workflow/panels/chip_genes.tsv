@@ -1,0 +1,62 @@
+# Clonal haematopoiesis gene panel, version 1, 2026-11-24
+#
+# Curated from the clonal haematopoiesis literature. in_hartwig_driver_panel records whether the gene
+# appears in DriverGenePanel.38.tsv from hmf_pipeline_resources.38_v3.0.0--8, and
+# hartwig_report_germline_variant records that panel's reportGermlineVariant setting, which is why the
+# existing SAGE germline output cannot serve this purpose: every gene here except TP53 is set to NONE.
+#
+# The curated 74-gene list and variant-level rules in the supplement to Vlasschaert et al, Blood 2023
+# (doi:10.1182/blood.2022018825) are not open access and have not been read. This panel is therefore a
+# literature-curated starting set rather than a reproduction of that standard, and should be reconciled
+# with it when the supplement becomes available.
+gene	functional_class	in_hartwig_driver_panel	hartwig_report_germline_variant	notes
+ASXL1	chromatin	true	NONE	third most frequent; requires gene-specific artefact filtering per Vlasschaert 2023
+ATM	DNA damage response	true	NONE	also a cancer predisposition gene already reported by the germline layer
+BCOR	chromatin	true	NONE	
+BCORL1	chromatin	false	absent	
+BRAF	signalling	true	NONE	
+BRCC3	DNA damage response	false	absent	
+CALR	signalling	true	NONE	
+CBL	signalling	true	NONE	
+CEBPA	transcription factor	true	NONE	
+CHEK2	DNA damage response	true	NONE	also a cancer predisposition gene already reported by the germline layer
+CREBBP	chromatin	true	NONE	
+CSF3R	signalling	true	NONE	
+DDX41	DNA damage response	false	absent	
+DNMT3A	DNA methylation	true	NONE	most frequent clonal haematopoiesis driver; R882 is the recurrent hotspot
+ETV6	transcription factor	false	absent	
+EZH2	chromatin	true	NONE	
+FLT3	signalling	true	NONE	
+GNAS	signalling	true	NONE	
+GNB1	signalling	false	absent	
+IDH1	DNA methylation	true	NONE	
+IDH2	DNA methylation	true	NONE	
+JAK2	signalling	true	NONE	V617F is the recurrent hotspot and defines a myeloproliferative phenotype
+KDM6A	chromatin	true	NONE	
+KIT	signalling	true	NONE	
+KRAS	signalling	true	NONE	
+LUC7L2	spliceosome	false	absent	
+MPL	signalling	true	NONE	
+NF1	signalling	true	NONE	
+NPM1	nucleolar chaperone	true	NONE	
+NRAS	signalling	true	NONE	
+PHF6	chromatin	true	NONE	
+PPM1D	DNA damage response	true	NONE	enriched after cytotoxic therapy; truncating variants in the final exon
+PRPF8	spliceosome	false	absent	
+PTPN11	signalling	true	NONE	
+RAD21	cohesin	true	NONE	
+RUNX1	transcription factor	true	NONE	
+SETBP1	transcription factor	true	NONE	
+SF3B1	spliceosome	true	NONE	K700E and surrounding hotspots
+SH2B3	signalling	true	NONE	
+SMC3	cohesin	true	NONE	
+SRCAP	chromatin	false	absent	
+SRSF2	spliceosome	true	NONE	P95 hotspot
+STAG2	cohesin	true	NONE	
+TET2	DNA methylation	true	NONE	second most frequent; requires gene-specific artefact filtering per Vlasschaert 2023
+TP53	DNA damage response	true	ANY	enriched after cytotoxic therapy; also a germline predisposition gene, so allele fraction must be read carefully
+U2AF1	spliceosome	true	NONE	S34 and Q157 hotspots; sits in a region with known mapping difficulty on GRCh38
+WT1	transcription factor	true	NONE	
+YLPM1	chromatin	false	absent	
+ZBTB33	chromatin	false	absent	
+ZRSR2	spliceosome	true	NONE	
