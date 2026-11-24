@@ -1,6 +1,6 @@
 # Laboratory sequencing-run QC
 
-Component `lab-qc/v0.1.1`, owner direction November24,2026. Separate
+Component `lab-qc/v0.1.2`, owner direction November24,2026. Separate
 `LAB_RUN_QC` Nextflow entry: existing BAMs and original FASTQs to one branded
 MultiQC per **sequencing run**, without running callers or changing native
 results. Use after all-lane BAM preparation, not after clinical reporting.
@@ -20,6 +20,10 @@ The later native AMBER/PURPLE analytical report remains separate.
   READ_LENGTH151; no STOP_AFTER. Duplicates and overlapping mate observations
   are excluded by native Picard. Fast accumulation is used without substituting
   Hartwig/Parabricks values; cross-tool identity is not claimed.
+  The task generates primary-chromosome BED from the exact reference FAI and
+  uses native BedToIntervalList with its complete dictionary. This retains the
+  full sequence dictionary while restricting the measured territory; a
+  hand-written subset dictionary is not supplied.
 - Picard CollectInsertSizeMetrics retains native defaults; General Statistics
   includes the measured FR mean. No deduplication is rerun.
 - Native BAMTOOLS flag text is copied byte-for-byte for MultiQC's samtools-format
@@ -56,8 +60,8 @@ sbatch --account=def-hpcg6049_cpu \
   /path/to/manifest.json /path/to/execution
 ```
 
-Manifest keys: `reference`, `fai`, `dict`, `intervals` (Picard interval-list,
-not BED), `logo`, `css`, and `samples`. Each sample has `run_id`, `sample_id`,
+Manifest keys: `reference`, `fai`, `dict`, `logo`, `css`, and `samples`.
+The native task generates its measured interval list. Each sample has `run_id`, `sample_id`,
 `bam`, `bai`, `bam_gib`, `bamtools_flags`, `source_versions`, and `fastqs` with
 `label`, `r1`, `r2`, `input_gib` per lane pair. Optional `demultiplexing` maps
 run IDs to original source-file lists; `run_notes` records factual source gaps.

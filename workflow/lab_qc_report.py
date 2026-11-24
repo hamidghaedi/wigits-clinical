@@ -146,7 +146,9 @@ def prepare(args):
             import yaml
             native=yaml.safe_load(v.read_text())
             for process in ['BAMTOOLS','REDUX','BWAMEM2_ALIGN']:
-                if process in native: versions[process]=native[process]
+                for tool,version in native.get(process,{}).items():
+                    measured=versions.setdefault(process,{}).setdefault(tool,[])
+                    if str(version) not in measured: measured.append(str(version))
             source_hashes[str(v)]=digest(v)
     for p in root.glob('*.version.txt'):
         version=p.read_text().strip()

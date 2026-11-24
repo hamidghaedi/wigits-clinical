@@ -5,7 +5,7 @@ params.outdir = null
 params.picard_image = null
 params.fastp_image = null
 params.multiqc_image = null
-params.release_tag = 'lab-qc/v0.1.1'
+params.release_tag = 'lab-qc/v0.1.2'
 params.release_commit = null
 
 process LAB_FASTQ_QC {
@@ -39,14 +39,17 @@ process LAB_WGS_METRICS {
     maxForks 4
     publishDir "${params.outdir}/${run}/qc/${sample}/picard", mode: 'copy'
     input:
-    tuple val(run), val(sample), val(input_gib), path(bam), path(bai), path(reference), path(fai), path(dict), path(intervals)
+    tuple val(run), val(sample), val(input_gib), path(bam), path(bai), path(reference), path(fai), path(dict)
     output:
-    tuple val(run), path("${sample}.wgs_metrics.txt"), path("${sample}.picard.version.txt"), emit: files
+    tuple val(run), path("${sample}.wgs_metrics.txt"), path("${sample}.picard.version.txt"), path("${sample}.coverage.interval_list"), emit: files
     script:
     """
     java -jar /usr/picard/picard.jar CollectWgsMetrics --version > ${sample}.picard.version.txt 2>&1 || test \$? -eq 1
+    awk '\$1 ~ /^chr([1-9]|1[0-9]|2[0-2]|X|Y)\$/ {print \$1 "\\t0\\t" \$2}' ${fai} > primary.bed
+    java -Xmx2g -jar /usr/picard/picard.jar BedToIntervalList \
+      I=primary.bed O=${sample}.coverage.interval_list SD=${dict}
     java -Xmx12g -jar /usr/picard/picard.jar CollectWgsMetrics \
-      I=${bam} O=${sample}.wgs_metrics.txt R=${reference} INTERVALS=${intervals} \
+      I=${bam} O=${sample}.wgs_metrics.txt R=${reference} INTERVALS=${sample}.coverage.interval_list \
       MINIMUM_MAPPING_QUALITY=20 MINIMUM_BASE_QUALITY=20 COVERAGE_CAP=250 \
       COUNT_UNPAIRED=false USE_FAST_ALGORITHM=true READ_LENGTH=151
     """
@@ -114,7 +117,7 @@ workflow LAB_RUN_QC {
     ch_wgs = ch_samples.map { s -> tuple(s.run_id, s.sample_id, s.bam_gib,
         file(s.bam, checkIfExists:true), file(s.bai, checkIfExists:true),
         file(manifest.reference, checkIfExists:true), file(manifest.fai, checkIfExists:true),
-        file(manifest.dict, checkIfExists:true), file(manifest.intervals, checkIfExists:true)) }
+        file(manifest.dict, checkIfExists:true)) }
     ch_insert = ch_samples.map { s -> tuple(s.run_id, s.sample_id, s.bam_gib,
         file(s.bam, checkIfExists:true), file(s.bai, checkIfExists:true)) }
     LAB_FASTQ_QC(ch_fastqs)
