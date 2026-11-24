@@ -1,18 +1,19 @@
 {
  "case": "KQ0004",
- "generated_utc": "2026-11-23T20:25:48+00:00",
- "rules_version": "docs/neoantigen_extension_proposal.md@2026-11-23",
+ "generated_utc": "2026-11-24T15:19:23+00:00",
+ "rules_version": "docs/neoantigen_extension_proposal.md@2026-11-24",
  "thresholds": {
   "binding_strong_nm": 500.0,
   "binding_percentile": 2.0,
   "clonal_subcl_max": 0.25,
   "allele_cn_min": 0.5,
-  "ffpe_muc_min": 3
+  "ffpe_muc_min": 3,
+  "min_fold_change": 2.0
  },
  "candidates": 69,
  "tiers": {
-  "Prioritise": 6,
-  "Review": 28,
+  "Prioritise": 3,
+  "Review": 31,
   "Hold": 29,
   "Exclude": 6
  },

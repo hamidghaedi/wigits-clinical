@@ -130,3 +130,23 @@ pVACtools docs (pvactools.readthedocs.io; pVACview *Genome Medicine* 2024); next
 *Bioinformatics* 2022; DSL1); nf-neoant (`bioinfo-pf-curie/nf-neoant`); nf-core/epitopeprediction;
 NeoDisc (Huber et al., *Nat Biotechnol* 2024/25; restricted licence); NeoQual-nf (MSKCC); hmftools
 `neo/README.md`, `lilac/README.md`; INTerpath-001 ESMO 2026 LBA1.
+
+
+## Tier rule change, 2026-11-24
+
+A minimum ratio of wild-type to mutant binding affinity was added to the prioritisation rules, set at
+2.0 and recorded with every candidate as `fold_change`.
+
+The rules previously asked only that the wild-type peptide bind less well than the mutant peptide. On
+KQ0004 three of the six candidates that requirement admitted had a ratio close to one, so the two
+peptides bound comparably and the substitution gave a T cell little to distinguish. Drawing the mutant
+and wild-type affinities together made this plain, and the figure is now part of the report supplement.
+
+Applying the ratio moves GSX1 S156I (1.15), PPM1F P227T (1.22) and ZSWIM9 V91M (1.60) from Prioritise to
+Review, leaving MAPK13 P306L (43.3), RCOR2 L294F (35.2) and PAPLN T825M (18.2) prioritised. Eight
+candidates under review have a ratio below one, where the wild-type peptide is the stronger binder, among
+them TP53 F270C at 0.51.
+
+Published work does not settle on a single cut-off for this ratio, so the value in force is written into
+the summary block of every report and into `neo_candidates.py --explain`, and `rules_version` is dated so
+that decisions recorded against the earlier rules remain identifiable.

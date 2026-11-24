@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import neo_interface as ni  # noqa: E402
 
-RULES_VERSION = "docs/neoantigen_extension_proposal.md@2026-11-23"
+RULES_VERSION = "docs/neoantigen_extension_proposal.md@2026-11-24"
 
 # --- thresholds (named, so a decision never rests on an invisible number) -----------------------
 BINDING_STRONG_NM = 500.0        # pVACseq default strong-binder IC50
@@ -35,6 +35,11 @@ CLONAL_SUBCL_MAX = 0.25          # SUBCL above this is treated as subclonal
 ALLELE_CN_MIN = 0.5              # LILAC tumour copy number below this = allele effectively lost
 FFPE_TRANSITIONS = {("C", "T"), ("G", "A")}   # deamination signature
 FFPE_MUC_MIN = 3                 # minimum unique fragment coordinates for a C>T/G>A call
+# Minimum ratio of wild-type to mutant IC50 required before a candidate is prioritised. A ratio of 1.0
+# means the two peptides bind equally well, so the mutation adds nothing a T cell can distinguish, and a
+# ratio below 1.0 means the wild-type peptide is the better binder. Published work does not settle on a
+# single cut-off, so 2.0 is used here and recorded with every candidate as fold_change.
+MIN_FOLD_CHANGE = 2.0
 
 TIERS = ("Prioritise", "Review", "Hold", "Exclude")
 
@@ -248,8 +253,8 @@ class CandidateBuilder:
         strong_pct = rec["percentile_mt"] is not None and rec["percentile_mt"] <= BINDING_PERCENTILE
         clonal = rec["subclonal"] is False
         expressed = rec["rna_status"] == "SUPPORTED"
-        differential = (rec["ic50_wt"] is None or rec["ic50_mt"] is None
-                        or rec["ic50_wt"] > rec["ic50_mt"])
+        fc = rec["fold_change"]
+        differential = fc is None or fc >= MIN_FOLD_CHANGE
 
         if strong:
             reasons.append(f"IC50 {rec['ic50_mt']:.0f} nM")
@@ -267,8 +272,9 @@ class CandidateBuilder:
             reasons.append(f"NEO likelihood {rec['neo_likelihood']}")
         if rec["gene_of_interest"]:
             reasons.append("cancer gene census gene")
-        if not differential:
-            reasons.append("wild-type binds at least as well")
+        if fc is not None:
+            reasons.append(f"wild-type binds {fc:.1f}x less well"
+                            if fc >= 1 else f"wild-type binds {1 / fc:.1f}x better")
 
         if strong and strong_pct and expressed and clonal and differential:
             return "Prioritise", reasons
@@ -322,6 +328,7 @@ class CandidateBuilder:
                 "ic50_mt": _f(a.get("IC50 MT")),
                 "ic50_wt": _f(a.get("IC50 WT")),
                 "percentile_mt": _f(a.get("%ile MT")),
+                "fold_change": None,  # filled below once both affinities are known
                 "percentile_wt": _f(a.get("%ile WT")),
                 "pvacseq_tier": a.get("Tier", ""),
                 "num_passing_peptides": a.get("Num Passing Peptides", ""),
@@ -360,6 +367,8 @@ class CandidateBuilder:
                 **{k: nvar.get(k, "") for k in (
                     "neo_variant_type", "neo_variant_copy_number", "neo_subclonal_likelihood", "neo_nmd_min")},
             }
+            if rec["ic50_mt"] and rec["ic50_wt"]:
+                rec["fold_change"] = rec["ic50_wt"] / rec["ic50_mt"]
             rec["allele_lost"] = (rec["lilac_tumour_cn"] is not None
                                   and rec["lilac_tumour_cn"] < ALLELE_CN_MIN)
             rec["allele_disrupted"] = (str(rec.get("neo_allele_disrupted", "")).lower() == "true"
@@ -408,7 +417,7 @@ class CandidateBuilder:
             "rules_version": RULES_VERSION,
             "thresholds": {"binding_strong_nm": BINDING_STRONG_NM, "binding_percentile": BINDING_PERCENTILE,
                             "clonal_subcl_max": CLONAL_SUBCL_MAX, "allele_cn_min": ALLELE_CN_MIN,
-                            "ffpe_muc_min": FFPE_MUC_MIN},
+                            "ffpe_muc_min": FFPE_MUC_MIN, "min_fold_change": MIN_FOLD_CHANGE},
             "candidates": len(rows),
             "tiers": tier_counts,
             "rna_states": {s: sum(1 for r in rows if r["rna_status"] == s)
@@ -442,19 +451,21 @@ EXPLANATION = """Tier rules (eligibility first, then ranking):
   Review    a strong binding prediction (IC50 <= %(nm).0f nM or percentile <= %(pct).1f) but missing one of
             expression, clonality or mutant-over-wild-type differential.
   Prioritise strong IC50 AND strong percentile AND mutant allele expressed in RNA AND clonal
-            (SUBCL <= %(subcl).2f) AND wild-type binds worse.
+            (SUBCL <= %(subcl).2f) AND the wild-type peptide binds at least %(fc).1f times less well.
 
 Every row carries tier_reasons, so a tier can always be read back to the evidence that produced it.
 """ % {"cn": ALLELE_CN_MIN, "muc": FFPE_MUC_MIN, "nm": BINDING_STRONG_NM,
-        "pct": BINDING_PERCENTILE, "subcl": CLONAL_SUBCL_MAX}
+        "pct": BINDING_PERCENTILE, "subcl": CLONAL_SUBCL_MAX, "fc": MIN_FOLD_CHANGE}
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--results-case-dir", required=True)
-    ap.add_argument("--pvacseq-dir", required=True, help="pvacseq/MHC_Class_I directory")
-    ap.add_argument("--outdir", required=True)
-    ap.add_argument("--case", required=True)
+    # none of these are argparse-required, so that --explain can be run on its own to print the
+    # tier rules; the combination is validated below instead
+    ap.add_argument("--results-case-dir")
+    ap.add_argument("--pvacseq-dir", help="pvacseq/MHC_Class_I directory")
+    ap.add_argument("--outdir")
+    ap.add_argument("--case")
     ap.add_argument("--genes-of-interest-file", default=None)
     ap.add_argument("--selected-vcf", default=None,
                     help="exported <case>.somatic.selected.vcf (default: <outdir>/<case>.somatic.selected.vcf)")
@@ -463,6 +474,11 @@ def main(argv=None):
     if args.explain:
         print(EXPLANATION)
         return 0
+    missing = [n for n in ("results_case_dir", "pvacseq_dir", "outdir", "case")
+               if not getattr(args, n)]
+    if missing:
+        ap.error("the following arguments are required: "
+                 + ", ".join("--" + m.replace("_", "-") for m in missing))
     summary = CandidateBuilder(args.results_case_dir, args.pvacseq_dir, args.outdir, args.case,
                                args.selected_vcf).run(args.genes_of_interest_file)
     print(json.dumps({k: summary[k] for k in

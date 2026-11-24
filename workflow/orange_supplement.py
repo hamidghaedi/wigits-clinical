@@ -210,16 +210,21 @@ def build(candidates_tsv, summary_json, outfile, sample, logo=None, figures=(), 
             ("Prioritise / Review / Hold / Exclude",
              f"{tiers['Prioritise']} / {tiers['Review']} / {tiers['Hold']} / {tiers['Exclude']}"),
             ("Mutant allele in tumour RNA",
-             f"{rna['SUPPORTED']} supported, {rna['COVERED_NO_ALT']} covered without the mutant allele, "
-             f"{rna['NOT_COVERED']} not covered"),
+             f"Present in {rna['SUPPORTED']}. Absent in {rna['COVERED_NO_ALT']} where coverage was "
+             f"adequate. Undetermined in {rna['NOT_COVERED']} where the RNA did not cover the position."),
             ("Peptides scored by both predictors", f"{S['peptides_scored_by_both']:,}"),
             ("Class I typing QC", S["lilac_qc_status"]),
             ("Genetic immune escape", S["case_immune_escape"] if isinstance(S["case_immune_escape"], str)
-             else ", ".join(S["case_immune_escape"]))  ,
+             else ", ".join(S["case_immune_escape"])),
             ("Binding thresholds",
-             f"{_num(thr['binding_strong_nm'])} nM and {_num(thr['binding_percentile'],1)} percentile"),
-            ("Class II neoepitopes", "Not assessed \u2014 class II prediction is not performed"),
-            ("Fusion and splice neoepitopes", "Not assessed from RNA \u2014 DNA fusions only, via NEO/LINX"),
+             f"{_num(thr['binding_strong_nm'])} nM and percentile {_num(thr['binding_percentile'],1)}"),
+            ("Minimum wild-type to mutant ratio",
+             f"{_num(thr.get('min_fold_change', 2.0), 1)} for prioritisation"),
+            ("Class II neoepitopes",
+             "Not assessed in this version. Prediction against class II alleles is not performed."),
+            ("Fusion and splice neoepitopes",
+             "Assessed from DNA fusions through NEO and LINX. Candidates arising from RNA fusions and "
+             "splice variants are not assessed in this version."),
             ("Rules version", S["rules_version"]),
         ]),
         Spacer(1, 20),
@@ -235,6 +240,7 @@ def build(candidates_tsv, summary_json, outfile, sample, logo=None, figures=(), 
                 Paragraph(r["peptide"], st["content"]),
                 Paragraph(r["allele"], st["content"]),
                 Paragraph(f'{_num(r["ic50_mt"])} ({wt})', st["content"]),
+                Paragraph(_num(r.get("fold_change"), 1), st["content"]),
                 Paragraph(_num(r["percentile_mt"], 2), st["content"]),
                 Paragraph({"SUPPORTED": _num(r["rna_vaf_sage"], 2),
                            "COVERED_NO_ALT": "no alt",
@@ -245,19 +251,21 @@ def build(candidates_tsv, summary_json, outfile, sample, logo=None, figures=(), 
             ])
         return out
 
-    labels = ["Gene", "Variant", "Peptide", "Allele", "Binding mut (wt) nM", "%ile",
+    labels = ["Gene", "Variant", "Peptide", "Allele", "Binding mut (wt) nM", "Ratio", "%ile",
               "RNA", "TPM", "Clonality", "NEO"]
     # widths are tuned so no header word wraps mid-word at font size 7; CLONALITY is the binding one
-    widths = [46, 40, 74, 56, 70, 26, 32, 30, 52, 46]
+    widths = [44, 38, 72, 54, 66, 28, 26, 30, 28, 50, 44]
 
     pri = sorted([r for r in rows if r["tier"] == "Prioritise"], key=lambda r: float(r["ic50_mt"]))
     rev = sorted([r for r in rows if r["tier"] == "Review"], key=lambda r: float(r["ic50_mt"]))
     story += [
         Paragraph(f"Prioritised Candidates ({len(pri)})", st["tableTitle"]),
         orange_table(doc, labels, cand_rows(pri), widths),
-        Paragraph("Strong predicted binding on both measures, mutant allele expressed in tumour RNA, "
-                  "clonal, and the wild-type peptide binds less well. Binding is the median mutant IC50 "
-                  "with the wild-type in brackets.", st["note"]),
+        Paragraph("These candidates satisfy every prioritisation criterion. The predicted binding falls "
+                  "within both thresholds, the mutant allele is present in tumour RNA, the variant is "
+                  "clonal, and the wild-type peptide binds appreciably less well. Binding is given as the "
+                  "median mutant affinity with the corresponding wild-type affinity in brackets, and the "
+                  "ratio column is the wild-type affinity divided by the mutant affinity.", st["note"]),
         Spacer(1, 20),
     ]
     shown = rev[:max_review]
@@ -265,10 +273,13 @@ def build(candidates_tsv, summary_json, outfile, sample, logo=None, figures=(), 
         Paragraph(f"Candidates Under Review ({len(rev)})", st["tableTitle"]),
         orange_table(doc, labels, cand_rows(shown), widths,
                      shade_rows=range(len(shown))),
-        Paragraph("Shaded as candidate-grade: a strong binding prediction with one of expression, "
-                  "clonality or the mutant-over-wild-type differential missing. "
-                  + (f"Strongest {len(shown)} of {len(rev)} shown; the full set is in the candidate table."
-                     if len(shown) < len(rev) else "Human review decides these."), st["note"]),
+        Paragraph("These candidates have a strong binding prediction and fall short on one of the "
+                  "remaining criteria, most often expression, clonality or the margin over the wild-type "
+                  "peptide. They are shaded in the manner this report uses for candidate-grade findings "
+                  "and are settled by expert review. "
+                  + (f"The {len(shown)} strongest are shown here and the complete set appears in the "
+                     f"candidate table." if len(shown) < len(rev)
+                     else "All of them are shown here."), st["note"]),
     ]
 
     held = [r for r in rows if r["tier"] == "Hold"]
@@ -278,11 +289,13 @@ def build(candidates_tsv, summary_json, outfile, sample, logo=None, figures=(), 
         Paragraph("Not Carried Forward", st["tableTitle"]),
         key_value_table(doc, [
             (f"Held ({len(held)})",
-             "RNA never covered the position, so absence of the mutant transcript is not established, "
-             "or no strong binding prediction. Held, not excluded."),
+             "These candidates are retained for a later review. In most of them the RNA did not cover "
+             "the variant position, which leaves the expression of the mutant transcript undetermined. "
+             "In the remainder the binding prediction fell outside the thresholds above."),
             (f"Excluded ({len(excl)})",
-             "Ineligible on evidence that a binding score cannot override \u2014 variant alt reads in the "
-             "matched normal, restricting allele lost, or typing QC failure."),
+             "These candidates were set aside on evidence that a binding prediction does not override, "
+             "namely variant-supporting reads in the matched normal sample, loss of the restricting "
+             "allele, or a failure of HLA typing quality control."),
         ]),
     ]
 
