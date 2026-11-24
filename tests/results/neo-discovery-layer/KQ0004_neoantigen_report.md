@@ -12,6 +12,7 @@ Slurm job `07deef02` on Frontenac · inputs checksummed in `KQ0004.interface_man
 | Field | Value | Source |
 |---|---|---|
 | Tumour DNA / normal DNA / tumour RNA | `KQ0004-2023-AAAD-2-DNA` / `-gDNA` / `-2-RNA` | oncoanalyser 3.0.0, native path |
+| Primary tumour | Nervous system; CUPPA **CNS: Glioma (100%)** | ORANGE front page |
 | Purity / ploidy | 0.9200 / 2.0600 | PURPLE |
 | Microsatellite status | MSS | PURPLE |
 | TMB / TML | 4.4243 per Mb (LOW) / 69 (LOW) | PURPLE |
@@ -20,6 +21,18 @@ Slurm job `07deef02` on Frontenac · inputs checksummed in `KQ0004.interface_man
 
 The case passes every case-level gate in the review SOP. Note the low mutational burden: at 4.42
 mutations per Mb this is a **small** candidate space, and the shortlist should be read as such.
+
+The ORANGE report's driver profile is a textbook glioma: *PTEN* p.Gln261\*, *TP53* p.Phe270Cys, *ATRX*
+p.Arg2153Ser and two *MED12* missense variants, with *EGFR*, *KRAS*, *CCND2* and *CHD4* amplified and
+*CDKN2A*/*CDKN2B* homozygously deleted, on a chr7-gain / chr10-loss background. Two things in that
+profile bear on the neoantigen read:
+
+- **Signature 11 (temozolomide), 3% of the mutation burden.** This tumour has seen an alkylating agent.
+  TMZ-induced mutations are genuine somatic neoantigen substrate, but they also arrive late, so several
+  will be subclonal — which is what the subclonal flags on the *MED12* and *NPM1* candidates reflect.
+- **Signature 1 (5-methylcytosine deamination), 35%.** The dominant process produces exactly the
+  C>T/G>A changes the FFPE screen looks for, so the FFPE rule must not be tightened on this case without
+  separating the two sources; as run, it flagged nothing.
 
 ## 2. What was run
 
@@ -63,7 +76,12 @@ non-expression, and tiering them as Hold rather than Exclude is deliberate.
 
 Two observations worth the reviewer's attention:
 
-- **None is a cancer gene.** The CGC v104 genes in the table — *ATRX*, *TP53*, *NPM1*, *MED12*, *PTPN6*,
+- **None is a cancer gene, and none of ORANGE's drivers reached Prioritise.** Of the six somatic drivers
+  ORANGE reports, four produced a candidate at all — *TP53* F270C and *NPM1* L79F land in Review,
+  *MED12* C514S in Hold, *ATRX* R2153S in Exclude (alt reads in the matched normal). *PTEN* p.Gln261\*
+  produced **no** candidate: it is a stop-gained variant, and a premature stop yields no mutant peptide
+  for class I prediction. That is correct behaviour, not a gap, but it is the kind of absence a reader
+  will look for. The CGC v104 genes in the table — *ATRX*, *TP53*, *NPM1*, *MED12*, *PTPN6*,
   *PDGFB*, *BLM*, *ERC1* — all land in Review, Hold or Exclude. Driver status and neoantigen quality are
   independent properties, and the ranking does not reward the former.
 - **The differential matters more than the absolute.** *RCOR2* L294F binds at 84 nM while its wild-type

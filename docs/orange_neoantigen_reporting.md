@@ -1,177 +1,174 @@
 # Extending the ORANGE report with the neoantigen layer
 
-**Status: design, not yet implemented.** Gap G28 (neoantigen layer) and G10 (immune-escape table).
-Written from the ORANGE 5.0.1 report sources read on 2026-11-23 at tag `orange-v5.0.1`
-(`orange/src/main/java/com/hartwig/hmftools/orange/report/`), the installed container
-`quay.io-biocontainers-hmftools-orange-5.0.1--hdfd78af_0.img`, and the repository's existing
-front-page overlay. Line references are to that tag.
+**Approach: ORANGE is left untouched and the neoantigen content is rendered as additional pages in
+ORANGE's own visual language, appended after the original report.** Gap G28 (neoantigen layer);
+gap G10 (immune-escape table) is addressed separately below.
 
-The aim is that an added chapter is **indistinguishable in style from a native one**: same fonts, same
-palette, same type sizes, same table geometry, same page furniture. Nothing is re-styled, nothing is
-invented; the added content borrows the native resources.
+Written from the ORANGE 5.0.1 report sources read at tag `orange-v5.0.1`
+(`orange/src/main/java/com/hartwig/hmftools/orange/report/`) **and from a rendered report** —
+`KQ0004-2023-AAAD-2-DNA.orange.pdf`, 11 pages, 13 MB, produced by the native oncoanalyser 3.0.0 run.
+Reading the source alone was not enough: the page furniture, the orange-slice logo, the side panel and
+the footer disclaimer are only apparent in the rendered document.
 
-## 1. How ORANGE renders, and where an addition goes
+## 1. Why a supplement rather than a patched chapter
 
-`ReportWriter.writePdf` builds a fixed chapter list and hands each to `writePdfChapters`:
+An earlier draft of this document proposed overlaying `ImmunologyChapter.java` — compiling one modified
+class against the installed JAR and putting it first on the classpath, the pattern
+`workflow/patches/oncoanalyser-3.0.0-qc-report.patch` already uses for the front page. That remains
+technically viable (`javac` and OpenJDK 21 are present inside the ORANGE container), but it is the wrong
+default here:
 
-```
-FrontPage → SomaticFindings → GermlineFindings (not tumour-only) → Immunology
-          → RnaFindings (if isofox) → Cuppa (not tumour-only) → QualityControl (if qSee plot)
-          → PurplePlots
-```
-
-Each chapter implements `ReportChapter` (`name()`, `pageSize()`, `render(Document)`), gets its own
-`AreaBreak`, and the page header/footer are drawn by `PageEventHandler` from the chapter name. So an added
-chapter needs no layout work of its own: give it a name and render tables into the document.
-
-**Insertion point.** A neoantigen chapter belongs immediately after `Immunology` — it is the same
-biology (HLA presentation) and the native Immunology chapter already loads LILAC. Two options:
-
-| Option | What it means | Cost |
+| | Patched chapter | **Appended supplement** |
 |---|---|---|
-| **A. Extend `ImmunologyChapter`** | add `addNeoantigenData(document)` after `addHLAData(document)`; also un-comment `addImmuneEscapeData` (G10) | one overlaid class, exactly the pattern `FrontPageChapter.java` already uses |
-| B. New `NeoantigenChapter` | own chapter, own TOC entry, needs `ReportWriter` overlaid too | two overlaid classes, more divergence from upstream |
+| ORANGE output | modified | **byte-identical** (verified by sha256 before and after) |
+| Breaks on an ORANGE upgrade | yes — the overlay is compiled against one JAR | no |
+| Needs the container rebuilt or classpath-ordered | yes | no |
+| Review bundle can be regenerated without re-running ORANGE | no | yes |
+| Content limited to what `OrangeRecord` carries | effectively yes | no |
 
-**Recommend A.** The repository already compiles one overlaid class against the installed JAR and puts it
-first on the classpath (`modules/local/orange/main.nf`, `assets/orange_qc_report/FrontPageChapter.java`);
-the same mechanism takes `ImmunologyChapter.java` with no further plumbing. `javac` is present in the
-ORANGE container (`/usr/local/bin/javac`, OpenJDK 21), which is what makes this work.
+The supplement costs one thing in exchange: the appended pages are not in ORANGE's table of contents and
+are not in the ORANGE JSON. The second point matters and is handled in §5.
 
-**G10 comes free.** In ORANGE 5.0.1 the immune-escape block is *present but commented out* in
-`ImmunologyChapter` (the `addImmuneEscapeData` method and its call site), and `ImmuneEscapeTable` is a
-complete class. Un-commenting it in the same overlay renders HLA / antigen-presentation / IFN-γ / CD58 /
-PD-L1 / SETDB1 escape, which the JSON already carries (verified on KQ0004: all six flags present, all
-false). That closes G10 with no new rendering code.
+## 2. The real document, as rendered
 
-## 2. The native style, as constants (`ReportResources`)
+| Page | Chapter |
+|---|---|
+| 1 | Front page — primary tumour, purity, ploidy, fit method, QC; driver summary; genome-wide biomarkers; CUPPA call |
+| 2 | Somatic Findings — small variants, amplifications/deletions, fusions, disruptions, viruses |
+| 3 | Arm copy-number aberrations; signature allocations; structural driver plots |
+| 4–5 | LINX structural driver plots and the whole-genome circos (landscape) |
+| 6 | Germline Findings, including pharmacogenetics |
+| **7** | **Immunology — HLA class I alleles, then HLA class II alleles** |
+| 8 | RNA Findings — RNA QC, high gene expression, RNA-only fusions, novel splice junctions |
+| 9 | Tissue of Origin (CUPPA) |
+| 10 | Quality Control |
+| 11 | Purity and Ploidy |
 
-Every value below is read from the 5.0.1 source; an added table must use these and nothing else.
+Page 7 is the chapter the neoantigen content is a continuation of, and it is **half empty** — the two
+allele tables occupy the top third. Class II *is* rendered for a whole-genome experiment (DP/DQ, since
+LILAC does not type DRB1/3/4/5), with columns ALLELE, QC STATUS, REF FRAGS, TUMOR FRAGS, RNA FRAGS,
+TUMOR CN, SOMATIC MUTATIONS. The supplement's allele vocabulary matches that table exactly.
 
-**Fonts** — Nimbus Sans L, loaded from classpath resources by `ReportResources.create()`:
-`fonts/nimbus-sans/NimbusSansL-Regular.ttf` and `…-Bold.ttf`, encoded `IDENTITY_H`. An overlay must
-obtain fonts through the injected `ReportResources` instance, never load its own.
+**No immune-escape table is rendered**, confirming G10 from the output rather than only from the source.
+
+## 3. Page furniture to reproduce
+
+From the rendered page, top to bottom:
+
+- **orange-slice logo**, top left, roughly 42 pt square. Extracted from any ORANGE PDF rather than
+  re-drawn (`pypdf` → `page.images`), so it is the identical asset, not an imitation.
+- **title** — `ORANGE` in bold `PALETTE_ORANGE`, then `Report (Research Use Only)` in bold dark grey.
+- **side panel** — a filled `PALETTE_ORANGE` rectangle at the top right carrying `SAMPLE` (bold 7, white)
+  over the sample name (bold 10, white).
+- **chapter title** — bold 10 `PALETTE_ORANGE`, at the top of the text frame.
+- **footer** — page number `n/total` in bold 7 orange, then the RUO disclaimer in regular 6 mid-grey:
+  *"This report is for 'Research Use Only (RUO)' and is not suitable for diagnostic or clinical
+  applications. No rights can be derived from the contents of this report."*
+
+Page geometry: A4; margins top 100, left 30, right 30, bottom 40; header band 60; footer 20; content
+width 535 pt.
+
+## 4. Type, palette and table geometry
+
+Every value below is from `ReportResources.java` and is reproduced verbatim by the renderer.
 
 | Style | Font | Size | Colour |
 |---|---|---|---|
-| `chapterTitleStyle()` | bold | 10 | `PALETTE_ORANGE` |
-| `tableTitleStyle()` | bold | 8 | `PALETTE_ORANGE` |
-| `tableHeaderStyle()` | regular | 7 | `PALETTE_MID_GREY` |
-| `tableContentStyle()` | regular | 7 | `PALETTE_DARK_GREY` |
-| `keyStyle()` / `valueStyle()` | regular | 7 | `PALETTE_MID_GREY` |
-| `subTextStyle()` | regular | 6 | `PALETTE_BLACK` |
-| `disclaimerStyle()` | regular | 6 | `PALETTE_MID_GREY` |
-| `qcWarningStyle()` | bold | 7 | `PALETTE_DARK_GREY` |
-| `urlStyle()` | regular | 7 | `PALETTE_BLUE` |
-| `pageNumberStyle()` | bold | 7 | `PALETTE_ORANGE` |
+| chapter title | bold | 10 | `PALETTE_ORANGE` |
+| table title | bold | 8 | `PALETTE_ORANGE` |
+| table header | regular | 7 | `PALETTE_MID_GREY`, **upper-cased**, fixed 23 pt row |
+| table content | regular | 7 | `PALETTE_DARK_GREY`, 0.25 pt mid-grey rule below |
+| key / value | regular | 7 | `PALETTE_MID_GREY` |
+| sub-text | regular | 6 | black |
+| disclaimer | regular | 6 | `PALETTE_MID_GREY` |
 
-**Palette** (`DeviceRgb`): `ORANGE (242,139,31)`, `ORANGE_1..6 (255,165,0) → (155,115,0)`,
-`BLUE (38,90,166)`, `DARK_GREY (39,47,50)`, `MID_GREY (101,106,108)`, `LIGHT_GREY (211,211,211)`,
-`GAINSBORO_GREY (220,220,220)`, `SMOKE_GREY (240,240,240)`, `WHITE`, `BLACK`.
+Palette: `ORANGE (242,139,31)`, `ORANGE_1..6 (255,165,0) → (155,115,0)`, `BLUE (38,90,166)`,
+`DARK_GREY (39,47,50)`, `MID_GREY (101,106,108)`, `LIGHT_GREY (211,211,211)`,
+`GAINSBORO_GREY (220,220,220)`, `SMOKE_GREY (240,240,240)`.
 
-**Page**: A4; margins top 100 (the chapter title is drawn in the header), right 30, bottom 40, left 30;
-header band 60; footer 20; full-page image 750 × 430; front-page circos 400.
+**Fonts.** ORANGE embeds Nimbus Sans L (`fonts/nimbus-sans/NimbusSansL-{Regular,Bold}.ttf`). Nimbus Sans L
+is URW's clone of Helvetica and is **metrically identical** to it, so reportlab's built-in Helvetica
+reproduces the same advance widths, line breaks and column fits. `--font-dir` takes the real TTFs when
+they are available; the renderer reports which was used.
 
-**Table geometry** (`util/Tables`, `util/Cells`):
-- content tables are `UnitValue.createPercentArray(widths).setWidth(contentWidth())` with `setFixedLayout()`;
-- bottom margin 20 between tables;
-- header cells: fixed height 23 pt, **text upper-cased**, no border, bottom-aligned, `tableHeaderStyle`;
-- content cells: no border except `SolidBorder(PALETTE_MID_GREY, 0.25F)` on the bottom, `tableContentStyle`;
-- long tables use `Tables.createWrapping(...)`, which adds "THE TABLE CONTINUES ON THE NEXT PAGE" /
-  "CONTINUED FROM THE PREVIOUS PAGE" in `subTextStyle`;
-- an empty or unavailable table is `Tables.createEmpty(title, width)` → `NONE`, or `createNotAvailable` → `NA`,
-  never a blank space;
-- `shadeCandidateCells` paints `SMOKE_GREY` behind rows that are candidates rather than confirmed —
-  **the native idiom for "lower confidence", and the right treatment for our Review/Hold tiers**.
+**Shading.** `SMOKE_GREY` behind a row is ORANGE's own idiom for "candidate, not confirmed"
+(`candidateDriverBackground`). The supplement uses it for the Review tier and nothing else, so a reader
+who knows the native report already knows what the shading means.
 
-## 3. Proposed tables
+## 5. What the supplement contains
 
-### 3.1 `Neoantigen Candidates` (one row per prioritised candidate)
+**Page 1 — Neoantigens**
 
-Columns, chosen to mirror the native driver tables' economy (gene first, evidence last) and to fit A4
-content width at font size 7:
+1. *Neoantigen Summary* (key/value): candidates assessed; the four tier counts; the three RNA states
+   spelled out; peptides scored by both predictors; class I typing QC; immune escape; binding
+   thresholds; and explicit **"Not assessed"** rows for class II and for RNA-derived fusion/splice
+   neoepitopes, so a reader cannot mistake absence for a negative result.
+2. *Prioritised Candidates*: gene, variant, peptide, allele, mutant IC50 with the wild-type in brackets,
+   percentile, RNA state or mutant allele fraction, gene TPM, clonality, NEO likelihood.
+3. *Candidates Under Review*: the same columns, smoke-grey shaded, strongest first.
+4. *Not Carried Forward*: the Hold and Exclude counts with their reason classes — never a silent drop.
 
-| Column | Source | Note |
-|---|---|---|
-| Gene | candidate table `gene` | CGC genes are not bolded — the native tables do not bold within a row |
-| Variant | `aa_change` | e.g. `S156I` |
-| Peptide | `peptide` | mutant epitope |
-| Allele | `allele` | `HLA-C*12:03` |
-| Binding (nM) | `ic50_mt` | mutant IC50; wild-type shown in brackets when it differs by < 2-fold |
-| %ile | `percentile_mt` | |
-| RNA | `rna_status` + `rna_vaf` | `SUPPORTED 0.45`, `COVERED_NO_ALT`, `NOT_COVERED` — never a bare 0 |
-| Clonality | `subclonal_likelihood` → `Clonal` / `Subclonal` | from PURPLE `SUBCL`, not VAF |
-| NEO likelihood | `neo_likelihood` | Hartwig's own presentation score, for comparison |
-| Tier | `tier` | Prioritise / Review / Hold |
+**Page 2 — figures**, rendered in matplotlib to the same contract (Nimbus Sans/Helvetica at 7 pt body and
+8 pt title, palette colours only, mid-grey 0.25 pt spines matching the cell rules, 300 dpi, content
+width):
 
-Rendering rules: `Prioritise` rows plain; `Review` and `Hold` rows shaded with `shadeCandidateCells`
-(the native candidate idiom); `Exclude` rows are **not rendered** but counted in the caption. Table title
-`tableTitleStyle`, so it reads as a sibling of "HLA Class I Alleles".
+- *binding strength versus RNA support* — percentile against mutant allele fraction, coloured by tier,
+  hollow markers where the mutant allele was not seen, and a separate stripe for positions RNA never
+  covered, so the three-state rule is visible rather than collapsed to zero;
+- *candidates per restricting allele, stacked by tier* — deliberately allele-centric, because that is how
+  the native Immunology chapter is organised.
 
-### 3.2 `Neoantigen Summary` (key/value, `createKey`/`createValue`)
+**The JSON.** The appended pages are not in the ORANGE JSON, so the layer writes its own machine-readable
+record — `<case>.neo_candidates.summary.json` plus the full candidate table — and the release manifest
+references both alongside `<sample>.orange.json`. The rule that the machine-readable record carries the
+same content as the PDF is preserved; it is simply carried by a sibling file.
 
-Coding candidates assessed · peptides predicted · Prioritise/Review/Hold/Exclude counts ·
-restricting alleles retained (from LILAC) · class I typing QC · predictors and versions ·
-"not assessed" rows for class II and RNA-only fusion/splice candidates, which this version does not cover.
+## 6. Gap G10 — the immune-escape table
 
-### 3.3 `Genetic Immune Escape` (G10)
+In ORANGE 5.0.1 the immune-escape block is **present but commented out** in `ImmunologyChapter`
+(the `addImmuneEscapeData` method and its call site), while `ImmuneEscapeTable` is a complete class. The
+data is in the JSON — verified on KQ0004, all six flags present and all false. Two routes:
 
-The native `ImmuneEscapeTable` as written upstream, un-commented. No new code.
+1. render the six flags in the supplement, from the JSON, with no Java involved (consistent with §1);
+2. un-comment the native block in a single-class overlay, which renders Hartwig's own table.
 
-## 4. Figures, if any
+Route 1 is recommended for the same reasons as §1; route 2 stays documented because it is the only way to
+get the *native* table, should that ever be wanted.
 
-ORANGE embeds pre-rendered PNGs (`util/Images`, `PlotPathResolver`); it draws nothing itself. So a
-neoantigen figure must be produced upstream as a PNG and passed in. To look native it must match the
-report, not a matplotlib default:
+## 7. Implementation
 
-- figure text in **Nimbus Sans** (available on the cluster as a Ghostscript/URW font; otherwise the
-  metrically-identical Helvetica) at **7 pt body / 8 pt title**, matching `tableContent`/`tableTitle`;
-- colours **only** from the palette above — `PALETTE_ORANGE` for the highlighted series,
-  `ORANGE_1..6` for ordered categories (that is what the native ladder exists for),
-  `MID_GREY` for axes and ticks, `SMOKE_GREY` for fills, `BLUE` only for links;
-- no chart junk: no grid unless it carries reading precision, no frame on legends, ticks outward,
-  spines in `MID_GREY` at 0.25 pt to match the cell borders;
-- sized to the native image boxes (full page 750 × 430 pt, i.e. 10.4 × 6.0 in at 72 dpi) and exported at
-  300 dpi so the embedded raster is sharp at A4.
+`workflow/orange_supplement.py` — reads the candidate TSV and summary JSON, renders the pages, and
+optionally concatenates: ORANGE pages first, then the supplement, into
+`<sample>.orange.extended.pdf`. The original PDF is opened read-only and its sha256 is unchanged by the
+operation. Page numbering of the appended pages continues the original's (`12/13`, `13/13`) when
+`--total-pages` is given, and falls back to `S1`, `S2` for a standalone supplement.
 
-A single candidate figure is proposed: **binding strength versus RNA support**, IC50 percentile on one
-axis and mutant-allele RNA VAF on the other, points coloured by tier and sized by clonality, with the
-`NOT_COVERED` candidates drawn on a separate "no coverage" stripe rather than at zero — the one plot that
-makes the three-state RNA rule visible. Everything else in the chapter is better as a table.
+```
+python3 workflow/orange_supplement.py \
+  --candidates-tsv <case>.neo_candidates.tsv \
+  --summary-json   <case>.neo_candidates.summary.json \
+  --sample  <tumour_sample_id> \
+  --logo    <logo extracted from the ORANGE pdf> \
+  --figure  fig_binding_rna.png --figure fig_alleles.png \
+  --orange-pdf <sample>.orange.pdf \
+  --first-page 12 --total-pages 13 \
+  --out <case>.neoantigens.supplement.pdf
+```
 
-Implementation note: the repository's figure work should load the `figure-style` skill and then override
-the font and palette to the values above; the house style is a starting point, the ORANGE palette is the
-contract.
+## 8. What this must not do
 
-## 5. Data path into ORANGE
+- Not modify, re-render or re-interpret anything ORANGE produces.
+- Not present a computational shortlist as a clinical recommendation: the appended pages inherit the same
+  RUO disclaimer, and the review SOP's recorded decisions are what carry weight.
+- Not silently drop candidates — excluded ones are counted with their reason class.
+- Not let visual harmony imply equal provenance: everything on these pages comes from the neoantigen
+  layer, not from Hartwig's validated pipeline, and the chapter sub-title says so
+  ("Neoantigen supplement — wigits-clinical").
 
-ORANGE reads `OrangeRecord` from its JSON/config inputs; it has no plug-in slot for an arbitrary table.
-Two honest options:
-
-1. **Overlay reads our TSV directly** (chosen for the first version): the ORANGE task is given
-   `-neo_candidates_tsv <path>` through an extra argument in `modules/local/orange/main.nf`, and the
-   overlaid `ImmunologyChapter` reads it with the same CSV reader hmftools already uses. Minimal, and the
-   file is exactly the artefact the review step signs off.
-2. Extend the `OrangeRecord` data model (`hmftools-datamodel`) with a neoepitope section. Cleaner, but it
-   changes a published schema and every consumer of the JSON — out of scope until the layer is settled.
-
-Whichever path, the **JSON must gain the same content as the PDF** (the repository's own rule that the
-JSON is the machine-readable record): a `neoantigens` block with the candidate rows and the summary
-counts, written by our own step rather than by ORANGE, and referenced from the release manifest.
-
-## 6. What this must not do
-
-- Not re-fit, re-call or re-interpret anything ORANGE already reports.
-- Not present a computational shortlist as a clinical recommendation: the chapter carries the same
-  research-use framing as the rest of the report, and the review SOP's decisions are what matter.
-- Not silently drop candidates: excluded ones are counted in the caption with the reason class.
-- Not diverge from upstream any further than the one overlaid class the mechanism already requires;
-  every added line is traceable to this document.
-
-## 7. Sources
+## 9. Sources
 
 - `ReportResources.java`, `ReportWriter.java`, `chapters/ImmunologyChapter.java`, `util/Cells.java`,
   `util/Tables.java`, `util/Images.java`, `tables/ImmuneEscapeTable.java` at `orange-v5.0.1`.
-- This repository: `docs/ORANGE_QC_REPORT_RECOVERY.md`, `workflow/patches/oncoanalyser-3.0.0-qc-report.patch`,
-  `workflow/overlays/oncoanalyser-3.0.0/assets/orange_qc_report/FrontPageChapter.java`.
-- Verified on the KQ0004 ORANGE JSON: `immuneEscape` carries all six flags; `lilac.alleles` carries
-  class I and class II.
+- The rendered report `KQ0004-2023-AAAD-2-DNA.orange.pdf` (oncoanalyser 3.0.0, 2026-11-15).
+- This repository: `docs/ORANGE_QC_REPORT_RECOVERY.md`,
+  `workflow/patches/oncoanalyser-3.0.0-qc-report.patch`.
