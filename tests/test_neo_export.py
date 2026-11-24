@@ -34,10 +34,13 @@ def test_selected_vcf_has_rna_format_fields(exported):
     lines = [l for l in open(vcf) if not l.startswith("#")]
     assert lines, "expected at least one exported record"
     header = open(vcf).read()
-    for key in ("RDP", "RAD", "RAF", "RNA_STATUS"):
+    for key in ("RDP", "RAD", "RAF", "RNA_STATUS", "GX", "TX"):
         assert key in header
+    # pvactools reads GX/TX from FORMAT, not INFO
+    assert '##FORMAT=<ID=GX' in header and '##FORMAT=<ID=TX' in header
+    assert '##INFO=<ID=GX' not in header
     fmt = lines[0].split("\t")[8].split(":")
-    assert fmt[-3:] == ["RDP", "RAD", "RAF"]
+    assert fmt[-5:] == ["RDP", "RAD", "RAF", "GX", "TX"]
     # tumour column (last) must carry values; normal column must not claim RNA support
     tumour = dict(zip(fmt, lines[0].rstrip("\n").split("\t")[10].split(":")))
     normal = dict(zip(fmt, lines[0].rstrip("\n").split("\t")[9].split(":")))
@@ -106,3 +109,24 @@ def test_proximal_vcf_has_exactly_one_sample(exported):
             break
     else:
         raise AssertionError("no #CHROM line in the proximal VCF")
+
+
+def test_expression_reaches_the_tumour_genotype(exported):
+    """GX/TX must reach the tumour genotype, or every pVACseq expression column comes out NA.
+
+    Skipped when the fixture carries no ISOFOX quantification: the fixture is a trimmed subject_a case
+    and gene-level expression is only present on a real RNA case.
+    """
+    _, manifest = exported
+    if not manifest["counts"].get("isofox_genes"):
+        pytest.skip("fixture has no ISOFOX gene expression")
+    vcf = manifest["outputs"]["somatic_selected_vcf"]
+    populated = 0
+    for line in open(vcf):
+        if line.startswith("#"):
+            continue
+        f = line.rstrip("\n").split("\t")
+        vals = dict(zip(f[8].split(":"), f[-1].split(":")))
+        if vals.get("GX", ".") != "." and "|" in vals["GX"]:
+            populated += 1
+    assert populated > 0, "no record carries gene expression in the tumour genotype"

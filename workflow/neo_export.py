@@ -100,7 +100,12 @@ class Exporter:
         gp = self.layout.files.get("isofox_gene_tsv")
         if gp:
             for row in ni.read_tsv(gp):
+                # PAVE's IMPACT carries the HGNC symbol, ISOFOX is keyed on GeneId, and pvactools
+                # accepts either (it matches GX against ensembl_gene_id OR gene_name). Index both, or
+                # the gene join silently produces nothing and every expression column reads NA.
                 genes[row["GeneId"]] = row["AdjTPM"]
+                if row.get("GeneName"):
+                    genes[row["GeneName"]] = row["AdjTPM"]
         tp = self.layout.files.get("isofox_transcript_tsv")
         if tp:
             for row in ni.read_tsv(tp):
@@ -125,8 +130,11 @@ class Exporter:
             '##FORMAT=<ID=RAD,Number=R,Type=Integer,Description="Tumour RNA allelic depths (ref,alt)">',
             '##FORMAT=<ID=RAF,Number=1,Type=Float,Description="Tumour RNA allele frequency">',
             '##INFO=<ID=RNA_STATUS,Number=1,Type=String,Description="SUPPORTED|COVERED_NO_ALT|NOT_COVERED per docs/neoantigen_interface.md">',
-            '##INFO=<ID=GX,Number=.,Type=String,Description="Gene expression (ISOFOX AdjTPM) as GeneId|TPM">',
-            '##INFO=<ID=TX,Number=.,Type=String,Description="Transcript expression (ISOFOX AdjTPM) as TransName|TPM">',
+            # GX/TX are FORMAT fields, not INFO: pvactools reads them from the tumour genotype
+            # (input_file_converter.py checks vcf_reader.header.format_ids()). Written INFO-side they
+            # are silently ignored and every expression column comes out NA.
+            '##FORMAT=<ID=GX,Number=.,Type=String,Description="Gene expression (ISOFOX AdjTPM) as GeneId|TPM">',
+            '##FORMAT=<ID=TX,Number=.,Type=String,Description="Transcript expression (ISOFOX AdjTPM) as TransName|TPM">',
             f'##neoExport=<rules="{RULES_VERSION}",case="{self.case}",source="{os.path.basename(src)}">',
         ]
 
@@ -163,20 +171,16 @@ class Exporter:
                 tx = ni.strip_transcript_version(impact.get("Transcript", ""))
                 gx = f"{gene_id}|{genes[gene_id]}" if gene_id in genes else ""
                 txv = f"{tx}|{transcripts[tx]}" if tx in transcripts else ""
-                add = [f"RNA_STATUS={status}"]
-                if gx:
-                    add.append(f"GX={gx}")
-                if txv:
-                    add.append(f"TX={txv}")
-                f[7] = ";".join([f[7]] + add)
+                f[7] = ";".join([f[7], f"RNA_STATUS={status}"])
 
                 fmt = f[8].split(":")
                 norm = ni.sample_values(f[8], f[9 + n_idx])
                 tum = ni.sample_values(f[8], f[9 + t_idx])
                 rad_ref = max(rdp - rad_alt, 0)
-                fmt_new = fmt + ["RDP", "RAD", "RAF"]
-                norm_new = [norm.get(k, ".") for k in fmt] + [".", ".", "."]
-                tum_new = [tum.get(k, ".") for k in fmt] + [str(rdp), f"{rad_ref},{rad_alt}", f"{raf:.4f}"]
+                fmt_new = fmt + ["RDP", "RAD", "RAF", "GX", "TX"]
+                norm_new = [norm.get(k, ".") for k in fmt] + [".", ".", ".", ".", "."]
+                tum_new = ([tum.get(k, ".") for k in fmt]
+                           + [str(rdp), f"{rad_ref},{rad_alt}", f"{raf:.4f}", gx or ".", txv or "."])
                 out.write("\t".join(f[:8] + [":".join(fmt_new), ":".join(norm_new), ":".join(tum_new)]) + "\n")
 
         self.counts.update({"somatic_total": total, "somatic_pass": passed, "selected": selected,

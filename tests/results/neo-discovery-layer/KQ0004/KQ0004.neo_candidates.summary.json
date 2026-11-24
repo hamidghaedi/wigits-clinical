@@ -1,0 +1,65 @@
+{
+ "case": "KQ0004",
+ "generated_utc": "2026-11-23T20:25:48+00:00",
+ "rules_version": "docs/neoantigen_extension_proposal.md@2026-11-23",
+ "thresholds": {
+  "binding_strong_nm": 500.0,
+  "binding_percentile": 2.0,
+  "clonal_subcl_max": 0.25,
+  "allele_cn_min": 0.5,
+  "ffpe_muc_min": 3
+ },
+ "candidates": 69,
+ "tiers": {
+  "Prioritise": 6,
+  "Review": 28,
+  "Hold": 29,
+  "Exclude": 6
+ },
+ "rna_states": {
+  "SUPPORTED": 34,
+  "COVERED_NO_ALT": 16,
+  "NOT_COVERED": 19
+ },
+ "pvacseq_tiers": {
+  "LowExpr": 7,
+  "NoExpr": 29,
+  "Pass": 13,
+  "Poor": 18,
+  "Subclonal": 2
+ },
+ "neo_peptide_rows": 72162,
+ "peptides_scored_by_both": 16080,
+ "best_peptides_matched_in_neo": 69,
+ "case_immune_escape": "none",
+ "purity": {
+  "purity": "0.9200",
+  "ploidy": "2.0600",
+  "msStatus": "MSS",
+  "tmbPerMb": "4.4243",
+  "tml": "69"
+ },
+ "lilac_qc_status": "PASS",
+ "inputs": {
+  "aggregated": "/global/scratch/hpc6049/wigits_runs/neo_ext/KQ0004/pvacseq/MHC_Class_I/KQ0004.all_epitopes.aggregated.tsv",
+  "all_epitopes": "/global/scratch/hpc6049/wigits_runs/neo_ext/KQ0004/pvacseq/MHC_Class_I/KQ0004-2023-AAAD-2-DNA.all_epitopes.tsv",
+  "purple_somatic_vcf": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/purple/KQ0004-2023-AAAD-2-DNA.purple.somatic.vcf.gz",
+  "purple_germline_vcf": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/purple/KQ0004-2023-AAAD-2-DNA.purple.germline.vcf.gz",
+  "purple_purity_tsv": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/purple/KQ0004-2023-AAAD-2-DNA.purple.purity.tsv",
+  "purple_qc": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/purple/KQ0004-2023-AAAD-2-DNA.purple.qc",
+  "sage_append_vcf": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/sage_append/KQ0004-2023-AAAD-2-DNA/KQ0004-2023-AAAD-2-DNA.sage.append.vcf.gz",
+  "lilac_tsv": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/lilac/KQ0004-2023-AAAD-2-DNA.lilac.tsv",
+  "lilac_qc_tsv": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/lilac/KQ0004-2023-AAAD-2-DNA.lilac.qc.tsv",
+  "isofox_gene_tsv": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/isofox/KQ0004-2023-AAAD-2-DNA.isf.gene_data.tsv",
+  "isofox_transcript_tsv": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/isofox/KQ0004-2023-AAAD-2-DNA.isf.transcript_data.tsv",
+  "neo_data_tsv": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/neo/finder/KQ0004-2023-AAAD-2-DNA.neo.neo_data.tsv",
+  "neo_peptide_scores_tsv": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/neo/scorer/KQ0004-2023-AAAD-2-DNA.neo.peptide_scores.tsv",
+  "neo_neoepitope_tsv": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/neo/scorer/KQ0004-2023-AAAD-2-DNA.neo.neoepitope.tsv",
+  "linx_neoepitope_tsv": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/linx/somatic_annotations/KQ0004-2023-AAAD-2-DNA.linx.neoepitope.tsv",
+  "orange_json": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/orange/KQ0004-2023-AAAD-2-DNA.orange.json"
+ },
+ "outputs": {
+  "candidates": "/global/scratch/hpc6049/wigits_runs/neo_ext/KQ0004/KQ0004.neo_candidates.tsv",
+  "concordance": "/global/scratch/hpc6049/wigits_runs/neo_ext/KQ0004/KQ0004.neo_concordance.tsv"
+ }
+}
