@@ -42,3 +42,17 @@ analyses form the activation baseline. The tracker collector stays read-only;
 the coordinator owns submission/delivery and the existing five-minute sync.
 Source versions come from completed producer tasks. QC publication clears no
 identity/scientific hold. Full-size metric completion is not claimed here.
+
+
+## Coordinator activation
+
+Published component lab-qc/v0.2.0 is installed in a clean detached runtime.
+Coordinator ops/lab-qc-dispatch/v1.0.0, commit
+961354337c17e8090af63a9487130edebd420abd, enables the existing five-minute tick.
+On November24 at23:25:02UTC the scheduled observation completed, preserved two
+externally managed sequencing-run states and submitted zero duplicate jobs.
+Twelve existing native analyses are baselined. The two current v0.1.2 QC jobs
+remain unchanged. The operational receipt is maintained in the coordinator's
+`docs/qc/lab_qc_autodispatch_20261124/README.md`; private runtime/configuration
+and real-source metadata stay outside Git. This completes G29 automation,
+not G28's still-running full-size metric assessment.
