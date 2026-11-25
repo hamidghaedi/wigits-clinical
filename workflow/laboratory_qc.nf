@@ -161,6 +161,7 @@ workflow LAB_RUN_QC {
                 ["${s.sample_id}_${q.label}.fastp.json", "${s.sample_id}_${q.label}.fastp.html", "${s.sample_id}_${q.label}.fastp.version.txt"]
             } : kind == 'insert' ? ["${s.sample_id}.insert_size_metrics.txt", "${s.sample_id}.insert_size_histogram.pdf", "${s.sample_id}.picard.version.txt"] :
                 ["${s.sample_id}.wgs_metrics.txt", "${s.sample_id}.bammetrics.version.txt", "${s.sample_id}.coverage.interval_list", "${s.sample_id}.coverage.bed"]
+            allowed=allowed.collect { it.toString() }
             if (!(item.files.keySet().every { it in allowed })) error "Unexpected reused metric: ${s.sample_id} ${kind}"
             if (kind == 'coverage' && item.producer != 'parabricks.bammetrics') error 'Reused coverage must identify Parabricks'
             if (item.dependency && !(item.dependency.toString() ==~ /[0-9]+/)) error 'Invalid upstream metric job binding'
