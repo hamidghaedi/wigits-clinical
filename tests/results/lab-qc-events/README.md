@@ -28,3 +28,24 @@ callback failures log warnings without reclassifying analytical success; missing
 source bindings remain visible errors. Full-size QC performance remains under
 measurement, separate from notification correctness. Manual/remote/RNA-only
 routes without this registered source mapping are not claimed as covered.
+
+
+## Slurm and activation result
+
+Slurm12510626 completed exit0 in47seconds on November24 local time.
+Native source help with its real reference configuration exited0. The actual
+Nextflow topic notification arrived at04:01:33.677UTC November25, before the
+synthetic caller finished at04:01:53UTC. Both source parsing and event timing
+passed. Candidate12510595 failed because the help invocation omitted the native
+genome configuration;12510599 failed on the synthetic output's literal metadata.
+The harness corrections preserve these failed receipts and change no analytical
+code. Accepted source is the published lab-qc/v0.3.0 tag.
+
+Real-task metadata replay:14 notifications produced exactly2 captured run-level
+submission commands,0 actual production jobs. Current v0.1.2 QC and its delivery
+job remain unchanged. Coordinator ops/lab-qc-events/v1.0.0 /97ccb23 removes the
+periodic dispatcher and freezes the output hook/config in new native packages.
+Private configuration switched to the accepted event runtime at04:02:46UTC;
+source/base/hook bindings and validation receipts remain outside Git. No plugin,
+new environment, main merge or running-job modification. Ordinary report copying
+continues on the existing archive schedule and never triggers BAM readiness.
