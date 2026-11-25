@@ -40,3 +40,17 @@ The129-test offline suite passes (3 pre-existing skips); the adapter3 tests,
 shell syntax and diff checks pass. This proves directive calculation, not
 full-size coverage completion. Runtime details remain in the private coordinator
 `phase2-laboratory-parabricks-20261125-r1` execution record.
+
+## Full-size delivery verification
+
+The v0.4.1 full batch12511667 completed exit0 in1h32m44. Twelve new coverage
+tasks, the dependent reuse of the successful matched tumour and both run-level
+render tasks succeeded. All29 completed small-source reuse tasks were cached.
+The two reports contain exactly4/10 laboratory samples, all eight required
+summary metrics populated, and no duplicate REDUX display rows. The completed
+task `_SUCCESS` hashes match the persistent canonical HTMLs; the corresponding
+Laptop_sync Drive copies match in size and MD5. Source releases, metrics,
+original BAMs and scientific/identity holds are preserved. The coordinator's
+`docs/qc/phase2_laboratory_parabricks_20261125/README.md` records the two direct
+links and retained exact execution receipts. This is full-size validation for
+these14 libraries, not a universal resource/performance bound.

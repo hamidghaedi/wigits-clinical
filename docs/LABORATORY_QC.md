@@ -189,3 +189,10 @@ and its running tumour producer, then calculate the remaining12 coverage sets.
 Original Picard metrics and jobs remain evidence. Superseded queued publication
 must not overwrite the owner-selected Parabricks reports. The final two HTMLs
 use the existing phase/run delivery paths and exact source/sample receipts.
+
+Full-size v0.4.1 batch12511667 completed exit0 on November25 in1h32m44.
+The two run-level reports passed exact4/10 membership and populated-metric
+checks and were independently delivered into the canonical archive and
+Laptop_sync. Both copies match the produced HTML bytes. See
+`tests/results/lab-qc-parabricks/README.md` for the validation scope; resource
+allowances remain provisional beyond the measured14-library batch.
