@@ -14,7 +14,9 @@ set -u
 mkdir -p "$TEST_ROOT/lib"
 cd "$TEST_ROOT"
 export NXF_OPTS='-Xms256m -Xmx2g' NXF_ANSI_LOG=false
-nextflow -log native_help.log run "$NATIVE" --help > native_help.txt
+nextflow -log native_help.log run "$NATIVE" \
+  -c "$ONCO_REF_ROOT/$ONCO_REFERENCE_VERSION/reference_data.config" \
+  --genome GRCh38_hmf --mode wgts --help > native_help.txt
 cp "$HERE/../tests/fixtures/lab_qc_events/notification.nf" test.nf
 cp "$HERE/overlays/lab-qc-events/lib/LabQcEvents.groovy" lib/
 python3 - "$HERE" "$TEST_ROOT" <<'PY'
