@@ -35,7 +35,7 @@ The later native AMBER/PURPLE analytical report remains separate.
 Original native files and lineage are retained. One top-level General Statistics
 row per laboratory sample; lane-level raw QC remains in expandable children and
 an explicit yield table. Software versions come from task output, never image
-names. Phase1 MOHCCN network logo,200px width and default MultiQC presentation are
+names. Phase1 MOHCCN network logo at its original natural size and default MultiQC presentation are
 locked in `workflow/assets/lab_multiqc_style.json` and `lab_multiqc.css`.
 The source comparison is the coordinator's February20 run19 YAML/HTML.
 Headers retain Project/Pipeline/Batch/Run/Tissue/Flowcell/Run Date/Report Date;

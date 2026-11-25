@@ -97,7 +97,9 @@ def prepare(args):
             raise ValueError('No measured FR insert-size metrics: '+sid)
         dup = duplicate_summary(s['bamtools_flags'])
         data[sid] = dict(raw_reads=raw['total_reads'], raw_gb=raw['total_bases']/1e9,
-                         raw_q30_pct=raw['q30_pct'], bam_duplicate_pct=dup['bam_duplicate_pct'],
+                         raw_q30_pct=raw['q30_pct'], MEAN_COVERAGE=float(wgs['MEAN_COVERAGE']),
+                         MEDIAN_COVERAGE=float(wgs['MEDIAN_COVERAGE']),picard_target_bases_30X=100*float(wgs['PCT_30X']),
+                         bam_duplicate_pct=dup['bam_duplicate_pct'],
                          mean_insert_size=float(fr['MEAN_INSERT_SIZE']))
         provenance[sid] = dict(source=s, raw=raw, bamtools=dup, coverage_producer="Parabricks bammetrics", wgs_metrics=wgs, picard_insert=insert)
         for q,path in zip(s['fastqs'],paths):
@@ -115,15 +117,16 @@ def prepare(args):
     for item in demux:
         path=Path(item);dest=Path('qc/demultiplexing')/path.name;dest.parent.mkdir(exist_ok=True)
         shutil.copy2(path,dest); source_hashes[str(path)]=digest(path)
-    description = ('All recorded lane pairs; fastp QC-only (no trimming/filtering or FASTQ rewriting). '
-                   'Coverage: Parabricks bammetrics on all-lane REDUX BAMs, MAPQ20/baseQ20, '
-                   'cap250, overlapping mates counted once, primary chr1-22/X/Y territory on the exact HMF reference. '
-                   'Duplication/flag plots: Hartwig BAMTOOLS, not Picard MarkDuplicates. '
-                   'Fastp duplication is an independent estimate; its disabled filtering does not constitute a laboratory QC pass. ')
+    description = ('Coverage: Parabricks bammetrics (duplicate-excluding, MAPQ/baseQ20, cap250); '
+                   'insert size: Picard; alignment/duplication: Hartwig BAMTOOLS. '
+                   'FASTQ QC includes all recorded lanes without trimming or filtering. ')
     if not demux:
-        description += 'Original demultiplexing/PF/undetermined-read statistics were not supplied; FASTQ yield includes assigned reads only. '
+        description += 'Original demultiplexing/PF/undetermined-read statistics were not supplied. '
     description += manifest.get('run_notes', {}).get(args.run, '')
     headers = {
+        'MEAN_COVERAGE':dict(title='Mean coverage',suffix='x',format='{:,.2f}',hidden=False),
+        'MEDIAN_COVERAGE':dict(title='Median coverage',suffix='x',format='{:,.2f}',hidden=False),
+        'picard_target_bases_30X':dict(title='Bases ≥30x',suffix='%',format='{:,.2f}',max=100,hidden=False),
         'raw_reads': dict(title='Raw reads', description='Individual mate reads, summed across all lane pairs', format='{:,.0f}'),
         'raw_gb': dict(title='Raw Gb', description='FASTQ bases before QC processing / 1e9', format='{:,.2f}'),
         'raw_q30_pct': dict(title='Q30 bases', description='100 * summed raw Q30 bases / summed raw bases', suffix='%', max=100, format='{:,.2f}'),
@@ -140,9 +143,9 @@ def prepare(args):
         custom_logo_title=style['custom_logo_title'],show_analysis_paths=False,show_analysis_time=False,
         custom_css_files=['report.css'],
         report_header_info=header,
-        module_order=[{'fastp':{'name':'fastp (raw FASTQ QC only)','generalstats':False}},
-                      {'samtools':{'name':'Alignment flags (Hartwig BAMTOOLS; samtools format)'}},
-                      {'picard':{'name':'Coverage and insert size (Parabricks / Picard)'}},{'custom_content':{}}],
+        module_order=[{'fastp':{'name':'fastp','generalstats':False}},
+                      {'samtools':{'name':'Alignment metrics'}},
+                      {'picard':{'name':'BAM metrics','generalstats':False}},{'custom_content':{}}],
         sample_names_replace_regex=True,
         sample_names_replace={r'\.wgs_metrics$':'',r'\.insert_size_metrics$':'',r'\.fastp$':'',**sample_aliases(samples)},
         custom_data={'lab_summary':dict(plot_type='generalstats',headers=[{k:v} for k,v in headers.items()],data=data),
@@ -178,7 +181,7 @@ def prepare(args):
     shutil.copy2(args.manifest,'provenance/input_manifest.json')
     Path('provenance/release.json').write_text(json.dumps(dict(tag=args.release_tag,commit=args.release_commit,
         logo_sha256=digest(args.logo),logo_width=style['logo_width'],style_id=style['id'],
-        coverage_producer='Parabricks bammetrics',demultiplexing_supplied=bool(demux)),indent=2)+'\n')
+        coverage_producer='Parabricks bammetrics',style_css=Path(args.css).read_text(),demultiplexing_supplied=bool(demux)),indent=2)+'\n')
     with Path('provenance/sample_summary.csv').open('w',newline='') as f:
         w=csv.DictWriter(f,fieldnames=['sample_id',*next(iter(data.values()))]);w.writeheader()
         for sid,row in data.items(): w.writerow(dict(sample_id=sid,**row))
@@ -208,8 +211,9 @@ def finalize(args):
     images=re.findall(r'data:image/[^;]+;base64,([A-Za-z0-9+/=]+)',text)
     if not any(hashlib.sha256(base64.b64decode(x)).hexdigest()==release['logo_sha256'] for x in images):
         raise ValueError('Expected branding image not embedded')
-    width=release.get('logo_width',50)
-    if not re.search(r'#page_title\s+\.custom_logo\s*\{[^}]*width:\s*'+str(width)+'px',text):
+    if release.get('style_css'):
+        if release['style_css'].strip() not in text:raise ValueError('Phase1 branding CSS missing')
+    elif not re.search(r'#page_title\s+\.custom_logo\s*\{[^}]*width:\s*50px',text):
         raise ValueError('Missing configured branding CSS')
     Path('_SUCCESS').write_text(json.dumps(dict(run_id=args.run,samples=sorted(expected),
         release_tag=args.release_tag,release_commit=args.release_commit,report_sha256=digest(report),
