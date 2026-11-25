@@ -1,8 +1,10 @@
 nextflow.enable.dsl=2
 
 process BAM_READY {
+    input:
+    val meta
     output:
-    tuple val([sample_id:'SYNTHETIC']), path('bamtools_SYNTHETIC'), topic: bamtools_metrics_dir
+    tuple val(meta), path('bamtools_SYNTHETIC'), topic: bamtools_metrics_dir
     script:
     '''
     mkdir bamtools_SYNTHETIC
@@ -24,7 +26,7 @@ process CALLER {
 }
 
 workflow {
-    BAM_READY()
+    BAM_READY(channel.value([sample_id: 'SYNTHETIC']))
     CALLER(channel.value(true))
     channel.topic('bamtools_metrics_dir').subscribe { record ->
         LabQcEvents.bamReady(record[1],log)
