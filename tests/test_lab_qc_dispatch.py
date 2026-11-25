@@ -81,6 +81,17 @@ class LabDispatchTests(unittest.TestCase):
         result=tool.tick(self.config,lambda *a,**k:self.fail('must not submit'))
         self.assertEqual(result[0]['status'],'waiting_for_bams');self.assertIn('LIB1',result[0]['reason'])
 
+    def test_existing_coverage_summary_is_bound_without_scanning_bam(self):
+        parent=self.root/'CASE0/results/CASE0/bamtools/LIB0'
+        source=parent/'LIB0.bam_metric.summary.tsv'
+        source.write_text('MeanCoverage\n141\n')
+        tool.tick(self.config,lambda *a,**k:SimpleNamespace(stdout='999\n'))
+        state=tool.read(Path(self.config['state_directory'])/'SEQ_RUN.run.json')
+        manifest=tool.read(Path(state['execution_root'])/'manifest.json')
+        rows={r['sample_id']:r for r in manifest['samples']}
+        self.assertEqual(rows['LIB0']['bamtools_summary'],str(source))
+        self.assertIsNone(rows['LIB1']['bamtools_summary'])
+
     def test_incomplete_published_bam_copy_waits(self):
         p=self.root/'CASE1/results/CASE1/alignments/LIB1/LIB1.redux.bam';p.write_bytes(b'partial')
         result=tool.tick(self.config,lambda *a,**k:self.fail('must not submit'))

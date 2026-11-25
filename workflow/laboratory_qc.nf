@@ -7,7 +7,7 @@ params.parabricks_image = null
 params.slurm_account = null
 params.fastp_image = null
 params.multiqc_image = null
-params.release_tag = 'lab-qc/v0.4.0'
+params.release_tag = 'lab-qc/v0.4.1'
 params.release_commit = null
 
 process LAB_FASTQ_QC {
@@ -36,12 +36,14 @@ process LAB_WGS_METRICS {
     tag "$sample"
     container params.parabricks_image
     cpus 32
-    memory { (64 + 32 * Math.max(0,Math.ceil(input_gib/512.0).toInteger()-1)).GB }
-    time { Math.max(60,Math.ceil(input_gib)).toInteger().min }
+    memory { allowance.memory_gib.GB }
+    time { allowance.minutes.min }
+    // Preserve other running metrics if one fails; still fail the workflow.
+    errorStrategy 'finish'
     // No artificial four-library cap: the site queue/scheduler controls capacity.
     publishDir "${params.outdir}/${run}/qc/${sample}/coverage", mode: 'copy'
     input:
-    tuple val(run), val(sample), val(input_gib), path(bam), path(bai), path(reference), path(fai)
+    tuple val(run), val(sample), val(input_gib), val(allowance), path(bam), path(bai), path(reference), path(fai)
     output:
     tuple val(run), path("${sample}.wgs_metrics.txt"), path("${sample}.bammetrics.version.txt"), path("${sample}.coverage.bed"), emit: files
     script:
@@ -175,6 +177,7 @@ workflow LAB_RUN_QC {
         tuple(s.run_id, s.sample_id, q.label, q.input_gib, file(q.r1, checkIfExists:true), file(q.r2, checkIfExists:true))
     } }
     ch_wgs = ch_samples.filter { !it.reuse?.coverage }.map { s -> tuple(s.run_id, s.sample_id, s.bam_gib,
+        LabQcResources.coverage(s.bam_gib, s.bamtools_summary),
         file(s.bam, checkIfExists:true), file(s.bai, checkIfExists:true),
         file(manifest.reference, checkIfExists:true), file(manifest.fai, checkIfExists:true)) }
     ch_insert = ch_samples.filter { !it.reuse?.insert }.map { s -> tuple(s.run_id, s.sample_id, s.bam_gib,

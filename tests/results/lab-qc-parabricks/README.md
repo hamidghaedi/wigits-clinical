@@ -11,7 +11,7 @@ HTML/YAML, shared network logo, and base YAML. Carry visual settings and real
 metadata structure, not old hardcoded software versions. Actual Parabricks,
 Picard insert-size, BAMTOOLS and fastp sources remain labelled separately.
 
-Offline suite126 tests pass,3 existing skips; adapter3 pass. Shell/diff checks
+Offline suite129 tests pass,3 existing skips; adapter3 pass. Shell/diff checks
 pass. Existing tests cover event timing/duplicate protection and missing-library
 scope. A new test refuses a shrunk manifest membership. Full rendering and
 real-data execution remain pending until the runtime canary/final reports pass.
@@ -22,3 +22,21 @@ rewrite. Reuse only immutable completed sources or explicit successful upstream
 Slurm dependencies; no timer/file watcher. Current Picard work remains intact.
 Per-run grouping removes unnecessary cross-run waiting. Production caps no
 longer serialize coverage in groups of4; site scheduler limits remain.
+
+
+## Depth-aware memory recovery
+
+The first v0.4.0 full batch failed when a141x tumour exceeded64GiB after2m51.
+Nextflow terminated the other coverage tasks. v0.4.1 reads the already-completed
+BAMTOOLS summary for an initial depth-aware allowance (128GiB for this tumour),
+retains32CPU/filters and changes failure handling to `finish`, with no retries.
+The depth/size heuristic is provisional; measured failure establishes only that
+64GiB was insufficient, not the exact cause or a guaranteed upper bound.
+The metadata canary tests band boundaries, missing/malformed summary, large BAM
+allowance and walltime floor; full-size recovery remains separately recorded.
+
+Metadata canary12511665 completed exit0 in7s under Slurm/Nextflow26.04.4.
+The129-test offline suite passes (3 pre-existing skips); the adapter3 tests,
+shell syntax and diff checks pass. This proves directive calculation, not
+full-size coverage completion. Runtime details remain in the private coordinator
+`phase2-laboratory-parabricks-20261125-r1` execution record.

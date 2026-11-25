@@ -24,7 +24,7 @@ nextflow run "$HERE/laboratory_qc.nf" -entry LAB_RUN_QC \
   --parabricks_image "$CONTAINER_DIR/clara-parabricks-4.6.0-1.sif" --slurm_account "$SLURM_ACCOUNT_CPU" \
   --fastp_image "$CONTAINER_DIR/fastp-1.0.1--heae3180_0.sif" \
   --multiqc_image "$CONTAINER_DIR/multiqc-1.32--pyhdfd78af_0.sif" \
-  --release_tag lab-qc/v0.4.0 --release_commit "$RELEASE_COMMIT" \
+  --release_tag lab-qc/v0.4.1 --release_commit "$RELEASE_COMMIT" \
   -work-dir "$TASK_ROOT/work" -with-trace "$TASK_ROOT/execution_trace.txt" "$@"
 
 # Delivery follows this QC workflow's success, not a periodic readiness scan.

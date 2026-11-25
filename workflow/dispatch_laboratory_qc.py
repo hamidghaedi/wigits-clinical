@@ -26,7 +26,7 @@ import tarfile
 
 import yaml
 
-VERSION = '2.2.0'
+VERSION = '2.2.1'
 PHASES = {'Phase 1':'Phase_1','Phase_1':'Phase_1','Phase 1.5':'phase_1.5',
           'phase_1.5':'phase_1.5','Phase 2':'Phase_2','Phase_2':'Phase_2'}
 
@@ -192,7 +192,9 @@ def sample_manifest(item, lab, config, folder):
     objects=item['plan'].get('objects',[])
     seqruns={x['run_id'] for x in objects if x.get('sample_id')==sid}
     if seqruns and seqruns!={lab['run_id']}:raise ValueError(sid+': multi-run BAM needs per-run metric binding')
+    summary=flags.with_name(sid+'.bam_metric.summary.tsv')
     return dict(run_id=lab['run_id'],sample_id=sid,bam=str(bam),bai=str(bai),bam_gib=bam.stat().st_size/2**30,
+                bamtools_summary=str(summary) if summary.is_file() else None,
                 bamtools_flags=str(flags),source_versions=str(version_path),fastqs=fq,
                 source_case_package=item['case']['package'],source_native_job=item['job'],
                 source_version_files=version_sources),profiles[0]

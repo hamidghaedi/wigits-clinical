@@ -1,6 +1,6 @@
 # Laboratory sequencing-run QC
 
-Component `lab-qc/v0.4.0`, owner direction November24,2026. Separate
+Component `lab-qc/v0.4.1`, owner direction November24,2026. Separate
 `LAB_RUN_QC` Nextflow entry: existing BAMs and original FASTQs to one branded
 MultiQC per **sequencing run**, without running callers or changing native
 results. Use after all-lane BAM preparation, not after clinical reporting.
@@ -63,19 +63,26 @@ sbatch --account=def-hpcg6049_cpu \
 
 Manifest keys: `reference`, `fai`, `dict`, `logo`, `css`, and `samples`.
 The native task generates its measured interval list. Each sample has `run_id`, `sample_id`,
-`bam`, `bai`, `bam_gib`, `bamtools_flags`, `source_versions`, and `fastqs` with
+`bam`, `bai`, `bam_gib`, optional `bamtools_summary`, `bamtools_flags`, `source_versions`, and `fastqs` with
 `label`, `r1`, `r2`, `input_gib` per lane pair. Optional `demultiplexing` maps
 run IDs to original source-file lists; `run_notes` records factual source gaps.
 Original lab identities/lanes govern membership; filenames do not invent it.
 
-CPU/RAM: fastp4CPU/6GiB (up to12), coverage32CPU/64GiB up to512GiB BAM,
-then32GiB extra per additional512GiB tier, insert2CPU/8GiB (up to4). Coverage
-has no artificial four-library cap; the site's existing queue and scheduler
-control concurrency. Coverage walltime is1min/GiB BAM with1h floor. This has
-more than3x margin over the completed31GiB normal timing, while the full tumour
-benchmark is retained separately; it is a conservative initial allowance, not
-universal validation. Other size allowances remain unchanged. Existing issued
-jobs keep their original resources. No running analytical job or source file is modified.
+CPU/RAM: fastp4CPU/6GiB (up to12), insert2CPU/8GiB (up to4),
+coverage32CPU with `lab-coverage-depth-v1` initial RAM:64GiB at measured native
+BAMTOOLS mean coverage<=50x, plus32GiB per additional50x band. Missing/unreadable
+summary uses128GiB, with no new scan or launch gate. Add32GiB per BAM-size band
+above512GiB. Thus the141x tumour requests128GiB; a23x normal64GiB. The 64GiB
+BAM-size-only floor failed in the full batch at141x (peak64GiB, Slurm OOM).
+This depth allowance is a conservative recovery heuristic, not universal validation
+or a demonstrated causal model of the tool's memory use. See
+`workflow/lib/LabQcResources.groovy` and the metadata-only boundary canary.
+Coverage walltime stays1min/GiB BAM with1h floor. There is no artificial library
+concurrency cap; the site's existing queue and scheduler control concurrency.
+A failed coverage task uses Nextflow `finish`: already-running tasks finish,
+the workflow still fails, and no automatic resource escalation/retry is added.
+Completed tasks are reusable on explicit resume. Existing issued jobs keep their
+original resources. No running analytical job or source file is modified.
 
 The workflow publishes per-run `qc/`, HTML/data ZIP, source summaries and
 `_SUCCESS`. Deliver the successful run HTML through the coordinator's maintained
@@ -101,13 +108,13 @@ Primary tool references:
 ## Automatic BAM-ready dispatch
 
 Owner correction November24: **no recurring readiness check**. Component
-lab-qc/v0.4.0 retains the event route and supersedes v0.2.0's five-minute dispatch. The archive sync still
+lab-qc/v0.4.1 retains the event route and supersedes v0.2.0's five-minute dispatch. The archive sync still
 copies completed reports on its existing schedule; it no longer starts QC.
 
 A small operational subscription to native `bamtools_metrics_dir` receives each
 successfully completed BAMTOOLS output. BAMTOOLS already consumes the completed
 sample REDUX BAM. `LabQcEvents.bamReady` calls `dispatch_laboratory_qc.py`
-v2.1.0 once for that event. The first events record readiness; the final expected
+v2.2.1 once for that event. The first events record readiness; the final expected
 DNA library starts one LAB_RUN_QC job for its sequencing run. No SAGE, PURPLE,
 ORANGE or analytical-head completion dependency. Cached outputs re-emit the
 same topic on resume; persistent state prevents duplicate submissions.
@@ -128,8 +135,8 @@ binds this source and a frozen QC config in the case package, then exports
 `WIGITS_LAB_QC_CONFIG`. Original installed sources and issued packages remain
 untouched. No plugin, new environment or daemon is required.
 
-The QC head calls `--deliver-run` immediately after its own Nextflow execution
-succeeds. This stages HTML and compact evidence to the canonical phase/run QC
+Each completed run emits `_SUCCESS` to the report-ready callback immediately;
+the QC head also calls `--deliver-run` after its own Nextflow execution succeeds. This stages HTML and compact evidence to the canonical phase/run QC
 folder; existing Laptop_sync copying continues. Failed QC does not trigger
 successful delivery; ambiguous submissions need operator recovery. File locking
 serializes concurrent events without dropping the final event. Per-run saved
