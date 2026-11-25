@@ -1,6 +1,6 @@
 # Laboratory sequencing-run QC
 
-Component `lab-qc/v0.3.0`, owner direction November24,2026. Separate
+Component `lab-qc/v0.4.0`, owner direction November24,2026. Separate
 `LAB_RUN_QC` Nextflow entry: existing BAMs and original FASTQs to one branded
 MultiQC per **sequencing run**, without running callers or changing native
 results. Use after all-lane BAM preparation, not after clinical reporting.
@@ -15,15 +15,12 @@ The later native AMBER/PURPLE analytical report remains separate.
   and length filtering. Read/base/Q30 counts use **before_filtering**. Sum counts
   across lanes; Q30 is summed Q30 bases divided by summed bases. Individual mate
   reads are not read pairs. This does not add fastp preprocessing to analysis.
-- Picard image3.1.0 (the installed executable reports3.1.0-SNAPSHOT) CollectWgsMetrics: exact alignment reference, primary chr1-22/X/Y
-  intervals, MAPQ20/baseQ20, cap250, COUNT_UNPAIRED=false, USE_FAST_ALGORITHM=true,
-  READ_LENGTH151; no STOP_AFTER. Duplicates and overlapping mate observations
-  are excluded by native Picard. Fast accumulation is used without substituting
-  Hartwig/Parabricks values; cross-tool identity is not claimed.
-  The task generates primary-chromosome BED from the exact reference FAI and
-  uses native BedToIntervalList with its complete dictionary. This retains the
-  full sequence dictionary while restricting the measured territory; a
-  hand-written subset dictionary is not supplied.
+- Owner-selected Parabricks4.6.0-1 bammetrics for coverage,32 CPU threads,
+  MAPQ20/baseQ20/cap250, unpaired=false, chr1-22/X/Y whole-chromosome BED from
+  the exact alignment reference FAI. No GPU, sampling, STOP_AFTER or BAM rewrite.
+  Native Picard coverage is historical/comparison evidence, never relabelled as
+  the same execution. The matched normal comparison took8m39 versus70m10 and
+  differs slightly numerically; preserve the actual source values and labels.
 - Picard CollectInsertSizeMetrics retains native defaults; General Statistics
   includes the measured FR mean. No deduplication is rerun.
 - Native BAMTOOLS flag text is copied byte-for-byte for MultiQC's samtools-format
@@ -38,7 +35,11 @@ The later native AMBER/PURPLE analytical report remains separate.
 Original native files and lineage are retained. One top-level General Statistics
 row per laboratory sample; lane-level raw QC remains in expandable children and
 an explicit yield table. Software versions come from task output, never image
-names. Queen's Pathology logo/CSS use the accepted shared asset supplied by path.
+names. Phase1 MOHCCN network logo,200px width and default MultiQC presentation are
+locked in `workflow/assets/lab_multiqc_style.json` and `lab_multiqc.css`.
+The source comparison is the coordinator's February20 run19 YAML/HTML.
+Headers retain Project/Pipeline/Batch/Run/Tissue/Flowcell/Run Date/Report Date;
+values come from the laboratory manifest and report preparation, never old literals.
 Header displays the immutable component tag; SHA and small-source hashes live
 in provenance and `_SUCCESS`. New versioned execution roots preserve old reports.
 This implements the applicable presentation/source/release requirements of the
@@ -67,12 +68,14 @@ The native task generates its measured interval list. Each sample has `run_id`, 
 run IDs to original source-file lists; `run_notes` records factual source gaps.
 Original lab identities/lanes govern membership; filenames do not invent it.
 
-CPU/RAM are task-specific: fastp4CPU/6GiB (up to12 concurrent tasks), native
-WGS4CPU/16GiB (up to4), insert2CPU/8GiB (up to4). Initial walltime uses actual
-compressed FASTQ-pair or BAM size with a conservative2x allowance: fastp
-12GiB/hour, WGS20GiB/hour (minimum4h), insert40GiB/hour. These are planning
-allowances pending the first full-run measurements, not validated throughput.
-No running analytical job or source file is modified.
+CPU/RAM: fastp4CPU/6GiB (up to12), coverage32CPU/64GiB up to512GiB BAM,
+then32GiB extra per additional512GiB tier, insert2CPU/8GiB (up to4). Coverage
+has no artificial four-library cap; the site's existing queue and scheduler
+control concurrency. Coverage walltime is1min/GiB BAM with1h floor. This has
+more than3x margin over the completed31GiB normal timing, while the full tumour
+benchmark is retained separately; it is a conservative initial allowance, not
+universal validation. Other size allowances remain unchanged. Existing issued
+jobs keep their original resources. No running analytical job or source file is modified.
 
 The workflow publishes per-run `qc/`, HTML/data ZIP, source summaries and
 `_SUCCESS`. Deliver the successful run HTML through the coordinator's maintained
@@ -98,13 +101,13 @@ Primary tool references:
 ## Automatic BAM-ready dispatch
 
 Owner correction November24: **no recurring readiness check**. Component
-lab-qc/v0.3.0 supersedes v0.2.0's five-minute dispatch. The archive sync still
+lab-qc/v0.4.0 retains the event route and supersedes v0.2.0's five-minute dispatch. The archive sync still
 copies completed reports on its existing schedule; it no longer starts QC.
 
 A small operational subscription to native `bamtools_metrics_dir` receives each
 successfully completed BAMTOOLS output. BAMTOOLS already consumes the completed
 sample REDUX BAM. `LabQcEvents.bamReady` calls `dispatch_laboratory_qc.py`
-v2.0.0 once for that event. The first events record readiness; the final expected
+v2.1.0 once for that event. The first events record readiness; the final expected
 DNA library starts one LAB_RUN_QC job for its sequencing run. No SAGE, PURPLE,
 ORANGE or analytical-head completion dependency. Cached outputs re-emit the
 same topic on resume; persistent state prevents duplicate submissions.
@@ -155,3 +158,27 @@ BAMs and repeated chunk labels require an explicit released mapping. A changed
 laboratory scope after delivery requires an explicit new report revision, not a
 silent overwrite. Full-size v0.1.2 metric jobs continue; event validation is not
 universal QC resource/performance validation.
+
+
+## Reuse and independent report completion
+
+`expected_samples` maps every selected sequencing run to its complete sample
+list derived from the laboratory manifest. Both the workflow and report helper
+retain exact membership. Each run groups its own expected metric events using
+Nextflow groupKey; another run cannot delay its completed report.
+
+Optional per-sample `reuse` has `fastp`, `insert`, `coverage` entries, each a
+`files` map from normalized metric filenames to immutable source paths. Raw QC
+and insert metrics can be copied by small local tasks inside the Slurm head;
+large BAM/FASTQ sources are never copied. Coverage reuse must explicitly name
+producer `parabricks.bammetrics`. An optional numeric `dependency` is a Slurm
+afterok binding for an already-running producer; a small copy task starts only
+after it succeeds. There is no file-readiness polling and no duplicate coverage
+calculation. Full source paths and small-file hashes remain in report provenance.
+
+For the October15/19 batch all14 BAMs already exist. Reuse112 completed raw-QC
+lane products and14 insert metrics. Reuse the matched Parabricks normal output
+and its running tumour producer, then calculate the remaining12 coverage sets.
+Original Picard metrics and jobs remain evidence. Superseded queued publication
+must not overwrite the owner-selected Parabricks reports. The final two HTMLs
+use the existing phase/run delivery paths and exact source/sample receipts.

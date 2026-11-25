@@ -3,8 +3,10 @@
 Laboratory sequencing-run QC uses the separate [BAM-ready entry](../docs/LABORATORY_QC.md),
 `laboratory_qc.nf -entry LAB_RUN_QC`. It produces one MultiQC per sequencing run
 from existing BAMs and all FASTQ lane pairs, without invoking callers.
-`dispatch_laboratory_qc.py` v2.0.0 receives native completed-BAM output events
-and submits once the whole laboratory run is ready. QC-head success triggers
+`dispatch_laboratory_qc.py` v2.1.0 receives native completed-BAM output events
+and submits once the whole laboratory run is ready. Owner-selected Parabricks
+coverage uses32 CPU threads, with Phase1 network-logo presentation and
+independent completion for each sequencing run. QC-head success triggers
 delivery. There is no periodic readiness scan or variant-calling dependency.
 
 Current repository release: [v0.1.0](../docs/releases/v0.1.0.md), maintained on

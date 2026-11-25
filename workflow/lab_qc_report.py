@@ -5,8 +5,7 @@ Each manifest row is one actual laboratory library, grouped by sequencing run
 (not paired analysis). Sum fastp before_filtering reads/bases/Q30 bases across
 all recorded lanes; Q30 = summed Q30 bases / summed bases. fastp is QC-only,
 with all trimming/filtering disabled and no FASTQ outputs. No post-trimming
-yield or raw instrument PF/undetermined read count is inferred. Picard WGS
-metrics remain their native filtered measurements; BAMTOOLS duplicate flag
+yield or raw instrument PF/undetermined read count is inferred. Coverage uses the owner-selected accelerated Parabricks bammetrics producer; BAMTOOLS duplicate flag
 counts remain their actual producer's observations, not Picard duplicate metrics.
 Copy the native flag text verbatim into a separately labelled samtools-format
 parser input. Original source paths and small-file hashes remain in provenance.
@@ -66,6 +65,8 @@ def load_samples(manifest, run):
     samples = [s for s in manifest['samples'] if s['run_id'] == run]
     if not samples or len({s['sample_id'] for s in samples}) != len(samples):
         raise ValueError('Expected nonempty unique run membership')
+    if manifest.get('expected_samples') is not None and {s['sample_id'] for s in samples} != set(manifest['expected_samples'].get(run,[])):
+        raise ValueError('Sequencing-manifest membership differs from QC samples: '+run)
     for s in samples:
         if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', s['sample_id']):
             raise ValueError('Unsafe sample ID')
@@ -93,7 +94,7 @@ def prepare(args):
         data[sid] = dict(raw_reads=raw['total_reads'], raw_gb=raw['total_bases']/1e9,
                          raw_q30_pct=raw['q30_pct'], bam_duplicate_pct=dup['bam_duplicate_pct'],
                          mean_insert_size=float(fr['MEAN_INSERT_SIZE']))
-        provenance[sid] = dict(source=s, raw=raw, bamtools=dup, picard_wgs=wgs, picard_insert=insert)
+        provenance[sid] = dict(source=s, raw=raw, bamtools=dup, coverage_producer="Parabricks bammetrics", wgs_metrics=wgs, picard_insert=insert)
         for q,path in zip(s['fastqs'],paths):
             lane = raw_summary([path])
             lane_data[sid+' '+q['label']] = dict(reads=lane['total_reads'], yield_gb=lane['total_bases']/1e9, q30_pct=lane['q30_pct'])
@@ -110,7 +111,7 @@ def prepare(args):
         path=Path(item);dest=Path('qc/demultiplexing')/path.name;dest.parent.mkdir(exist_ok=True)
         shutil.copy2(path,dest); source_hashes[str(path)]=digest(path)
     description = ('All recorded lane pairs; fastp QC-only (no trimming/filtering or FASTQ rewriting). '
-                   'Coverage: native Picard CollectWgsMetrics on all-lane REDUX BAMs, MAPQ20/baseQ20, '
+                   'Coverage: Parabricks bammetrics on all-lane REDUX BAMs, MAPQ20/baseQ20, '
                    'cap250, overlapping mates counted once, primary chr1-22/X/Y territory on the exact HMF reference. '
                    'Duplication/flag plots: Hartwig BAMTOOLS, not Picard MarkDuplicates. '
                    'Fastp duplication is an independent estimate; its disabled filtering does not constitute a laboratory QC pass. ')
@@ -123,14 +124,20 @@ def prepare(args):
         'raw_q30_pct': dict(title='Q30 bases', description='100 * summed raw Q30 bases / summed raw bases', suffix='%', max=100, format='{:,.2f}'),
         'bam_duplicate_pct': dict(title='BAM duplicates', description='BAMTOOLS: 100 * primary duplicate reads / primary reads; PCR and optical combined', suffix='%', max=100, format='{:,.2f}'),
         'mean_insert_size': dict(title='Mean insert', description='Picard CollectInsertSizeMetrics FR mean; bp', suffix=' bp', format='{:,.2f}')}
-    config=dict(title='MOHCCN sequencing-run QC', subtitle=args.run,
-        report_comment=description, custom_logo='logo.jpg', custom_logo_width=50,
-        custom_logo_title="Queen's University Department of Pathology and Molecular Medicine",
+    style=json.loads((Path(__file__).resolve().parent/'assets/lab_multiqc_style.json').read_text())
+    metadata=manifest.get('run_metadata',{}).get(args.run,{})
+    header=[{'Project':metadata.get('project_id','')},{'Pipeline Version':args.release_tag},
+            {'Batch ID':metadata.get('batch_id','')},{'Run ID':args.run},
+            {'Tissue Type':metadata.get('tissue_type','')},{'Flowcell ID':metadata.get('flowcell_id','')},
+            {'Run Date':metadata.get('run_date','')},{'Report Date':metadata.get('report_date','')}]
+    config=dict(title=style['title'], subtitle='Batch: '+metadata.get('batch_id','')+' | Run ID: '+args.run,
+        report_comment=description, custom_logo='logo.jpg', custom_logo_width=style['logo_width'],
+        custom_logo_title=style['custom_logo_title'],show_analysis_paths=False,show_analysis_time=False,
         custom_css_files=['report.css'],
-        report_header_info=[{'Run ID':args.run},{'Pipeline version':args.release_tag}],
-        module_order=[{'custom_content':{}},{'fastp':{'name':'fastp (raw FASTQ QC only)','generalstats':False}},
+        report_header_info=header,
+        module_order=[{'fastp':{'name':'fastp (raw FASTQ QC only)','generalstats':False}},
                       {'samtools':{'name':'Alignment flags (Hartwig BAMTOOLS; samtools format)'}},
-                      {'picard':{'name':'Picard (deduplicated coverage and insert size)'}}],
+                      {'picard':{'name':'Coverage and insert size (Parabricks / Picard)'}},{'custom_content':{}}],
         sample_names_replace_regex=True,
         sample_names_replace={r'\.wgs_metrics$':'',r'\.insert_size_metrics$':'',r'\.fastp$':''},
         custom_data={'lab_summary':dict(plot_type='generalstats',headers=[{k:v} for k,v in headers.items()],data=data),
@@ -153,7 +160,11 @@ def prepare(args):
     for p in root.glob('*.version.txt'):
         version=p.read_text().strip()
         if '.fastp.version' in p.name: versions['Raw FASTQ QC']={'fastp':version.removeprefix('fastp ')}
-        elif '.picard.version' in p.name: versions['BAM QC']={'Picard':version.removeprefix('Version:')}
+        elif '.picard.version' in p.name: versions['Insert-size QC']={'Picard':version.removeprefix('Version:')}
+        elif '.bammetrics.version' in p.name:
+            match=re.search(r'^pbrun:\s*(\S+)',version,re.M)
+            if not match:raise ValueError('Parabricks emitted version not found')
+            versions['Coverage QC']={'Parabricks bammetrics':match[1]}
     versions['Report']={'MultiQC':Path('multiqc.version.txt').read_text().strip().removeprefix('multiqc, version ')}
     config['software_versions']=versions
     Path('multiqc_config.json').write_text(json.dumps(config,indent=2)+'\n')
@@ -161,7 +172,8 @@ def prepare(args):
     Path('provenance/sources.json').write_text(json.dumps(source_hashes,indent=2)+'\n')
     shutil.copy2(args.manifest,'provenance/input_manifest.json')
     Path('provenance/release.json').write_text(json.dumps(dict(tag=args.release_tag,commit=args.release_commit,
-        logo_sha256=digest(args.logo),demultiplexing_supplied=bool(demux)),indent=2)+'\n')
+        logo_sha256=digest(args.logo),logo_width=style['logo_width'],style_id=style['id'],
+        coverage_producer='Parabricks bammetrics',demultiplexing_supplied=bool(demux)),indent=2)+'\n')
     with Path('provenance/sample_summary.csv').open('w',newline='') as f:
         w=csv.DictWriter(f,fieldnames=['sample_id',*next(iter(data.values()))]);w.writeheader()
         for sid,row in data.items(): w.writerow(dict(sample_id=sid,**row))
@@ -191,8 +203,9 @@ def finalize(args):
     images=re.findall(r'data:image/[^;]+;base64,([A-Za-z0-9+/=]+)',text)
     if not any(hashlib.sha256(base64.b64decode(x)).hexdigest()==release['logo_sha256'] for x in images):
         raise ValueError('Expected branding image not embedded')
-    if not re.search(r'#page_title\s+\.custom_logo\s*\{[^}]*width:\s*50px',text):
-        raise ValueError('Missing 50px branding CSS')
+    width=release.get('logo_width',50)
+    if not re.search(r'#page_title\s+\.custom_logo\s*\{[^}]*width:\s*'+str(width)+'px',text):
+        raise ValueError('Missing configured branding CSS')
     Path('_SUCCESS').write_text(json.dumps(dict(run_id=args.run,samples=sorted(expected),
         release_tag=args.release_tag,release_commit=args.release_commit,report_sha256=digest(report),
         data_sha256=digest(archives[0])),indent=2)+'\n')

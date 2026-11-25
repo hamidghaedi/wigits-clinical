@@ -13,6 +13,7 @@ Existing externally managed QC is adopted explicitly and never resubmitted.
 import argparse
 import csv
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 import fcntl
 import hashlib
 import json
@@ -25,7 +26,7 @@ import tarfile
 
 import yaml
 
-VERSION = '2.0.0'
+VERSION = '2.1.0'
 PHASES = {'Phase 1':'Phase_1','Phase_1':'Phase_1','Phase 1.5':'phase_1.5',
           'phase_1.5':'phase_1.5','Phase 2':'Phase_2','Phase_2':'Phase_2'}
 
@@ -215,8 +216,15 @@ def build_manifest(run_id, labs, items, config, folder):
         sample,profile=sample_manifest(matches[0],lab,config,folder)
         samples.append(sample);profiles.append(profile)
     if len({p['reference'] for p in profiles})!=1:raise ValueError('Run contains different alignment references')
+    def values(key):return '; '.join(sorted({r.get(key,'') for r in expected.values()}-{''}))
+    metadata=dict(project_id=values('project_id'),batch_id=values('batch_id'),flowcell_id=values('flowcell_id'),
+                  run_date=values('run_date'),tissue_type=values('tissue_preservation_method'),
+                  report_date=datetime.now(ZoneInfo('America/Toronto')).date().isoformat())
     return dict(reference=profiles[0]['reference'],fai=profiles[0]['fai'],dict=profiles[0]['dict'],
-                logo=config['logo'],css=config['css'],samples=samples),phases.pop()
+                logo=config['logo'],css=config['css'],samples=samples,
+                expected_samples={run_id:sorted(expected)},run_metadata={run_id:metadata},
+                coverage_producer='parabricks.bammetrics',demultiplexing={run_id:config.get('demultiplexing',{}).get(run_id,[])},laboratory_sources=sorted({r['source'] for r in expected.values()})),phases.pop()
+
 
 
 def deliver(config, state):

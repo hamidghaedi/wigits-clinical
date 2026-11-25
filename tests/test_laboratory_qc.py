@@ -45,6 +45,11 @@ class LaboratoryQcTests(unittest.TestCase):
         self.assertEqual([s['sample_id'] for s in lab.load_samples(dict(samples=samples),'T_RUN')],['TEST-DNA'])
         with self.assertRaises(ValueError):lab.load_samples(dict(samples=samples+samples),'T_RUN')
 
+    def test_sequencing_manifest_membership_cannot_be_shrunk(self):
+        sample=dict(run_id='R',sample_id='S',fastqs=[dict(label='L001')])
+        with self.assertRaisesRegex(ValueError,'Sequencing-manifest membership'):
+            lab.load_samples(dict(samples=[sample],expected_samples={'R':['S','MISSING']}),'R')
+
     def test_finalizer_accepts_flat_and_nested_zip_and_requires_summary_cells(self):
         for prefix in ['', 'data/']:
             with self.subTest(prefix=prefix),tempfile.TemporaryDirectory() as tmp:

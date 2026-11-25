@@ -1,0 +1,5 @@
+/* Phase1 MultiQC's network logo displayed at the template's native200px width. */
+#page_title .custom_logo {
+  width: 200px !important;
+  height: auto !important;
+}
