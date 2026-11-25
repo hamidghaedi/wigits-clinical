@@ -3,9 +3,9 @@
 Laboratory sequencing-run QC uses the separate [BAM-ready entry](../docs/LABORATORY_QC.md),
 `laboratory_qc.nf -entry LAB_RUN_QC`. It produces one MultiQC per sequencing run
 from existing BAMs and all FASTQ lane pairs, without invoking callers.
-`dispatch_laboratory_qc.py` v1.0.0 supplies automatic submission/delivery through
-the existing coordinator archive tick; it uses completed BAM-stage metadata
-and task-local versions, independent of variant calling.
+`dispatch_laboratory_qc.py` v2.0.0 receives native completed-BAM output events
+and submits once the whole laboratory run is ready. QC-head success triggers
+delivery. There is no periodic readiness scan or variant-calling dependency.
 
 Current repository release: [v0.1.0](../docs/releases/v0.1.0.md), maintained on
 `main`. Production uses the frozen-package `run_full_native.sbatch` entry and

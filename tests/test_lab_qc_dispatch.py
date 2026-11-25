@@ -147,3 +147,41 @@ class LabDispatchTests(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
+
+
+class BamEventTests(unittest.TestCase):
+    setUp=LabDispatchTests.setUp
+    add_case=LabDispatchTests.add_case
+    write_lab=LabDispatchTests.write_lab
+    # Reuse the synthetic native output tree; no BAM content is inspected.
+    def event(self,i):
+        run=self.root/('CASE'+str(i));sid='LIB'+str(i)
+        work=run/'work/bb/222222';metrics=work/'outputs'
+        (work/'.exitcode').write_text('0')
+        (work/(sid+'.redux.bam')).symlink_to(run/'work/aa/111111/outputs'/(sid+'.redux.bam'))
+        (work/'.command.sh').write_text('bamtools -ref_genome ref.fa -bam_file '+sid+'.redux.bam\n')
+        return metrics
+
+    def test_last_bam_event_triggers_without_published_outputs_or_traces(self):
+        import shutil
+        e0=self.event(0);e1=self.event(1)
+        for case in ['CASE0','CASE1']:shutil.rmtree(self.root/case/'results')
+        calls=[]
+        def submit(*a,**k):calls.append(a);return SimpleNamespace(stdout='999')
+        first=tool.bam_ready(self.config,e0,submit)
+        self.assertEqual(first[0]['status'],'waiting_for_bams');self.assertEqual(calls,[])
+        second=tool.bam_ready(self.config,e1,submit)
+        self.assertEqual(second[0]['status'],'submitted');self.assertEqual(len(calls),1)
+        tool.bam_ready(self.config,e1,submit);self.assertEqual(len(calls),1)
+
+    def test_failed_bamtools_never_emits_readiness(self):
+        e=self.event(0);(e.parent/'.exitcode').write_text('1')
+        with self.assertRaisesRegex(ValueError,'successful completed'):tool.bam_ready(self.config,e)
+        self.assertFalse((Path(self.config['state_directory'])/'bam_events').exists())
+
+    def test_successful_qc_completion_delivers_once_without_polling(self):
+        tool.bam_ready(self.config,self.event(0),lambda *a,**k:SimpleNamespace(stdout='999'))
+        tool.bam_ready(self.config,self.event(1),lambda *a,**k:SimpleNamespace(stdout='999'))
+        with patch.object(tool,'deliver',return_value=True) as delivery:
+            tool.finish(self.config,'SEQ_RUN');tool.finish(self.config,'SEQ_RUN')
+            self.assertEqual(delivery.call_count,1)

@@ -23,5 +23,17 @@ nextflow run "$HERE/laboratory_qc.nf" -entry LAB_RUN_QC \
   --picard_image "$CONTAINER_DIR/picard-3.1.0.sif" \
   --fastp_image "$CONTAINER_DIR/fastp-1.0.1--heae3180_0.sif" \
   --multiqc_image "$CONTAINER_DIR/multiqc-1.32--pyhdfd78af_0.sif" \
-  --release_tag lab-qc/v0.2.0 --release_commit "$RELEASE_COMMIT" \
+  --release_tag lab-qc/v0.3.0 --release_commit "$RELEASE_COMMIT" \
   -work-dir "$TASK_ROOT/work" -with-trace "$TASK_ROOT/execution_trace.txt" "$@"
+
+# Delivery follows this QC workflow's success, not a periodic readiness scan.
+if [[ -n "${WIGITS_LAB_QC_CONFIG:-}" ]]; then
+    python3 - "$WIGITS_LAB_QC_CONFIG" "$MANIFEST" <<'LABQC'
+import json, os, subprocess, sys
+config=json.load(open(sys.argv[1]));manifest=json.load(open(sys.argv[2]))
+for run in sorted({s['run_id'] for s in manifest['samples']}):
+    subprocess.run([config['python'],config['dispatcher'],'--config',sys.argv[1],
+                    '--deliver-run',run],check=True,
+                   env={k:v for k,v in os.environ.items() if k!='PYTHONPATH'})
+LABQC
+fi

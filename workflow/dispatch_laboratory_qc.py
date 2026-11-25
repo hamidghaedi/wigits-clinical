@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Submit LAB_RUN_QC once per complete laboratory sequencing run, then stage it.
 
-Called by the existing five-minute archive maintenance, not a second daemon or
-tracker publisher. Discover only registered native queues / explicit queue
-pointers. Laboratory CSVs define complete DNA run membership; submitted cases
-never shrink it. REDUX and BAMTOOLS COMPLETED/CACHED exit0 plus published files
-establish BAM readiness. Do not inspect SAGE/PURPLE/ORANGE or head completion.
+Called only by native completed-BAMTOOLS output events, never a timer. The
+laboratory CSV defines complete DNA run membership; submitted cases never
+shrink it. Consume actual completed task paths, not asynchronously published
+copies. No SAGE/PURPLE/ORANGE or analytical-head completion dependency.
 Read task-local versions and reference links, not final combined versions.
 No BAM/FASTQ content reads, new fingerprints, hashes of raw data, or job changes.
 Save submission intent before sbatch; ambiguous submissions are never repeated.
@@ -26,7 +25,7 @@ import tarfile
 
 import yaml
 
-VERSION = '1.0.0'
+VERSION = '2.0.0'
 PHASES = {'Phase 1':'Phase_1','Phase_1':'Phase_1','Phase 1.5':'phase_1.5',
           'phase_1.5':'phase_1.5','Phase 2':'Phase_2','Phase_2':'Phase_2'}
 
@@ -137,14 +136,24 @@ def completed_file(published, work, basename):
 
 def sample_manifest(item, lab, config, folder):
     sid=safe(lab['sample_submitter_id']);case=item['plan']['case_id'];run=Path(item['plan']['run_directory'])
-    tasks=task_data(run)
-    redux=task_work(run,producing_task(tasks,'REDUX',sid))
-    metrics=task_work(run,producing_task(tasks,'BAMTOOLS',sid))
-    bam=run/'results'/case/'alignments'/sid/(sid+'.redux.bam')
-    bai=Path(str(bam)+'.bai')
-    completed_file(bam,redux,bam.name);completed_file(bai,redux,bai.name)
-    flags=run/'results'/case/'bamtools'/sid/(sid+'.bam_metric.flag_counts.tsv')
-    completed_file(flags,metrics,flags.name)
+    event_file=Path(config['state_directory'])/'bam_events'/run.name/(sid+'.json')
+    if config.get('event_driven'):
+        if not event_file.is_file():raise ValueError(sid+': completed BAM event pending')
+        event=read(event_file)
+        if event['native_job']!=item['job']:raise ValueError(sid+': BAM event belongs to another native attempt')
+        bam=Path(event['bam']);bai=Path(event['bai']);flags=Path(event['flags'])
+        redux=Path(event['redux_work']);metrics=Path(event['bamtools_work'])
+        if any(not p.is_file() or p.stat().st_size==0 for p in (bam,bai,flags)):
+            raise ValueError(sid+': completed BAM event output unavailable')
+    else:
+        # Retained only for explicit historical metadata reconstruction/tests.
+        tasks=task_data(run)
+        redux=task_work(run,producing_task(tasks,'REDUX',sid))
+        metrics=task_work(run,producing_task(tasks,'BAMTOOLS',sid))
+        bam=run/'results'/case/'alignments'/sid/(sid+'.redux.bam');bai=Path(str(bam)+'.bai')
+        completed_file(bam,redux,bam.name);completed_file(bai,redux,bai.name)
+        flags=run/'results'/case/'bamtools'/sid/(sid+'.bam_metric.flag_counts.tsv')
+        completed_file(flags,metrics,flags.name)
     command=(metrics/'.command.sh').read_text().replace('\\\n',' ')
     tokens=shlex.split(command);reference=(metrics/tokens[tokens.index('-ref_genome')+1]).resolve()
     profiles=[p for p in config['reference_profiles'] if Path(p['reference']).resolve()==reference]
@@ -242,7 +251,7 @@ def job_states(ids):
     return {v[0]:v[1:3] for line in result.stdout.splitlines() if len(v:=line.split('|'))>=3}
 
 
-def tick(config, runner=subprocess.run, status_reader=None):
+def tick(config, runner=subprocess.run, status_reader=None, only_run=None):
     root=Path(config['state_directory']);root.mkdir(parents=True,exist_ok=True)
     items=candidates(config);labs=laboratory_rows(config,items)
     eligible={l['run_id'] for i in items if i['job'] not in config['baseline_job_ids'] for l in libraries(i)}
@@ -251,6 +260,7 @@ def tick(config, runner=subprocess.run, status_reader=None):
     jobs=status_reader(active) if status_reader else {}
     report=[]
     for run_id in sorted(eligible|set(states)):
+        if only_run is not None and run_id!=only_run:continue
         safe(run_id);path=root/(run_id+'.run.json');state=states.get(run_id,dict(run_id=run_id))
         if state.get('external_managed'):
             report.append(dict(run_id=run_id,status='external_managed',job_id=state['job_id']));continue
@@ -276,7 +286,8 @@ def tick(config, runner=subprocess.run, status_reader=None):
         manifest_path=folder/'manifest.json';save(manifest_path,manifest);(folder/'logs').mkdir(exist_ok=True)
         command=['sbatch','--parsable','--account='+config['account'],
                  '--output='+str(folder/'logs/lab_head_%j.log'),
-                 '--export=ALL,WIGITS_WORKFLOW_DIR='+config['workflow_directory'],
+                 '--export=ALL,WIGITS_WORKFLOW_DIR='+config['workflow_directory']+
+                 ',WIGITS_LAB_QC_CONFIG='+config.get('config_path',''),
                  str(Path(config['workflow_directory'])/'run_laboratory_qc.sbatch'),str(manifest_path),str(folder)]
         state.update(status='submission_unconfirmed',phase=phase,submission_intent=True,command=command,
                      execution_root=str(folder),analysis_id=folder.name,submitted_at=now(),
@@ -292,14 +303,48 @@ def tick(config, runner=subprocess.run, status_reader=None):
     return report
 
 
+def bam_ready(config, metrics_dir, runner=subprocess.run):
+    """One native completed-output notification; persist it before considering QC."""
+    metrics_dir=Path(metrics_dir).resolve();metrics=metrics_dir.parent
+    if (metrics/'.exitcode').read_text().strip()!='0':
+        raise ValueError('BAMTOOLS event is not a successful completed task')
+    flags=list(metrics_dir.glob('*.bam_metric.flag_counts.tsv'))
+    if len(flags)!=1:raise ValueError('BAMTOOLS event sample is ambiguous')
+    sid=flags[0].name.removesuffix('.bam_metric.flag_counts.tsv');safe(sid)
+    matches=[i for i in candidates(config) if metrics.is_relative_to(Path(i['plan']['run_directory'])/'work')]
+    if len(matches)!=1:raise ValueError('Completed BAM event is not bound to one registered native run')
+    item=matches[0];run=Path(item['plan']['run_directory'])
+    bound=[l for l in libraries(item) if l['sample_id']==sid]
+    if len(bound)!=1:raise ValueError('Completed BAM event has no unique laboratory library binding')
+    tokens=shlex.split((metrics/'.command.sh').read_text().replace(chr(92)+chr(10),' '))
+    bam=(metrics/tokens[tokens.index('-bam_file')+1]).resolve();bai=Path(str(bam)+'.bai')
+    redux=bam.parent.parent
+    if not (redux/'versions.yml').is_file():raise ValueError('Native REDUX version source unavailable')
+    event=dict(sample_id=sid,run_id=bound[0]['run_id'],native_job=item['job'],received_at=now(),
+               bam=str(bam),bai=str(bai),flags=str(flags[0]),redux_work=str(redux),bamtools_work=str(metrics))
+    save(Path(config['state_directory'])/'bam_events'/run.name/(sid+'.json'),event)
+    return tick(dict(config,event_driven=True),runner,only_run=event['run_id'])
+
+
+def finish(config, run_id):
+    path=Path(config['state_directory'])/(safe(run_id)+'.run.json');state=read(path)
+    if state.get('external_managed') or state.get('status')=='delivered':return
+    if not deliver(config,state):raise ValueError('Laboratory QC completion receipt unavailable')
+    state.update(status='delivered',delivered_at=now());save(path,state)
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--config',required=True)
-    args=parser.parse_args();config=read(args.config)
+    events=parser.add_mutually_exclusive_group(required=True)
+    events.add_argument('--bam-ready',help='Completed native BAMTOOLS output directory')
+    events.add_argument('--deliver-run',help='Successful LAB_RUN_QC completion event')
+    args=parser.parse_args();config=read(args.config);config['config_path']=str(Path(args.config).resolve())
     root=Path(config['state_directory']);root.mkdir(parents=True,exist_ok=True)
     with (root/'dispatch.lock').open('a') as lock:
-        try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-        except BlockingIOError:return
-        tick(config,status_reader=job_states)
+        # Events wait briefly for one another; a nonblocking lock could lose the last BAM event.
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        if args.bam_ready:bam_ready(config,args.bam_ready)
+        else:finish(config,args.deliver_run)
 
 
 if __name__=='__main__':main()

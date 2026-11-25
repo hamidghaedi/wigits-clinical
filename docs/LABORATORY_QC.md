@@ -1,6 +1,6 @@
 # Laboratory sequencing-run QC
 
-Component `lab-qc/v0.2.0`, owner direction November24,2026. Separate
+Component `lab-qc/v0.3.0`, owner direction November24,2026. Separate
 `LAB_RUN_QC` Nextflow entry: existing BAMs and original FASTQs to one branded
 MultiQC per **sequencing run**, without running callers or changing native
 results. Use after all-lane BAM preparation, not after clinical reporting.
@@ -97,58 +97,61 @@ Primary tool references:
 
 ## Automatic BAM-ready dispatch
 
-`workflow/dispatch_laboratory_qc.py` v1.0.0 makes one metadata-only pass, called
-by the coordinator's existing five-minute archive sync. No second daemon or
-change to the read-only tracker collector is needed. This dispatches the same
-LAB_RUN_QC entry; it adds no analysis prerequisite or scientific threshold.
+Owner correction November24: **no recurring readiness check**. Component
+lab-qc/v0.3.0 supersedes v0.2.0's five-minute dispatch. The archive sync still
+copies completed reports on its existing schedule; it no longer starts QC.
 
-1. Discover existing native tracker queues and explicit `lab_qc_source.json`
-   pointers one level below configured `queue_roots`. The maintained staged
-   native queue launcher v1.1.0 writes the pointer beside its state directory.
-   Future cases appended to registered queues are discovered automatically.
-2. The laboratory CSV defines **all DNA libraries** for each sequencing run.
-   Wait for every library's REDUX and BAMTOOLS task to be COMPLETED/CACHED,
-   exit0, with the full published BAM/index/flags present. Compare metadata
-   sizes with completed task outputs to avoid consuming a copy still in flight.
-   Bind all laboratory-recorded FASTQ lanes/mates; no bulk counting or hashing.
-   A sequencing run containing an unprocessed library stays pending, rather
-   than presenting a partial report as complete.
-3. Take the exact reference from the producing BAMTOOLS command/task link and
-   match an explicitly configured reference profile. Use REDUX/BAMTOOLS
-   task-local versions.yml; the final combined software-version file and
-   SAGE, PURPLE, ORANGE, analytical MultiQC and head-job completion are irrelevant.
-4. Save submission intent before sbatch and one state per sequencing run.
-   Repeated ticks never launch another copy. An ambiguous submission or failed
-   QC job requires operator reconciliation; the state records the blocker and
-   preserves work. No automatic analysis cancellation, retry or data deletion.
-5. A successful QC receipt triggers the existing MultiQC stager. Archive the
-   compact QC/source package persistently and copy the HTML through the existing
-   phase/run Laptop_sync synchronization. Final native analytical MultiQC stays
-   a distinct report. Missing demultiplexing statistics remain disclosed.
+A small operational subscription to native `bamtools_metrics_dir` receives each
+successfully completed BAMTOOLS output. BAMTOOLS already consumes the completed
+sample REDUX BAM. `LabQcEvents.bamReady` calls `dispatch_laboratory_qc.py`
+v2.0.0 once for that event. The first events record readiness; the final expected
+DNA library starts one LAB_RUN_QC job for its sequencing run. No SAGE, PURPLE,
+ORANGE or analytical-head completion dependency. Cached outputs re-emit the
+same topic on resume; persistent state prevents duplicate submissions.
 
-Configuration is an explicit private JSON: `native_tracker_config`,
-`queue_roots`, `laboratories`, `reference_profiles` (reference/fai/dict),
-`workflow_directory`, `workflow_version`, `workflow_commit`, `python`,
-`dispatcher`, `stager`, `account`, `logo`, `css`, `archive_root`, `run_root`,
-`state_directory`, `baseline_job_ids`. No real case/configuration enters Git.
-Invoke with the existing interpreter that has PyYAML:
+Use the actual completed task BAM/index/flags and REDUX/BAMTOOLS versions.
+Do not wait for asynchronous publish copies or final combined versions.
+[Nextflow's publishDir documentation](https://docs.seqera.io/nextflow/reference/process/directives/publish-dir)
+explicitly directs downstream consumers to task outputs. Metadata only: no
+BAM/FASTQ content reads, counting, new raw-data hashing or scientific thresholds.
+The laboratory CSV retains the whole DNA run membership and every recorded lane.
+Missing libraries wait visibly; no partial run is labelled complete.
+
+`prepare_lab_qc_event_source.py` creates/reuses an isolated clean source from
+an exact base commit, adding only a topic subscription and `LabQcEvents.groovy`.
+Native analytical modules/configuration are unchanged. Base and derived commits
+and hook digest are recorded. The coordinator's new-package launcher v1.2.0
+binds this source and a frozen QC config in the case package, then exports
+`WIGITS_LAB_QC_CONFIG`. Original installed sources and issued packages remain
+untouched. No plugin, new environment or daemon is required.
+
+The QC head calls `--deliver-run` immediately after its own Nextflow execution
+succeeds. This stages HTML and compact evidence to the canonical phase/run QC
+folder; existing Laptop_sync copying continues. Failed QC does not trigger
+successful delivery; ambiguous submissions need operator recovery. File locking
+serializes concurrent events without dropping the final event. Per-run saved
+intent/state prevents duplicate submissions. Errors in the operational callback
+are visible warnings and do not alter native analysis success or scientific holds.
+
+Private configuration retains native tracker queue pointers, laboratory CSVs,
+explicit reference profiles, frozen workflow/dispatcher/Python, account,
+archive/run/state roots, logo/CSS and no-backfill baseline. It additionally gives
+`native_source_root`, the shared installation directory for isolated event sources.
+Operational state is `<state_directory>/bam_events/<analysis_id>/<sample>.json`
+and `<sequencing_run>.run.json`. `last_tick.json` is the last **event** evaluation,
+not evidence of a timer. Existing externally managed QC remains unchanged.
+
+The event CLI accepts only explicit events:
 
 ```bash
 python /path/to/frozen-release/workflow/dispatch_laboratory_qc.py \
-  --config /path/to/private/config.json
+  --config /path/to/frozen-case-config.json --bam-ready /path/to/completed/bamtools_SAMPLE
+python /path/to/frozen-release/workflow/dispatch_laboratory_qc.py \
+  --config /path/to/frozen-case-config.json --deliver-run SEQUENCING_RUN
 ```
 
-Activation snapshots existing native head-job IDs as a baseline: no surprise
-historical QC backfill. New submissions make their sequencing runs eligible;
-previous libraries in that same run can contribute their completed BAMs.
-Already-running laboratory QC has explicit `external_managed` states, so both
-its head and conditional delivery job continue unchanged. Already delivered
-runs are not automatically overwritten for a changed laboratory scope; issue
-an explicit new report revision if that scope changes.
-
-Inspect `state_directory/last_tick.json` and `<sequencing_run>.run.json` for
-pending-library, source-binding, submission and delivery status. A failed tick
-logs an error but does not stop the existing archive sync. Multiple chunks
-sharing one QC label, combined multi-run BAMs and ambiguous library bindings
-remain explicit pending reasons requiring a released source mapping. This
-component currently covers native **DNA** queues; RNA QC is not claimed.
+Scope remains registered native DNA queues. RNA-only queues, ambiguous multi-run
+BAMs and repeated chunk labels require an explicit released mapping. A changed
+laboratory scope after delivery requires an explicit new report revision, not a
+silent overwrite. Full-size v0.1.2 metric jobs continue; event validation is not
+universal QC resource/performance validation.
