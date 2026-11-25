@@ -26,7 +26,7 @@ import tarfile
 
 import yaml
 
-VERSION = '2.1.0'
+VERSION = '2.2.0'
 PHASES = {'Phase 1':'Phase_1','Phase_1':'Phase_1','Phase 1.5':'phase_1.5',
           'phase_1.5':'phase_1.5','Phase 2':'Phase_2','Phase_2':'Phase_2'}
 
@@ -227,8 +227,8 @@ def build_manifest(run_id, labs, items, config, folder):
 
 
 
-def deliver(config, state):
-    from_root=Path(state['execution_root'])/'results'/state['run_id']
+def deliver(config, state, result_dir=None):
+    from_root=Path(result_dir) if result_dir else Path(state['execution_root'])/'results'/state['run_id']
     success=from_root/'_SUCCESS'
     if not success.is_file():return False
     receipt=read(success);report=from_root/(state['run_id']+'.multiqc_report.html')
@@ -334,11 +334,13 @@ def bam_ready(config, metrics_dir, runner=subprocess.run):
     return tick(dict(config,event_driven=True),runner,only_run=event['run_id'])
 
 
-def finish(config, run_id):
+def finish(config, run_id, result_dir=None):
     path=Path(config['state_directory'])/(safe(run_id)+'.run.json');state=read(path)
     if state.get('external_managed') or state.get('status')=='delivered':return
-    if not deliver(config,state):raise ValueError('Laboratory QC completion receipt unavailable')
-    state.update(status='delivered',delivered_at=now());save(path,state)
+    if result_dir and not Path(result_dir).resolve().is_relative_to(Path(state['execution_root']).resolve()):
+        raise ValueError('Report output is outside the registered QC execution')
+    if not deliver(config,state,result_dir):raise ValueError('Laboratory QC completion receipt unavailable')
+    state.update(status='delivered',delivered_at=now(),delivered_from=str(result_dir) if result_dir else 'published outputs');save(path,state)
 
 
 def main():
@@ -346,12 +348,15 @@ def main():
     events=parser.add_mutually_exclusive_group(required=True)
     events.add_argument('--bam-ready',help='Completed native BAMTOOLS output directory')
     events.add_argument('--deliver-run',help='Successful LAB_RUN_QC completion event')
+    events.add_argument('--report-ready',help='Completed run report task success receipt')
     args=parser.parse_args();config=read(args.config);config['config_path']=str(Path(args.config).resolve())
     root=Path(config['state_directory']);root.mkdir(parents=True,exist_ok=True)
     with (root/'dispatch.lock').open('a') as lock:
         # Events wait briefly for one another; a nonblocking lock could lose the last BAM event.
         fcntl.flock(lock,fcntl.LOCK_EX)
         if args.bam_ready:bam_ready(config,args.bam_ready)
+        elif args.report_ready:
+            success=Path(args.report_ready).resolve();finish(config,read(success)['run_id'],success.parent)
         else:finish(config,args.deliver_run)
 
 

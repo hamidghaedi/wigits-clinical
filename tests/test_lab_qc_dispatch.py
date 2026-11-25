@@ -179,6 +179,15 @@ class BamEventTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'successful completed'):tool.bam_ready(self.config,e)
         self.assertFalse((Path(self.config['state_directory'])/'bam_events').exists())
 
+    def test_report_event_delivers_its_own_run_before_other_run_finishes(self):
+        tool.bam_ready(self.config,self.event(0),lambda *a,**k:SimpleNamespace(stdout='999'))
+        tool.bam_ready(self.config,self.event(1),lambda *a,**k:SimpleNamespace(stdout='999'))
+        state=tool.read(Path(self.config['state_directory'])/'SEQ_RUN.run.json')
+        task=Path(state['execution_root'])/'work/report';task.mkdir(parents=True)
+        with patch.object(tool,'deliver',return_value=True) as delivery:
+            tool.finish(self.config,'SEQ_RUN',task)
+            self.assertEqual(delivery.call_args.args[2],task)
+
     def test_successful_qc_completion_delivers_once_without_polling(self):
         tool.bam_ready(self.config,self.event(0),lambda *a,**k:SimpleNamespace(stdout='999'))
         tool.bam_ready(self.config,self.event(1),lambda *a,**k:SimpleNamespace(stdout='999'))

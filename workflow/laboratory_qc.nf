@@ -126,7 +126,8 @@ process LAB_RUN_REPORT {
     path '*.multiqc_report.html'
     path '*_data.zip'
     path 'provenance'
-    path '_SUCCESS'
+    path '_SUCCESS', emit:success
+    path 'qc', emit:source_metrics
     script:
     """
     mkdir -p assets
@@ -193,4 +194,5 @@ workflow LAB_RUN_QC {
         .map { entry -> tuple(groupKey(entry[0],sizes[entry[0]]), entry[1..-1]) }.groupTuple()
         .map { key, groups -> tuple(key.groupTarget, groups.flatten()) }
     LAB_RUN_REPORT(ch_metrics, file(params.manifest), file(manifest.logo), file(manifest.css), file("${projectDir}/lab_qc_report.py"), file("${projectDir}/assets/lab_multiqc_style.json"))
+    LAB_RUN_REPORT.out.success.subscribe { success -> LabQcDelivery.reportReady(success,log) }
 }
