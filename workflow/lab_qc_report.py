@@ -75,6 +75,11 @@ def load_samples(manifest, run):
     return samples
 
 
+def sample_aliases(samples):
+    """Map only known native BAM processing suffixes back to their laboratory ID."""
+    return {r'^'+re.escape(s['sample_id'])+r'\.redux$':s['sample_id'] for s in samples}
+
+
 def prepare(args):
     manifest = json.loads(Path(args.manifest).read_text())
     samples = load_samples(manifest, args.run)
@@ -139,7 +144,7 @@ def prepare(args):
                       {'samtools':{'name':'Alignment flags (Hartwig BAMTOOLS; samtools format)'}},
                       {'picard':{'name':'Coverage and insert size (Parabricks / Picard)'}},{'custom_content':{}}],
         sample_names_replace_regex=True,
-        sample_names_replace={r'\.wgs_metrics$':'',r'\.insert_size_metrics$':'',r'\.fastp$':''},
+        sample_names_replace={r'\.wgs_metrics$':'',r'\.insert_size_metrics$':'',r'\.fastp$':'',**sample_aliases(samples)},
         custom_data={'lab_summary':dict(plot_type='generalstats',headers=[{k:v} for k,v in headers.items()],data=data),
                      'lab_lane_yield':dict(section_name='Assigned FASTQ yield by sample and lane',
                          description='Individual reads, including both mates; not PF/undetermined demultiplexing counts.',

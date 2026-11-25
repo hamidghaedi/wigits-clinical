@@ -45,6 +45,12 @@ class LaboratoryQcTests(unittest.TestCase):
         self.assertEqual([s['sample_id'] for s in lab.load_samples(dict(samples=samples),'T_RUN')],['TEST-DNA'])
         with self.assertRaises(ValueError):lab.load_samples(dict(samples=samples+samples),'T_RUN')
 
+    def test_native_bam_suffix_is_normalized_only_for_its_bound_library(self):
+        import re
+        rules=lab.sample_aliases([dict(sample_id='LIB-A')])
+        self.assertEqual(next(re.sub(k,v,'LIB-A.redux') for k,v in rules.items()),'LIB-A')
+        self.assertEqual(next(re.sub(k,v,'OTHER.redux') for k,v in rules.items()),'OTHER.redux')
+
     def test_sequencing_manifest_membership_cannot_be_shrunk(self):
         sample=dict(run_id='R',sample_id='S',fastqs=[dict(label='L001')])
         with self.assertRaisesRegex(ValueError,'Sequencing-manifest membership'):
