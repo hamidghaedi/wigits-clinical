@@ -196,3 +196,21 @@ checks and were independently delivered into the canonical archive and
 Laptop_sync. Both copies match the produced HTML bytes. See
 `tests/results/lab-qc-parabricks/README.md` for the validation scope; resource
 allowances remain provisional beyond the measured14-library batch.
+
+## Owner-operated manifest preparation
+
+`prepare_native_manifest.py` v1.0.0 takes complete original laboratory CSVs and
+selects a case's native samplesheet from canonical staged files. Independently,
+it registers every DNA library/lane in each selected acquisition run under the
+shared `file_manifests/lab_qc/` registry. A selected case never truncates run
+membership; an already registered scope cannot be reduced by a patient-only CSV.
+The prepared `site.env` selects the existing BAM-event source and shared QC config.
+
+Dispatcher2.3.0 additionally accepts explicit `package_roots`: event handling
+reads prepared `input_plan.json`/`release.json` and the actual submitted head ID.
+Existing historical/queue enrollment is unchanged. Full run readiness, measured
+BAMTOOLS inputs,32-thread bammetrics, Phase1 presentation and submission-once
+behavior remain. Fir QC submissions receive the shared site environment rather
+than inheriting the last case's configuration. All expected libraries must be
+bound and BAM-ready; no polling, caller completion or partial report is added.
+The sample-independent [Fir guide](FIR_EXECUTION.md) owns operator commands.

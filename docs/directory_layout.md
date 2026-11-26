@@ -195,3 +195,13 @@ Project `fastq`/`analysis` links expose that scratch tree without duplicating it
 The executable binding is `workflow/conf/fir_paths.env`; case `site.env` sets
 these roots, analysis ID, release and selected options explicitly. Existing
 Frontenac defaults and issued jobs are unchanged. See [Fir guide](FIR_EXECUTION.md).
+
+Fir shared configuration lives in project `config/`; the sample-independent
+human guide lives in project `docs/RUN_NATIVE_WORKFLOW.md`, not `scripts/`.
+Original complete laboratory manifests are in
+`file_manifests/laboratory_inputs/`; optional small RunInfo XMLs are in
+`file_manifests/run_metadata/`. The argument-driven preparer generates inputs in
+`file_manifests/<analysis_id>/` and full-run membership/event records in
+`file_manifests/lab_qc/`. No custom script or guide is written per case.
+Compact successful run QC is retained in project `<phase>/qc_reports/<run_id>/`
+before central return. References, raw FASTQs and existing analyses are not moved.

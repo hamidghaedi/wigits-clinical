@@ -28,19 +28,25 @@ copy_once() {
 }
 copy_once "$manifest" "$package/samplesheet.csv"
 copy_once "$config" "$package/site.env"
+for name in input_plan.json release.json; do
+    [[ ! -f "$(dirname "$manifest")/$name" ]] || copy_once "$(dirname "$manifest")/$name" "$package/$name"
+done
 if [[ -e "$package/workflow" || -L "$package/workflow" ]]; then
     [[ "$(readlink -f "$package/workflow")" == "$(readlink -f "$WIGITS_WORKFLOW_DIR")" ]] || {
         echo 'Existing package uses a different release' >&2; exit 2;
     }
 else ln -s "$WIGITS_WORKFLOW_DIR" "$package/workflow"; fi
+extensions="${WIGITS_EXTENSIONS_CONFIG:-}"
 if $blood_ch; then
-    copy_once "${WIGITS_BLOOD_CH_CONFIG:?Bind WIGITS_BLOOD_CH_CONFIG in site.env}" "$package/optional_extensions.json"
-    python3 - "$package/optional_extensions.json" <<'PY'
+    extensions="${extensions:-${WIGITS_BLOOD_CH_CONFIG:?Prepared extension configuration required}}"
+fi
+if [[ -n "$extensions" ]]; then
+    copy_once "$extensions" "$package/optional_extensions.json"
+    python3 - "$package/optional_extensions.json" "$blood_ch" <<'PY'
 import json, sys
 d=json.load(open(sys.argv[1]))
-if not d['cases'] or any(c['options'].get('blood_ch') is not True or
-    c['laboratory'].get('normal_specimen_type','').strip().casefold() != 'blood'
-    for c in d['cases']):
+if not d['cases'] or any((sys.argv[2]=='true' and c['options'].get('blood_ch') is not True) or
+    (c['options'].get('blood_ch') and c['laboratory'].get('normal_specimen_type','').strip().casefold() != 'blood') for c in d['cases']):
     raise SystemExit('Blood CH requires a selected branch and a recorded blood normal')
 PY
 elif [[ -f "$package/optional_extensions.json" ]]; then

@@ -81,6 +81,22 @@ class LabDispatchTests(unittest.TestCase):
         result=tool.tick(self.config,lambda *a,**k:self.fail('must not submit'))
         self.assertEqual(result[0]['status'],'waiting_for_bams');self.assertIn('LIB1',result[0]['reason'])
 
+    def test_multiple_fastq_chunks_remain_in_one_library_row(self):
+        package=Path(self.cases[0]['package']);path=package/'samplesheet.csv'
+        with path.open() as stream:rows=list(csv.DictReader(stream));fields=list(rows[0])
+        extra=dict(rows[0]);mates=[]
+        for name in extra['filepath'].split(';'):
+            source=Path(name);target=source.with_name(source.name.replace('_001.fastq.gz','_002.fastq.gz'))
+            target.write_bytes(source.read_bytes());mates.append(str(target))
+        extra['filepath']=';'.join(mates)
+        with path.open('w') as stream:
+            writer=csv.DictWriter(stream,fieldnames=fields);writer.writeheader();writer.writerows(rows+[extra])
+        tool.tick(self.config,lambda *a,**k:SimpleNamespace(stdout='999\n'))
+        state=tool.read(Path(self.config['state_directory'])/'SEQ_RUN.run.json')
+        manifest=tool.read(Path(state['execution_root'])/'manifest.json')
+        self.assertEqual(len(manifest['samples']),2)
+        self.assertEqual([q['label'] for q in manifest['samples'][0]['fastqs']],['S1_L001','S1_L001_C002'])
+
     def test_existing_coverage_summary_is_bound_without_scanning_bam(self):
         parent=self.root/'CASE0/results/CASE0/bamtools/LIB0'
         source=parent/'LIB0.bam_metric.summary.tsv'

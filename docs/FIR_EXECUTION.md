@@ -1,48 +1,92 @@
-# Run a prepared case on Fir
+# Running the workflow on Fir
 
-Use the manifests supplied in `mohcc/file_manifests/<analysis_id>/`.
-The CSV lists every tumour and normal lane and both mates. `site.env` selects
-the pinned WiGiTS release, native reference, account and output directory;
-`blood_ch.json` binds the recorded blood normal and post-native CH analysis.
-These are inputs to the launcher, not files to reconstruct by hand.
+Use the same two commands for every case: prepare the inputs from the original
+laboratory manifests, then submit the workflow. Change the arguments, not the
+scripts. The shared configuration is `mohcc/config/native_fir.json`.
 
-From a Fir login shell:
+Before starting, the FASTQs must be in:
+
+```text
+/scratch/ghaedi/mohcc/fastq/<original_run_id>/<laboratory_sample_id>/
+```
+
+Use the **complete original laboratory CSVs**, including the matched normal's
+manifest when it was sequenced in a different run. Export an Excel manifest to
+CSV first. Do not make a patient-only copy of a run manifest.
+
+## 1. Prepare the workflow manifest
+
+Set these values for the case you want to analyse:
 
 ```bash
-bash /home/ghaedi/projects/def-ghaedi/ghaedi/mohcc/scripts/run_native_fir.sh \
-  --manifest /path/to/supplied/samplesheet.csv \
-  --config /path/to/supplied/site.env \
+mohcc=/home/ghaedi/projects/def-ghaedi/ghaedi/mohcc
+case_id=PATIENT_ID
+phase=Phase_1
+analysis_id="${case_id}-native-$(date +%Y%m%d)-r1"
+
+python3 "$mohcc/scripts/prepare_native_manifest.py" \
+  --lab-manifest "$mohcc/file_manifests/laboratory_inputs/TUMOUR_RUN.csv" \
+  --lab-manifest "$mohcc/file_manifests/laboratory_inputs/NORMAL_RUN.csv" \
+  --case-id "$case_id" --phase "$phase" --analysis-id "$analysis_id" \
+  --config "$mohcc/config/native_fir.json" \
   --blood-ch
 ```
 
-It prints the Slurm head job ID and run directory. The head launches native
-Oncoanalyser tasks, followed by the selected blood CH task. Omit `--blood-ch`
-for a new native-only case. RNA-informed neoantigens remain independently
-selected in the prepared configuration; no RNA is assumed from a case name.
-The launcher never transfers FASTQs or copies reference/container payloads.
+If tumour and normal share one manifest, supply it once. Add another
+`--lab-manifest` for RNA when it comes from another run.
+
+- Omit `--blood-ch` when you do not want blood CH analysis. It requires a normal
+  recorded as blood in the laboratory manifest.
+- Add `--rna-neoantigens` for the optional RNA-informed neoantigen analysis.
+  Recorded tumour RNA and its FASTQs must be available.
+- Use `--dna-only` if you explicitly want to omit RNA.
+- If there are several tumour or normal libraries, select them with
+  `--tumour-sample` / `--normal-sample` using the exact laboratory sample IDs.
+
+The command writes `file_manifests/<analysis_id>/samplesheet.csv`, `site.env`
+and the supporting metadata. It includes every recorded lane, both mates and
+all observed FASTQ chunks. Missing inputs or ambiguous laboratory bindings stop
+preparation. It does not transfer data, count all reads or submit any jobs.
+The routine route is native Hartwig for fresh-frozen tumours; the new FFPE
+route still requires a separate analytical decision.
+
+## 2. Submit the workflow
 
 ```bash
-squeue -u "$USER"
-tail -f /path/printed/by/the/launcher/logs/head-<job_id>.out
+bash "$mohcc/scripts/run_native_fir.sh" \
+  --manifest "$mohcc/file_manifests/$analysis_id/samplesheet.csv" \
+  --config "$mohcc/file_manifests/$analysis_id/site.env"
 ```
 
-Native results: `<run>/results/<case>/`; native trace/report:
-`<run>/results/pipeline_info/`; optional CH:
-`<run>/extensions/results/<case>/blood_ch/`; separate optional status:
-`<run>/extensions/state/status.json`. The native completion receipt is retained
-if a later optional task fails. Resource CSV/HTML is under native
-`results/pipeline_info/resource_usage/`; it observes jobs without changing them.
+The configuration carries the options selected in step1. The launcher prints
+the Slurm job ID and output directory. Check progress with `squeue -u "$USER"`;
+head logs are in the printed run directory's `logs/` folder.
 
-If the head fails, inspect its error and task logs. After addressing the cause,
-repeat the **same** command with `--resume`. It reuses the original package and
-Nextflow work/cache, and refuses a second head while the prior one is active.
-Do not change the manifest or release inside an existing execution.
+Outputs are under
+`/scratch/ghaedi/mohcc/analysis/WiGiTS/<version>/<analysis_id>/`:
 
-The module bindings default to Nextflow26.04.4 and Apptainer1.3.5, the existing
-tested versions. These must be available on Fir; no installation or upgrade is
-performed. The first owner-operated Fir run is the target-site runtime check.
-DNA BWA stays64CPUs with lane-sized RAM/walltime. Fir's final production ceiling
-is64CPUs/768GiB/7days. The head requests4CPUs/8GiB/6days23hours. These are
-limits, not predicted durations. Laboratory QC retains its BAM-ready event
-entry and site selection; full laboratory run membership and delivery need the
-corresponding issued QC configuration, not a claim that one case is a run.
+| Location | Contents |
+|---|---|
+| `results/<case_id>/` | Native analysis, alignments and ORANGE outputs |
+| `extensions/results/<case_id>/` | Selected blood CH / RNA neoantigen outputs |
+| `extensions/state/status.json` | Separate optional-analysis status |
+| `results/pipeline_info/resource_usage/` | CPU, memory, runtime and queue reports |
+
+After correcting a failed job, repeat **step2** with `--resume`. Keep the same
+manifest, configuration and work directory. Do not repeat preparation or change
+an existing execution's inputs; use a new analysis ID for a different analysis.
+
+## Laboratory run QC
+
+The preparer separately registers the **whole DNA sequencing-run membership**
+from each original laboratory manifest. A selected patient's samplesheet never
+replaces that full-run list. Tumour and normal from different runs belong to
+separate run-level QC reports.
+
+Each completed native BAMTOOLS task sends a BAM-ready event. When every expected
+DNA library and lane is represented, the existing laboratory QC workflow starts
+once for that run, without waiting for variant calling. Missing libraries keep
+it pending; no timer polls for readiness and no partial run is labelled complete.
+Run state and full registered manifests are in `file_manifests/lab_qc/`.
+Successful reports are retained under project `<phase>/qc_reports/<run_id>/`;
+central return and Laptop_sync publication retain their own delivery receipts.

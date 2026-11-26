@@ -103,3 +103,13 @@ are available; do not weaken them to manufacture a green result.
 The [Nextflow revision documentation](https://docs.seqera.io/nextflow/cli)
 describes `-r` for remote pipeline releases/commits. Our installed-source launch
 uses the exact versioned local checkout instead; record its SHA explicitly.
+
+## Reusable native-intake component
+
+`native-intake/v1.0.0` supplies the sample-independent laboratory manifest
+preparer, operator guide and owner-run QC enrollment on the v0.3.0 native base.
+The maintained source is `codex/reusable-native-intake`; main promotion still
+follows the normal PR policy. Issued tool packages pin this component tag and
+its exact commit, not a moving branch. No new scientific workflow or per-case
+implementation is introduced. The wrapper's native tool/reference/resource
+bindings remain those in v0.3.0. See [manifest preparation](NATIVE_MANIFEST_PREPARATION.md).

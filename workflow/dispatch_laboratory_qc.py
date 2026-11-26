@@ -26,7 +26,7 @@ import tarfile
 
 import yaml
 
-VERSION = '2.2.1'
+VERSION = '2.3.0'
 PHASES = {'Phase 1':'Phase_1','Phase_1':'Phase_1','Phase 1.5':'phase_1.5',
           'phase_1.5':'phase_1.5','Phase 2':'Phase_2','Phase_2':'Phase_2'}
 
@@ -51,7 +51,7 @@ def safe(value):
 
 
 def queues(config):
-    tracker=read(config['native_tracker_config'])
+    tracker=read(config['native_tracker_config']) if config.get('native_tracker_config') else {}
     result={q['path']:q for q in tracker.get('queues',[])}
     for root in config.get('queue_roots',[]):
         for pointer in sorted(Path(root).glob('*/lab_qc_source.json')):
@@ -61,7 +61,7 @@ def queues(config):
 
 def candidates(config):
     result={}
-    tracker=read(config['native_tracker_config'])
+    tracker=read(config['native_tracker_config']) if config.get('native_tracker_config') else {}
     for old in tracker.get('historical_runs',[]):
         package=Path(old['package']);plan=read(package/'input_plan.json');release=read(package/'release.json')
         result[plan['run_directory']]=dict(case=dict(package=str(package)),plan=plan,release=release,
@@ -76,6 +76,18 @@ def candidates(config):
             if not release.get('native_source_version'): continue
             result[plan['run_directory']]=dict(case=case,plan=plan,release=release,
                                job=str(read(state)['analysis_job']),laboratory=q.get('laboratory'))
+    # Owner-operated prepared manifests share the existing event/dispatch route.
+    # Reading these small records is event-driven, never a recurring scan.
+    for root in config.get('package_roots', []):
+        for plan_path in sorted(Path(root).glob('*/input_plan.json')):
+            package=plan_path.parent;plan=read(plan_path)
+            job_path=Path(plan['run_directory'])/'state/head_job.txt'
+            if not job_path.is_file(): continue
+            job=job_path.read_text().strip()
+            if not job.isdigit(): continue
+            release=read(package/'release.json')
+            result[plan['run_directory']]=dict(case=dict(package=str(package)),plan=plan,
+                release=release,job=job,laboratory=None)
     return list(result.values())
 
 
@@ -180,8 +192,8 @@ def sample_manifest(item, lab, config, folder):
             info=dict(x.split(':',1) for x in row['info'].split(';') if ':' in x)
             if not info.get('lane'):raise ValueError(sid+': explicit lane metadata missing')
             lane=int(info['lane']);observed_lanes.append(lane)
-            match=re.search(r'_(S\d+_L\d{3})_R1_',paths[0].name)
-            label=match[1] if match else 'L'+str(lane).zfill(3)
+            match=re.search(r'_(S\d+_L\d{3})_R1_(\d{3})\.fastq\.gz$',paths[0].name)
+            label=match[1]+('_C'+match[2] if match[2]!='001' else '') if match else 'L'+str(lane).zfill(3)
             if any(x['label']==label for x in fq):
                 raise ValueError(sid+': multiple chunks require an explicit released QC binding')
             fq.append(dict(label=label,r1=str(paths[0]),r2=str(paths[1]),
@@ -294,10 +306,11 @@ def tick(config, runner=subprocess.run, status_reader=None, only_run=None):
             state.update(status='waiting_for_bams',reason=str(exc),observed_at=now());save(path,state)
             report.append(dict(run_id=run_id,status=state['status'],reason=state['reason']));continue
         manifest_path=folder/'manifest.json';save(manifest_path,manifest);(folder/'logs').mkdir(exist_ok=True)
+        exports='ALL,WIGITS_WORKFLOW_DIR='+config['workflow_directory']+',WIGITS_LAB_QC_CONFIG='+config.get('config_path','')
+        if config.get('site_environment'):exports+=',WIGITS_SITE_ENV='+config['site_environment']
         command=['sbatch','--parsable','--account='+config['account'],
                  '--output='+str(folder/'logs/lab_head_%j.log'),
-                 '--export=ALL,WIGITS_WORKFLOW_DIR='+config['workflow_directory']+
-                 ',WIGITS_LAB_QC_CONFIG='+config.get('config_path',''),
+                 '--export='+exports,
                  str(Path(config['workflow_directory'])/'run_laboratory_qc.sbatch'),str(manifest_path),str(folder)]
         state.update(status='submission_unconfirmed',phase=phase,submission_intent=True,command=command,
                      execution_root=str(folder),analysis_id=folder.name,submitted_at=now(),

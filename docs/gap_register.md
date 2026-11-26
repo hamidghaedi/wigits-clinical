@@ -57,3 +57,5 @@ Status values. `open`, `in progress`, `done`, `wontfix`.
 
 
 | G36 | Owner-operated Fir native execution | The tested full-native entry still sources Frontenac paths and scheduler settings. Fir resources and canonical FASTQs are staged separately. | Owner November26; inspected launchers and delivered resource receipts | [Fir execution](FIR_EXECUTION.md): explicit site selection, owner launcher and offline command/resource regressions; target runtime remains to be measured. | done |
+
+| G37 | Reusable laboratory-to-native intake | The Fir launcher is reusable, but its first package and human guide were assembled around one case. Lab QC must retain complete acquisition-run membership independently of a selected pair. | Owner November26; original WGTS CSVs, current Fir handover and LAB_RUN_QC dispatcher | [Reusable intake](NATIVE_MANIFEST_PREPARATION.md): argument-driven preparer, shared site config and generic guide; full-run QC membership and cross-case submission-once regressions. | done |

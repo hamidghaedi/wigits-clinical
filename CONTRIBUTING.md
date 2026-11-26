@@ -44,3 +44,12 @@ upstream, local-source, reference and maintained component bindings. Existing
 component tags retain their independent versions. Every execution package must
 record the actual selected source/commit, containers, resource version and panel
 hash; optional experiments retain their own explicit inputs and bindings.
+
+## Reusable operations (owner direction November26)
+
+Operational code and the human running guide must work across cases by changing
+arguments and shared configuration. Do not write case-specific scripts, launch
+helpers or operational guides. Generate case-specific samplesheets, option/site
+bindings and provenance as runtime data from the maintained preparer; they are
+inputs/receipts, never a second implementation. Laboratory QC retains each
+complete original run manifest independently of the case selected for analysis.
