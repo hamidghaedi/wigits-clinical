@@ -133,9 +133,10 @@ prose are not regenerated, replaced or extended by this integration.
 ## Verification and remaining deployment work
 
 Offline unit/feature results and the compute-node CLI inspection are recorded in
-`tests/results/optional-extensions/README.md`. End-to-end Nextflow/HPC execution
-and real-case comparator checks remain pending until this candidate is pushed
-and reviewed under the repository's normal release policy. No new source is
+`tests/results/optional-extensions/README.md`. The feature branch is pushed.
+All four Nextflow option combinations pass the stub canary; the real CH task
+passes, and the real neoantigen end-to-end test is in progress at this checkpoint.
+Source promotion/review follows the normal release policy. No new source is
 selected by active native jobs or transfer queues. Fir additionally needs its
 explicit site profile and staged tool/reference assets before owner-operated
 execution. Main promotion and a numbered publication are separate from this
