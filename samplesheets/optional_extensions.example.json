@@ -1,0 +1,32 @@
+{
+  "schema_version": "wigits.optional-extensions.v1",
+  "resources": {
+    "bind_roots": ["/path/to/project", "/path/to/scratch"],
+    "reference_fasta": "/path/to/native/GRCh38_masked_exclusions_alts_hlas.fasta",
+    "hmf_resources": "/path/to/hmf_pipeline_resources.38_v3.0.0--8",
+    "sage_image": "/path/to/containers/hmftools-sage-5.0.2.img",
+    "pave_image": "/path/to/containers/hmftools-pave-1.9.img",
+    "samtools_image": "/path/to/containers/samtools-1.22.1.sif",
+    "vep_image": "/path/to/containers/ensembl-vep_release_115.2.sif",
+    "vep_cache": "/path/to/vep/cache",
+    "vep_plugins": "/path/to/vep_plugins/pvactools",
+    "pvactools_image": "/path/to/containers/pvactools-5.4.0.sif",
+    "genes_of_interest": "/path/to/genes_of_interest/cgc_v104_gene_symbols.tsv"
+  },
+  "cases": [
+    {
+      "case_id": "EXAMPLE",
+      "results_case_dir": "/path/to/analysis/results/EXAMPLE",
+      "native_genome": "GRCh38_hmf",
+      "tumour_sample": "EXAMPLE-DNA",
+      "normal_sample": "EXAMPLE-gDNA",
+      "rna_sample": "EXAMPLE-RNA",
+      "laboratory": {
+        "source": "/path/to/bound/laboratory_status.csv",
+        "normal_specimen_type": "Blood",
+        "tumour_rna_available": true
+      },
+      "options": {"blood_ch": true, "rna_neoantigens": true}
+    }
+  ]
+}

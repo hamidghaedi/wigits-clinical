@@ -1,0 +1,136 @@
+{
+ "case": "KQ0004",
+ "generated_utc": "2026-11-23T19:59:24+00:00",
+ "rules_version": "docs/neoantigen_interface.md@2026-11-23",
+ "samples": {
+  "tumour_dna": "KQ0004-2023-AAAD-2-DNA",
+  "normal_dna": "KQ0004-2023-AAAD-gDNA",
+  "tumour_rna": "KQ0004-2023-AAAD-2-RNA"
+ },
+ "counts": {
+  "sage_append_records": 16859,
+  "isofox_genes": 79000,
+  "isofox_transcripts": 214977,
+  "somatic_total": 16859,
+  "somatic_pass": 12962,
+  "selected": 72,
+  "phase_sets": 11,
+  "proximal_somatic": 0,
+  "proximal_germline": 0,
+  "hla_alleles": 6
+ },
+ "rna_coverage_states": {
+  "SUPPORTED": 36,
+  "COVERED_NO_ALT": 17,
+  "NOT_COVERED": 19
+ },
+ "hla": {
+  "alleles": [
+   "HLA-A*02:01",
+   "HLA-A*26:01",
+   "HLA-B*07:02",
+   "HLA-B*38:01",
+   "HLA-C*07:02",
+   "HLA-C*12:03"
+  ],
+  "lilac_qc_status": "PASS",
+  "class": "I"
+ },
+ "purity": {
+  "purity": "0.9200",
+  "ploidy": "2.0600",
+  "status": "NORMAL",
+  "wholeGenomeDuplication": "false",
+  "msStatus": "MSS",
+  "tml": "69",
+  "tmlStatus": "LOW",
+  "tmbPerMb": "4.4243",
+  "tmbStatus": "LOW"
+ },
+ "immune_escape": {
+  "hasHlaEscape": false,
+  "hasAntigenPresentationPathwayEscape": false,
+  "hasIFNGammaPathwayEscape": false,
+  "hasPDL1OverexpressionEscape": false,
+  "hasCD58InactivationEscape": false,
+  "hasEpigeneticSETDB1Escape": false
+ },
+ "outputs": {
+  "somatic_selected_vcf": "/global/scratch/hpc6049/wigits_runs/neo_ext/KQ0004/KQ0004.somatic.selected.vcf",
+  "proximal_vcf": "/global/scratch/hpc6049/wigits_runs/neo_ext/KQ0004/KQ0004.proximal.vcf",
+  "hla_alleles": "/global/scratch/hpc6049/wigits_runs/neo_ext/KQ0004/KQ0004.hla_alleles.txt"
+ },
+ "sources": {
+  "purple_somatic_vcf": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/purple/KQ0004-2023-AAAD-2-DNA.purple.somatic.vcf.gz",
+   "sha256": "35bb2eef8cabdacdff819f67e8726235fb44de9697f87f05e992c1fa6eb3cb4a",
+   "bytes": 3554956
+  },
+  "purple_germline_vcf": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/purple/KQ0004-2023-AAAD-2-DNA.purple.germline.vcf.gz",
+   "sha256": "2f5a21910fe4c5405d1b1d43b74fffcb87f8adf1ffeffc9e216210a7481e4bdb",
+   "bytes": 276491
+  },
+  "purple_purity_tsv": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/purple/KQ0004-2023-AAAD-2-DNA.purple.purity.tsv",
+   "sha256": "c797bf4471dd8ce89eab40301bcccfc0cdb61592024c63cd35552db6b2a67f95",
+   "bytes": 466
+  },
+  "purple_qc": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/purple/KQ0004-2023-AAAD-2-DNA.purple.qc",
+   "sha256": "97e6f6b79977ce286eaca78c3de30cffd5d8040cd1d6015af36e93d91121362c",
+   "bytes": 252
+  },
+  "sage_append_vcf": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/sage_append/KQ0004-2023-AAAD-2-DNA/KQ0004-2023-AAAD-2-DNA.sage.append.vcf.gz",
+   "sha256": "cbccf8f016bcc22c3d3292f184285bc5af4accc6354e53ed63f9f03ce6e42b15",
+   "bytes": 3721997
+  },
+  "lilac_tsv": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/lilac/KQ0004-2023-AAAD-2-DNA.lilac.tsv",
+   "sha256": "968977fbfac09ae6ea15dfee8ceb2a3e27ae0acd82fe70922477753b1e1fde8e",
+   "bytes": 1451
+  },
+  "lilac_qc_tsv": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/lilac/KQ0004-2023-AAAD-2-DNA.lilac.qc.tsv",
+   "sha256": "35490079887d9b6a50d5202bdc0bf6223fe585376b4d8cd0dd33b96307ffb1f9",
+   "bytes": 992
+  },
+  "isofox_gene_tsv": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/isofox/KQ0004-2023-AAAD-2-DNA.isf.gene_data.tsv",
+   "sha256": "791a1ffb553aa5d2992043446d3e9261a47bc4ca9ae444b387230948d89789c8",
+   "bytes": 5273172
+  },
+  "isofox_transcript_tsv": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/isofox/KQ0004-2023-AAAD-2-DNA.isf.transcript_data.tsv",
+   "sha256": "640a02cf928f096d6a883f10934d63a86dbf4d920c621a722249d9ccf302c959",
+   "bytes": 22681932
+  },
+  "neo_data_tsv": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/neo/finder/KQ0004-2023-AAAD-2-DNA.neo.neo_data.tsv",
+   "sha256": "9f33a41e2c7e2c806302bd3c302b80421ea3b166cbb071f898a4b13df082e0c2",
+   "bytes": 64336
+  },
+  "neo_peptide_scores_tsv": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/neo/scorer/KQ0004-2023-AAAD-2-DNA.neo.peptide_scores.tsv",
+   "sha256": "3e0ec3f2979e8efc95aed77a8599c50c82283a4cb1e4987e64d140aa31c45a1d",
+   "bytes": 12216989
+  },
+  "neo_neoepitope_tsv": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/neo/scorer/KQ0004-2023-AAAD-2-DNA.neo.neoepitope.tsv",
+   "sha256": "451863cdef9221670cde596093e82d8b04894fbc746a8e250ec58191550128ad",
+   "bytes": 50916
+  },
+  "linx_neoepitope_tsv": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/linx/somatic_annotations/KQ0004-2023-AAAD-2-DNA.linx.neoepitope.tsv",
+   "sha256": "3be747a8e0905d80dce12a8e779f98617772c456df914b02ff6652aa652e9285",
+   "bytes": 9972
+  },
+  "orange_json": {
+   "path": "/global/scratch/hpc6049/wigits_runs/KQ0004_full_native_20261114_onco3.0.0/results/KQ0004/orange/KQ0004-2023-AAAD-2-DNA.orange.json",
+   "sha256": "d9f0d848aaa4afa547eadfa6159af03d9255d2211b2c5f581ae144d626b4ab5f",
+   "bytes": 53394
+  }
+ },
+ "oncoanalyser": {}
+}

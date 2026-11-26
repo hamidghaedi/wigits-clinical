@@ -1,0 +1,87 @@
+# CHIP gene panel, version 3, 26 November 2026.
+# The 77 curated genes are those of the authors' file panels/vlasschaert/Full_CHIP_gene_list_08262022.txt,
+# with the status each has in Vlasschaert et al., Blood 2023;141(18):2214-2223 (see chip_gene_status.tsv).
+# The five added genes are called and reported and sit outside the curated list.
+gene	source	note
+ASXL1	retained	
+ASXL2	retained	
+ATM	added	outside the curated list; no evidence either way from KQ0004, where one call remains after the hotspot input was corrected
+BCOR	retained	
+BCORL1	retained	
+BRAF	retained	
+BRCC3	retained	
+CALR	added	outside the curated list; a myeloproliferative driver kept for haematology review
+CBL	retained	
+CBLB	retained	
+CEBPA	retained	
+CHEK2	added	outside the curated list; kept because it recurs in clonal haematopoiesis series
+CREBBP	retained	
+CSF1R	removed_in_publication	
+CSF3R	retained	
+CTCF	retained	
+CUX1	retained	
+DDX41	added	outside the curated list; germline predisposition to myeloid malignancy
+DNMT3A	retained	
+EED	retained	
+EP300	retained	
+ETNK1	retained	
+ETV6	retained	
+EZH2	retained	
+FLT3	retained	
+GATA1	removed_in_publication	
+GATA2	retained	
+GATA3	removed_in_publication	
+GNA13	removed_in_publication	
+GNAS	retained	
+GNB1	retained	
+IDH1	retained	
+IDH2	retained	
+IKZF1	retained	
+IKZF2	removed_in_publication	
+IKZF3	removed_in_publication	
+JAK1	removed_in_publication	
+JAK2	retained	
+JAK3	removed_in_publication	
+KDM6A	retained	
+KIT	retained	
+KMT2A	removed_in_publication	
+KMT2D	removed_in_publication	
+KRAS	retained	
+LUC7L2	removed_in_publication	
+MPL	retained	
+NF1	retained	
+NPM1	retained	
+NRAS	retained	
+PDS5B	retained	
+PDSS2	removed_in_publication	
+PHF6	retained	
+PHIP	retained	
+PPM1D	retained	
+PRPF40B	retained	
+PRPF8	retained	
+PTEN	removed_in_publication	
+PTPN11	retained	
+RAD21	retained	
+RUNX1	retained	
+SETBP1	retained	
+SETD2	retained	
+SETDB1	retained	
+SF1	removed_in_publication	
+SF3A1	removed_in_publication	
+SF3B1	retained	
+SH2B3	added	outside the curated list; kept for its role in myeloproliferative disease
+SMC1A	retained	
+SMC3	retained	
+SRCAP	added_after_publication	
+SRSF2	retained	
+STAG1	removed_in_publication	
+STAG2	retained	
+SUZ12	retained	
+TET2	retained	
+TP53	retained	
+U2AF1	retained	
+U2AF2	retained	
+WT1	retained	
+YLPM1	added_after_publication	
+ZBTB33	added_after_publication	
+ZRSR2	retained	

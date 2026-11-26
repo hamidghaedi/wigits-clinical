@@ -1,0 +1,6 @@
+Genes	Status	ScoreMargin	NextSolutionAlleles	MedianBaseQuality	HlaYAllele	DiscardedIndels	DiscardedIndelMaxFrags	DiscardedAlignmentFragments	LowCoverageBases	geneTypes	TotalFragments	FittedFragments	UnmatchedFragments	UninformativeFragments	HlaYFragments	PercentUnique	PercentShared	PercentWildcard	UnusedAminoAcids	UnusedAminoAcidMaxFrags	UnusedHaplotypes	UnusedHaplotypeMaxFrags	SomaticVariantsMatched	SomaticVariantsUnmatched
+HLA_DPB1	FAIL	0.000		-	NONE	0	0	0	DPB1=777	DPB1=0	0	0	0	0	0	NaN	NaN	NaN	0	0	0	0	0	0
+HLA_DPA1	FAIL	0.000		-	NONE	0	0	0	DPA1=783	DPA1=0	0	0	0	0	0	NaN	NaN	NaN	0	0	0	0	0	0
+MHC_CLASS_1	PASS	0.451	C*07:1014Q	40	NONE	0	0	0	A=0;B=0;C=0	A=1;B=1;C=1	485	297	188	0	0	0.953	0.047	0.000	7	4	0	0	0	0
+HLA_DQB1	FAIL	0.000		-	NONE	0	0	0	DQB1=786	DQB1=0	0	0	0	0	0	NaN	NaN	NaN	0	0	0	0	0	0
+HLA_DQA1	FAIL	0.000		-	NONE	0	0	0	DQA1=768	DQA1=0	0	0	0	0	0	NaN	NaN	NaN	0	0	0	0	0	0

@@ -1,0 +1,6 @@
+# Whitelist entries restated on the current transcript numbering. The paper notes that the ETNK1 hotspot
+# at N244 is now at N155, and supplementary table S1 lists it as N155(244).
+gene	aa_change	whitelist_entry	source
+ETNK1	N155S	N244S	paper text and supplementary table S1
+ETNK1	N155T	N244T	paper text and supplementary table S1
+ETNK1	N155K	N244K	paper text and supplementary table S1
