@@ -200,7 +200,7 @@ class OptionalExtensionTests(unittest.TestCase):
         review = next(c for c in calls.calls if c[:3] == ["pvactools_image", "pvacseq", "generate_aggregated_report"])
         self.assertEqual(review[review.index("--trna-vaf") + 1], "0.25")
         self.assertEqual(review[review.index("--trna-cov") + 1], "10")
-        self.assertEqual(review[review.index("--expn-val") + 1], "2.5")
+        self.assertEqual(review[review.index("--expn-val") + 1], "1.0")
 
     def test_explicit_review_aggregate_is_used_with_full_prediction_scores(self):
         pvac = self.root / "pvac"

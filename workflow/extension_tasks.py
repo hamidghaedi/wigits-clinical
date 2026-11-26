@@ -110,7 +110,9 @@ def neo_review(case, resources, out, threads, commands, prepared, prediction):
     # keep that as separate evidence instead of silently changing review labels.
     commands.container("pvactools_image", "pvacseq", "generate_aggregated_report",
                        results / (case["tumour_sample"] + ".all_epitopes.tsv"), aggregate,
-                       "--trna-vaf", "0.25", "--trna-cov", "10", "--expn-val", "2.5")
+                       # pVACtools multiplies this gene-expression argument by
+                       # 2.5 for the allele-expression cutoff in its metrics.
+                       "--trna-vaf", "0.25", "--trna-cov", "10", "--expn-val", "1.0")
     commands.run([sys.executable, HERE / "neo_candidates.py", "--results-case-dir", case["results_case_dir"],
                   "--pvacseq-dir", results, "--outdir", out, "--case", sample,
                   "--selected-vcf", Path(prepared) / (sample + ".somatic.selected.vcf"),
