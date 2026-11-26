@@ -99,7 +99,7 @@ process NEO_REVIEW {
     errorStrategy 'finish'
     publishDir "${params.outdir}/${meta.case_id}", mode: 'copy'
     input:
-    tuple val(meta), path(prediction), path(prepared), val(epitope_gib), path(plan)
+    tuple val(meta), path(prediction, stageAs: 'completed_predictions'), path(prepared, stageAs: 'completed_export'), val(epitope_gib), path(plan)
     output:
     tuple val(meta), path('rna_neoantigens'), emit: results
     script:

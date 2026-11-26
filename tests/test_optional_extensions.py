@@ -220,6 +220,15 @@ class OptionalExtensionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "source disagrees"):
             tasks.execute(self.plan(), "SYNTHETIC", "neo_review", self.root / "review", 2, self.root / "prepared", prediction)
 
+    def test_review_output_cannot_overwrite_its_prediction_source(self):
+        source = self.root / "predictions"
+        source.mkdir()
+        marker = source / "status.json"
+        marker.write_text('{"status":"COMPLETED"}\n')
+        with self.assertRaisesRegex(ValueError, "must be separate"):
+            tasks.execute(self.plan(), "SYNTHETIC", "neo_review", source, 2, self.root / "prepared", source)
+        self.assertEqual(json.loads(marker.read_text())["status"], "COMPLETED")
+
 
 if __name__ == "__main__":
     unittest.main()
