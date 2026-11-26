@@ -2,6 +2,9 @@ nextflow.enable.dsl=2
 
 params.plan = null
 params.outdir = null
+params.case_id = null
+params.existing_predictions = null
+params.existing_export = null
 
 process BLOOD_CH {
     tag "${meta.case_id}"
@@ -86,4 +89,37 @@ workflow OPTIONAL_EXTENSIONS {
     }.filter { meta, prepared, taskMeta -> taskMeta.status == 'PREPARED' }
      .map { meta, prepared, taskMeta -> tuple(meta, prepared, taskMeta.resources, planFile) }
     NEO_PREDICT(predictions)
+}
+
+process NEO_REVIEW {
+    tag "${meta.case_id}"
+    cpus 2
+    memory { (12 + Math.ceil(epitope_gib * 8)).GB }
+    time { (30 + Math.ceil(epitope_gib) * 30).min }
+    errorStrategy 'finish'
+    publishDir "${params.outdir}/${meta.case_id}", mode: 'copy'
+    input:
+    tuple val(meta), path(prediction), path(prepared), val(epitope_gib), path(plan)
+    output:
+    tuple val(meta), path('rna_neoantigens'), emit: results
+    script:
+    """
+    python3 '${projectDir}/extension_tasks.py' --plan '${plan}' --case-id '${meta.case_id}' \
+      --stage neo_review --outdir rna_neoantigens --threads ${task.cpus} \
+      --prediction '${prediction}' --prepared '${prepared}'
+    """
+}
+
+workflow REVIEW_EXISTING_NEO {
+    if (!params.plan || !params.outdir || !params.case_id || !params.existing_predictions || !params.existing_export)
+        error 'Supply --plan, --outdir, --case_id, --existing_predictions and --existing_export'
+    def planFile = file(params.plan, checkIfExists: true)
+    def plan = new groovy.json.JsonSlurper().parse(planFile.toFile())
+    def matches = plan.cases.findAll { it.case_id == params.case_id }
+    if (matches.size() != 1) error 'Select exactly one configured case'
+    def meta = matches[0]
+    def prediction = file(params.existing_predictions, checkIfExists: true)
+    def prepared = file(params.existing_export, checkIfExists: true)
+    def scores = prediction.resolve("pvacseq/MHC_Class_I/${meta.tumour_sample}.all_epitopes.tsv")
+    NEO_REVIEW(Channel.of(tuple(meta, prediction, prepared, scores.size() / (1024d*1024d*1024d), planFile)))
 }

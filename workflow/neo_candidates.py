@@ -67,11 +67,12 @@ def normalise_variant_key(text: str):
 
 
 class CandidateBuilder:
-    def __init__(self, results_case_dir, pvacseq_dir, outdir, case, selected_vcf=None):
+    def __init__(self, results_case_dir, pvacseq_dir, outdir, case, selected_vcf=None, aggregate_report=None):
         self.layout = ni.CaseLayout.from_results_dir(results_case_dir)
         self.pvacseq_dir = pvacseq_dir
         self.outdir = outdir
         self.case = case
+        self.aggregate_report = aggregate_report
         # RNA_STATUS / RDP / RAD / RAF live on the exported selected VCF, not on PURPLE's somatic VCF:
         # they are written by neo_export.py from SAGE_APPEND. Reading them from PURPLE yields None for
         # every record and silently sinks every candidate out of the expressed tiers.
@@ -80,6 +81,9 @@ class CandidateBuilder:
 
     # -- inputs ---------------------------------------------------------------------------
     def aggregated_rows(self):
+        if self.aggregate_report:
+            self.aggregated_path = self.aggregate_report
+            return ni.read_tsv(self.aggregate_report)
         hits = [f for f in os.listdir(self.pvacseq_dir) if f.endswith("aggregated.tsv")]
         if not hits:
             raise FileNotFoundError(f"no *aggregated.tsv in {self.pvacseq_dir}")
@@ -469,6 +473,7 @@ def main(argv=None):
     ap.add_argument("--genes-of-interest-file", default=None)
     ap.add_argument("--selected-vcf", default=None,
                     help="exported <case>.somatic.selected.vcf (default: <outdir>/<case>.somatic.selected.vcf)")
+    ap.add_argument("--aggregate-report", help="Explicit review aggregation; full epitope scores still come from --pvacseq-dir")
     ap.add_argument("--explain", action="store_true", help="print the tier rules and exit")
     args = ap.parse_args(argv)
     if args.explain:
@@ -480,7 +485,7 @@ def main(argv=None):
         ap.error("the following arguments are required: "
                  + ", ".join("--" + m.replace("_", "-") for m in missing))
     summary = CandidateBuilder(args.results_case_dir, args.pvacseq_dir, args.outdir, args.case,
-                               args.selected_vcf).run(args.genes_of_interest_file)
+                               args.selected_vcf, args.aggregate_report).run(args.genes_of_interest_file)
     print(json.dumps({k: summary[k] for k in
                       ("candidates", "tiers", "rna_states", "pvacseq_tiers", "peptides_scored_by_both",
                        "best_peptides_matched_in_neo", "case_immune_escape", "lilac_qc_status")}, indent=1))

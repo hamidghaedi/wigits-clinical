@@ -52,6 +52,22 @@ bind root is explicit in the configuration. No wildcard PAVE selection is used
 by the integrated entry. The example names the already tested component versions;
 it does not download or install them on another host.
 
+The review aggregation explicitly retains the completed feature's recorded
+settings: RNA VAF0.25, depth10 and allele-expression threshold2.5. The repaired
+pVACseq automatic aggregate instead inherits the discovery run's0.0/5/0.0
+settings; both records are kept separately. Candidate construction consumes the
+explicit review aggregate and the complete prediction score table. A small
+`REVIEW_EXISTING_NEO` entry can regenerate this review from completed predictions
+and their export, without rerunning annotation/models or modifying originals:
+
+```bash
+WIGITS_EXTENSIONS_ENTRY=REVIEW_EXISTING_NEO \
+  bash /path/to/pinned/release/workflow/run_optional_extensions.sh \
+  /path/to/package/optional_extensions.json /path/to/separate/review \
+  --case_id CASE_ID --existing_predictions /path/to/completed/rna_neoantigens \
+  --existing_export /path/to/completed/neo_export
+```
+
 ## Execute or resume independently
 
 Within the ordinary full-native package, selection is automatic once that native

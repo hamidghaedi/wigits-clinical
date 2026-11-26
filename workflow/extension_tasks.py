@@ -96,17 +96,33 @@ def neo_predict(case, resources, out, threads, commands, prepared):
     commands.container("pvactools_image", "pvacseq", "coverage_filter", binding, covered, *coverage)
     commands.container("pvactools_image", "pvacseq", "transcript_support_level_filter", covered, supported)
     commands.container("pvactools_image", "pvacseq", "top_score_filter", supported, top)
-    # The pVACseq run has already written its aggregate from all epitopes. Keep
-    # that native aggregate; do not overwrite it with the filtered shortlist.
+    write_json(out / "prediction_complete.json", dict(case_id=sample, completed_at=timestamp()))
+    return neo_review(case, resources, out, threads, commands, prepared, out)
+
+
+def neo_review(case, resources, out, threads, commands, prepared, prediction):
+    sample = case["case_id"]
+    results = Path(prediction).resolve() / "pvacseq/MHC_Class_I"
+    aggregate = out / (sample + ".review.aggregated.tsv")
+    # Preserve the feature's standalone aggregation, whose recorded metrics
+    # use RNA VAF0.25, depth10 and allele-expression2.5. The repaired pVACseq
+    # run now also produces an automatic aggregate using its discovery flags;
+    # keep that as separate evidence instead of silently changing review labels.
+    commands.container("pvactools_image", "pvacseq", "generate_aggregated_report",
+                       results / (case["tumour_sample"] + ".all_epitopes.tsv"), aggregate,
+                       "--trna-vaf", "0.25", "--trna-cov", "10", "--expn-val", "2.5")
     commands.run([sys.executable, HERE / "neo_candidates.py", "--results-case-dir", case["results_case_dir"],
                   "--pvacseq-dir", results, "--outdir", out, "--case", sample,
-                  "--selected-vcf", prepared / (sample + ".somatic.selected.vcf"), "--genes-of-interest-file", resources["genes_of_interest"]])
+                  "--selected-vcf", Path(prepared) / (sample + ".somatic.selected.vcf"),
+                  "--aggregate-report", aggregate, "--genes-of-interest-file", resources["genes_of_interest"]])
     return dict(status="COMPLETED", reason="RNA-informed independent class-I predictions and native NEO comparison completed")
 
 
-def execute(plan, case_id, stage, outdir, threads, prepared=None):
+def execute(plan, case_id, stage, outdir, threads, prepared=None, prediction=None):
     case = next(c for c in plan["cases"] if c["case_id"] == case_id)
     out = Path(outdir).resolve()
+    if stage == "neo_review" and (out == Path(prediction).resolve() or Path(prediction).resolve() in out.parents):
+        raise ValueError("Review output must be separate from the preserved prediction directory")
     out.mkdir(parents=True, exist_ok=True)
     commands = Commands(plan["resources"], out)
     feature = "blood_ch" if stage == "blood_ch" else "rna_neoantigens"
@@ -114,12 +130,25 @@ def execute(plan, case_id, stage, outdir, threads, prepared=None):
         raise ValueError("Refusing to execute a disabled/ineligible/unprepared feature")
     status = dict(case_id=case_id, feature=feature, started_at=timestamp(), status="RUNNING")
     write_json(out / "status.json", status)
+    write_json(out / "source_plan.json", plan)
     try:
         if stage == "neo_predict":
             prepared_status = json.loads((Path(prepared) / "task_metadata.json").read_text())
             if prepared_status["status"] != "PREPARED":
                 raise ValueError("Prediction requires a successful eligible export")
             result = neo_predict(case, plan["resources"], out, threads, commands, prepared)
+        elif stage == "neo_review":
+            source = Path(prediction)
+            source_plan = json.loads((source / "source_plan.json").read_text())
+            original = next(c for c in source_plan["cases"] if c["case_id"] == case_id)
+            for key in ("tumour_sample", "normal_sample", "rna_sample", "results_case_dir", "native_genome"):
+                if original.get(key) != case.get(key):
+                    raise ValueError("Prediction source disagrees with the configured case")
+            source_status = json.loads((source / "status.json").read_text())
+            if source_status.get("status") != "COMPLETED" and not (source / "prediction_complete.json").is_file():
+                raise ValueError("Prediction stage is not complete")
+            result = neo_review(case, plan["resources"], out, threads, commands, prepared, prediction)
+            result["reused_prediction_directory"] = str(source.resolve())
         else:
             result = {"blood_ch": chip, "neo_prepare": neo_prepare}[stage](case, plan["resources"], out, threads, commands)
         status.update(result)
@@ -136,12 +165,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--case-id", required=True)
-    parser.add_argument("--stage", choices=("blood_ch", "neo_prepare", "neo_predict"), required=True)
+    parser.add_argument("--stage", choices=("blood_ch", "neo_prepare", "neo_predict", "neo_review"), required=True)
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--threads", type=int, required=True)
     parser.add_argument("--prepared", type=Path)
+    parser.add_argument("--prediction", type=Path)
     args = parser.parse_args()
-    execute(json.loads(args.plan.read_text()), args.case_id, args.stage, args.outdir, args.threads, args.prepared)
+    execute(json.loads(args.plan.read_text()), args.case_id, args.stage, args.outdir, args.threads, args.prepared, args.prediction)
 
 
 if __name__ == "__main__":

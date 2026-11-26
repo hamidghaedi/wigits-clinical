@@ -13,7 +13,7 @@ python3 "$HERE/optional_extensions.py" plan --config "$CONFIG" --out "$RUN_DIR/s
 # explicit for standalone execution, and inherited from the native launcher.
 site_config="${WIGITS_EXTENSIONS_SITE_CONFIG:-$HERE/conf/frontenac.config}"
 status=0
-NXF_SYNTAX_PARSER=v1 nextflow run "$HERE/optional_extensions.nf" -entry OPTIONAL_EXTENSIONS \
+NXF_SYNTAX_PARSER=v1 nextflow run "$HERE/optional_extensions.nf" -entry "${WIGITS_EXTENSIONS_ENTRY:-OPTIONAL_EXTENSIONS}" \
   -c "$site_config" -c "$HERE/conf/optional_extensions.config" --plan "$RUN_DIR/state/plan.json" --outdir "$RUN_DIR/results" \
   -work-dir "$RUN_DIR/work" -with-trace "$RUN_DIR/logs/trace.tsv" -resume "$@" || status=$?
 python3 "$HERE/optional_extensions.py" status --plan "$RUN_DIR/state/plan.json" \

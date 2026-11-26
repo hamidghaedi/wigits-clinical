@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "workflow"))
 import optional_extensions as planner
 import extension_tasks as tasks
 import neo_interface as ni
+from neo_candidates import CandidateBuilder
 
 
 class OptionalExtensionTests(unittest.TestCase):
@@ -196,6 +197,28 @@ class OptionalExtensionTests(unittest.TestCase):
         self.assertNotIn("NetMHCpan", prediction)
         self.assertIn("--normal-sample-name", prediction)
         self.assertIn(self.case["normal_sample"], prediction)
+        review = next(c for c in calls.calls if c[:3] == ["pvactools_image", "pvacseq", "generate_aggregated_report"])
+        self.assertEqual(review[review.index("--trna-vaf") + 1], "0.25")
+        self.assertEqual(review[review.index("--trna-cov") + 1], "10")
+        self.assertEqual(review[review.index("--expn-val") + 1], "2.5")
+
+    def test_explicit_review_aggregate_is_used_with_full_prediction_scores(self):
+        pvac = self.root / "pvac"
+        pvac.mkdir()
+        (pvac / "automatic.aggregated.tsv").write_text("ID\tTier\nVARIANT\tPass\n")
+        review = self.root / "review.tsv"
+        review.write_text("ID\tTier\nVARIANT\tNoExpr\n")
+        builder = CandidateBuilder(str(self.case_root), str(pvac), str(self.root / "out"), "SYNTHETIC", aggregate_report=str(review))
+        self.assertEqual(builder.aggregated_rows()[0]["Tier"], "NoExpr")
+        self.assertEqual(builder.pvacseq_dir, str(pvac))
+
+    def test_review_reuse_rejects_a_different_case(self):
+        prediction = self.root / "predictions"
+        source_plan = self.plan()
+        source_plan["cases"][0]["tumour_sample"] = "OTHER_TUMOUR"
+        planner.write_json(prediction / "source_plan.json", source_plan)
+        with self.assertRaisesRegex(ValueError, "source disagrees"):
+            tasks.execute(self.plan(), "SYNTHETIC", "neo_review", self.root / "review", 2, self.root / "prepared", prediction)
 
 
 if __name__ == "__main__":

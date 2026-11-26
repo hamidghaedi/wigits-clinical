@@ -136,7 +136,7 @@ def collect_status(plan, result_root, trace=None):
         with Path(trace).open() as stream:
             for row in csv.DictReader(stream, delimiter="\t"):
                 process = row.get("process", "").split(":")[-1]
-                if process in ("BLOOD_CH", "NEO_PREPARE", "NEO_PREDICT"):
+                if process in ("BLOOD_CH", "NEO_PREPARE", "NEO_PREDICT", "NEO_REVIEW"):
                     terminal[(row.get("tag"), process)] = row
     cases = []
     for case in plan["cases"]:
@@ -153,10 +153,10 @@ def collect_status(plan, result_root, trace=None):
                     status.update(status="INCOMPLETE", reason="Export finished; prediction has no successful completion receipt")
             elif status["status"] == "READY":
                 status.update(status="INCOMPLETE", reason="Selected task has no successful completion receipt")
-            for process in (("BLOOD_CH",) if feature == "blood_ch" else ("NEO_PREPARE", "NEO_PREDICT")):
+            for process in (("BLOOD_CH",) if feature == "blood_ch" else ("NEO_PREPARE", "NEO_PREDICT", "NEO_REVIEW")):
                 row = terminal.get((case["case_id"], process), {})
                 if row.get("status") in ("FAILED", "ABORTED"):
-                    folder = {"BLOOD_CH": "blood_ch", "NEO_PREPARE": "neo_export", "NEO_PREDICT": "rna_neoantigens"}[process]
+                    folder = {"BLOOD_CH": "blood_ch", "NEO_PREPARE": "neo_export", "NEO_PREDICT": "rna_neoantigens", "NEO_REVIEW": "rna_neoantigens"}[process]
                     task_status = Path(row["workdir"]) / folder / "status.json"
                     status = json.loads(task_status.read_text()) if task_status.is_file() else dict(status="FAILED", reason="Nextflow task failed before a completion receipt")
                     status.update(task_workdir=row["workdir"], task_exit=row.get("exit"), process=process)
