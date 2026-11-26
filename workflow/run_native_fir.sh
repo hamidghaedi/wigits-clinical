@@ -28,7 +28,7 @@ copy_once() {
 }
 copy_once "$manifest" "$package/samplesheet.csv"
 copy_once "$config" "$package/site.env"
-for name in input_plan.json release.json; do
+for name in input_plan.json release.json case_manifest.json laboratory.json; do
     [[ ! -f "$(dirname "$manifest")/$name" ]] || copy_once "$(dirname "$manifest")/$name" "$package/$name"
 done
 if [[ -e "$package/workflow" || -L "$package/workflow" ]]; then

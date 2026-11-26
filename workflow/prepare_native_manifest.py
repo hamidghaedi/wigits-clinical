@@ -13,6 +13,7 @@ import csv
 from datetime import datetime
 import fcntl
 import gzip
+import glob
 import hashlib
 import json
 from pathlib import Path
@@ -21,13 +22,60 @@ import shlex
 import sys
 import xml.etree.ElementTree as ET
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 FIELDS = 'group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath'.split(',')
 PHASES = {'Phase_1', 'phase_1.5', 'Phase_2'}
 PHASE_ALIASES = {'Phase 1':'Phase_1','Phase 1.5':'phase_1.5','Phase 2':'Phase_2'}
 REQUIRED = {'case_submitter_id', 'sample_submitter_id', 'analyte_type',
             'tumor_descriptor', 'specimen_type', 'tissue_preservation_method',
             'lanes', 'fastq_parent_dir'}
+CASE_TOKEN = re.compile(r'(?i)(?<![A-Z0-9])KQ[-_ ]?0*([0-9]{1,4})(?![0-9])')
+
+
+def case_key(value):
+    """Same case-token rule as the tracker lab_manifest/seqera adapters."""
+    matches={f'KQ{int(n):04d}' for n in CASE_TOKEN.findall(value or '')}
+    if len(matches)>1: raise ValueError('Ambiguous patient identifier: '+value)
+    return next(iter(matches)) if matches else value
+
+
+def sample_key(value):
+    """Format-only matching, preserving GDNA/RNA and numbered DNA aliquots.
+
+    Phase1 lab standardizer passes2/3 handle separators. Tracker's case-token
+    rule handles prefix zero padding. Never adopt the old broad pass4 which
+    collapses GDNA/DNA or 1DNA/DNA. Non-cosmetic differences need sourced aliases.
+    """
+    value=re.sub(r'(?i)^KQ[-_ ]?0*([0-9]{1,4})(?=[-_ ]|$)',
+                 lambda m:f'KQ{int(m[1]):04d}',value.strip())
+    return re.sub(r'[-_\s]','',value).upper()
+
+
+def source_paths(config, explicit=()):
+    if explicit: return list(explicit),{}
+    phases={};paths=set()
+    for source in config.get('laboratory_sources',[]):
+        for name in sorted(glob.glob(source['glob'],recursive=True)):
+            path=Path(name).resolve()
+            if path.suffix.lower()!='.csv':continue
+            paths.add(path)
+            phases[str(path)]=source.get('phase_by_file',{}).get(path.name,source.get('phase'))
+    if not paths:raise ValueError('No original laboratory CSVs found in the configured laboratory_sources')
+    return sorted(paths),phases
+
+
+def load_aliases(config):
+    result={};sources={}
+    for name in config.get('sample_alias_files',[]):
+        path=Path(name);sources[str(path.resolve())]=hashlib.sha256(path.read_bytes()).hexdigest()
+        with path.open(encoding='utf-8-sig',newline='') as stream:
+            for row in csv.DictReader(stream):
+                old,new,evidence=(row.get(k,'').strip() for k in ('manifest_sample_id','storage_sample_id','evidence'))
+                if not all((old,new,evidence)):raise ValueError('Alias requires original ID, storage ID and source evidence')
+                if old in result and result[old]['storage_sample_id']!=new:raise ValueError('Conflicting sourced sample alias: '+old)
+                if case_key(old)!=case_key(new):raise ValueError('Sample alias cannot change patient identity')
+                result[old]=dict(storage_sample_id=new,evidence=evidence,source=str(path))
+    return result,sources
 
 
 def identifier(value):
@@ -49,7 +97,7 @@ def write_csv(path, rows):
         writer.writeheader();writer.writerows(rows)
 
 
-def laboratory(paths, phase):
+def laboratory(paths, phase, phase_map=None):
     result={};sources={}
     for path in paths:
         path=Path(path).resolve()
@@ -58,14 +106,17 @@ def laboratory(paths, phase):
             reader=csv.DictReader(stream)
             if not REQUIRED <= set(reader.fieldnames or []):
                 raise ValueError('Missing laboratory columns in '+str(path)+': '+', '.join(sorted(REQUIRED-set(reader.fieldnames or []))))
-            for original in reader:
+            for number,original in enumerate(reader,2):
                 row={k:(v or '').strip() for k,v in original.items() if k}
                 if not row['sample_submitter_id']: continue
-                row['_run_id']=identifier(Path(row['fastq_parent_dir']).parent.name)
+                parent=re.sub(r'/fastq\d*$','',row['fastq_parent_dir'].replace('\\','/').rstrip('/'))
+                run=Path(parent).name if parent else ''
+                row['_run_id']=run if run and run not in {'data','nfs','.'} else ''
                 identifier(row['sample_submitter_id'])
-                row['phase']=PHASE_ALIASES.get(row.get('phase'),row.get('phase')) or phase
-                if row['phase'] not in PHASES: raise ValueError('Unknown laboratory phase')
-                key=row['_run_id'],row['sample_submitter_id']
+                row['phase']=PHASE_ALIASES.get(row.get('phase'),row.get('phase')) or (phase_map or {}).get(str(path)) or phase
+                row['_source']=str(path);row['_source_row']=number
+                row['_original']=dict(original)
+                key=row['_run_id'] or str(path),row['sample_submitter_id']
                 if key in result and any(result[key].get(k)!=row.get(k) for k in REQUIRED|{'phase'}):
                     raise ValueError('Conflicting laboratory rows for '+row['sample_submitter_id'])
                 result[key]=row
@@ -80,18 +131,56 @@ def role(row):
     raise ValueError('Unresolved laboratory role: '+row['sample_submitter_id'])
 
 
-def select(rows, case, tumour=None, normal=None, rna=None, dna_only=False):
-    rows=[r for r in rows if r['case_submitter_id']==case or r['case_submitter_id'].split('-',1)[0]==case]
+def select(rows, case, tumour=None, normal=None, rna=None, dna_only=False, fastq_root=None):
+    rows=[r for r in rows if case_key(r['case_submitter_id'])==case_key(case)]
+    for row in rows:
+        if CASE_TOKEN.search(row['case_submitter_id']) and case_key(row['sample_submitter_id'])!=case_key(case):
+            raise ValueError('Laboratory case and sample IDs identify different patients: '+row['sample_submitter_id'])
     bound={}
     for key, analyte, kind, requested in [('tumor','DNA','tumor',tumour),('normal','DNA','normal',normal),('rna','RNA','tumor',rna)]:
         if key=='rna' and dna_only: continue
         choices=[r for r in rows if r['analyte_type'].upper()==analyte and role(r)==kind
                  and (not requested or r['sample_submitter_id']==requested)]
         if key=='rna' and not choices and not requested: continue
+        if len(choices)>1 and fastq_root and not requested:
+            staged=[r for r in choices if library_ready(r,fastq_root)]
+            if len(staged)==1:choices=staged
+            elif key=='rna':continue
         if len(choices)!=1:
             raise ValueError(f'Expected one {key} library for {case}; found {len(choices)}. Supply the matching laboratory manifests / explicit sample selector.')
         bound[key]=choices[0]
     return bound
+
+
+def locate_fastqs(lab, fastq_root, allow_missing=False):
+    """Match within the lab-declared run, with original names/paths retained."""
+    run=lab['_run_id'];sample=lab['sample_submitter_id']
+    if not run:
+        if allow_missing:return []
+        raise ValueError('Original laboratory run path is unresolved: '+sample)
+    root=Path(fastq_root)/run
+    key=sample_key(lab.get('_storage_sample_id',sample))
+    # Inspect only this acquisition run; never search the entire filesystem.
+    folders=[p for p in root.iterdir() if p.is_dir() and sample_key(p.name)==key] if root.is_dir() else []
+    candidates=[]
+    for folder in folders:
+        for path in sorted(folder.glob('*.fastq.gz')):
+            m=re.fullmatch(r'(.+)_S(\d+)_L(\d{3})_R([12])_(\d{3})\.fastq\.gz',path.name)
+            if not m or sample_key(m[1])!=key:raise ValueError('Unbound or conflicting FASTQ in sample folder: '+str(path))
+            candidates.append((path,m.groups()[1:]))
+    if len(folders)>1:raise ValueError('Multiple storage folders match the same laboratory library: '+sample)
+    if not candidates and not allow_missing:raise ValueError('No staged FASTQs for declared laboratory library: '+sample)
+    return candidates
+
+
+def library_ready(lab, fastq_root):
+    candidates=locate_fastqs(lab,fastq_root,allow_missing=True)
+    expected={int(x) for x in re.split(r'[;, ]+',lab['lanes']) if x}
+    pairs={}
+    for path,(number,lane,mate,chunk) in candidates:
+        if not path.stat().st_size:return False
+        pairs.setdefault((number,lane,chunk),set()).add(int(mate))
+    return bool(pairs) and {int(k[1]) for k in pairs}==expected and all(p=={1,2} for p in pairs.values())
 
 
 def header_flowcell(path, lane, mate):
@@ -108,15 +197,13 @@ def header_flowcell(path, lane, mate):
 def fastq_rows(case, bound, fastq_root, run_infos):
     rows=[];objects=[]
     for key,lab in bound.items():
-        sample=lab['sample_submitter_id'];run=lab['_run_id'];folder=Path(fastq_root)/run/sample
+        sample=lab['sample_submitter_id'];run=lab['_run_id']
+        native_sample=sample
         expected={int(x) for x in re.split(r'[;, ]+',lab['lanes']) if x}
         if not expected: raise ValueError('Missing laboratory lanes: '+sample)
-        pattern=re.compile(re.escape(sample)+r'_S(\d+)_L(\d{3})_R([12])_(\d{3})\.fastq\.gz$')
         pairs={}
-        for path in sorted(folder.glob('*.fastq.gz')):
-            match=pattern.fullmatch(path.name)
-            if not match: raise ValueError('Staged FASTQ name does not match the laboratory library: '+str(path))
-            sample_number,lane,mate,chunk=match.groups()
+        for path,parts in locate_fastqs(lab,fastq_root):
+            sample_number,lane,mate,chunk=parts
             if path.stat().st_size==0: raise ValueError('Empty staged FASTQ: '+str(path))
             pairs.setdefault((sample_number,lane,chunk),{})[int(mate)]=path
         observed={int(k[1]) for k in pairs}
@@ -126,10 +213,13 @@ def fastq_rows(case, bound, fastq_root, run_infos):
             flowcells=[run_infos[run]] if run in run_infos else [header_flowcell(mates[m],lane,m) for m in (1,2)]
             if len(set(flowcells))!=1: raise ValueError('FASTQ mate flowcells differ: '+sample)
             flowcell=identifier(flowcells[0])
-            rows.append(dict(zip(FIELDS,[case,case,sample,'tumor' if key=='rna' else key,
+            rows.append(dict(zip(FIELDS,[case,case,native_sample,'tumor' if key=='rna' else key,
                 'rna' if key=='rna' else 'dna','fastq',
-                f'library_id:{sample};lane:{lane};flowcell:{flowcell}',';'.join(str(mates[m].resolve()) for m in (1,2))])))
+                f'library_id:{native_sample};lane:{lane};flowcell:{flowcell}',';'.join(str(mates[m].resolve()) for m in (1,2))])))
             objects.extend(dict(sample_id=sample,run_id=run,lane=lane,mate=str(m),chunk=chunk,
+                storage_sample_id=mates[m].parent.name,
+                match_method='source_confirmed_alias' if lab.get('_alias_evidence') else
+                    'exact' if mates[m].name.startswith(sample+'_S') and mates[m].parent.name==sample else 'phase1_separator_or_patient_padding',
                 destination=str(mates[m].resolve()),expected_bytes=mates[m].stat().st_size) for m in (1,2))
     return rows,objects
 
@@ -168,13 +258,37 @@ def register_labs(config, rows, sources):
 
 
 def prepare(args):
-    config=json.loads(args.config.read_text());case=identifier(args.case_id)
+    config=json.loads(args.config.read_text())
+    requested=args.case_id or args.sample_id
+    if not requested:raise ValueError('Provide the patient/sample ID')
+    case=identifier(case_key(requested))
     required={'project_root','scratch_root','workflow_version','workflow_directory','workflow_commit',
               'native_source','native_source_version','native_source_commit','reference_root','extension_resources','lab_qc',
               'resource_version','driver_panel_sha256'}
     if not required<=config.keys(): raise ValueError('Incomplete shared site configuration: '+', '.join(sorted(required-config.keys())))
-    rows,sources=laboratory(args.lab_manifest,args.phase)
-    bound=select(rows,case,args.tumour_sample,args.normal_sample,args.rna_sample,args.dna_only)
+    paths,phases=source_paths(config,args.lab_manifest or [])
+    rows,sources=laboratory(paths,args.phase,phases)
+    aliases,alias_sources=load_aliases(config);sources.update(alias_sources)
+    for row in rows:
+        if row['sample_submitter_id'] in aliases:
+            row['_storage_sample_id']=aliases[row['sample_submitter_id']]['storage_sample_id']
+            row['_alias_evidence']=aliases[row['sample_submitter_id']]
+    declared=[r for r in rows if case_key(r['case_submitter_id'])==case]
+    if requested!=case:
+        exact=[r for r in declared if sample_key(r['sample_submitter_id'])==sample_key(requested)]
+        if len(exact)==1:
+            selector='rna_sample' if exact[0]['analyte_type'].upper()=='RNA' else 'normal_sample' if role(exact[0])=='normal' else 'tumour_sample'
+            if not getattr(args,selector):setattr(args,selector,exact[0]['sample_submitter_id'])
+    fastq_root=Path(config['scratch_root'])/'fastq'
+    bound=select(rows,case,args.tumour_sample,args.normal_sample,args.rna_sample,args.dna_only,fastq_root)
+    declared_bound=dict(bound)
+    rna_declared=[r for r in declared if r['analyte_type'].upper()=='RNA']
+    rna_status='NOT_DECLARED' if not rna_declared else 'NOT_SELECTED' if args.dna_only else 'AMBIGUOUS'
+    if 'rna' in bound:
+        rna_status='READY' if library_ready(bound['rna'],fastq_root) else 'NOT_STAGED'
+        if rna_status!='READY':bound.pop('rna')
+    if any(r['phase'] not in PHASES for r in bound.values()):
+        raise ValueError('Selected original source needs its phase configured once in laboratory_sources')
     if bound['tumor']['tissue_preservation_method'].casefold() not in {'frozen','fresh frozen','fresh-frozen'}:
         raise ValueError('Routine native route requires recorded fresh-frozen tumour; FFPE needs a separately authorized route')
     if args.blood_ch and bound['normal']['specimen_type'].casefold()!='blood':
@@ -193,7 +307,7 @@ def prepare(args):
             raise ValueError('Unusable RunInfo.xml: '+str(path))
         run_infos[run.get('Id')]=run.findtext('Flowcell')
         sources[str(path.resolve())]=hashlib.sha256(path.read_bytes()).hexdigest()
-    samplesheet,objects=fastq_rows(case,bound,Path(config['scratch_root'])/'fastq',run_infos)
+    samplesheet,objects=fastq_rows(case,bound,fastq_root,run_infos)
     aid=identifier(args.analysis_id or f'{case}-native-{datetime.now().strftime("%Y%m%d")}-r1')
     out=Path(config['project_root'])/'file_manifests'/aid
     if out.exists(): raise ValueError('Prepared inputs already exist; use them to run/resume, or choose another --analysis-id: '+str(out))
@@ -207,6 +321,21 @@ def prepare(args):
         writer=csv.DictWriter(stream,fieldnames=FIELDS,lineterminator='\n');writer.writeheader();writer.writerows(samplesheet)
     laboratory_path=out/'laboratory.json'
     save(laboratory_path,dict(sources=sources,selected_libraries=bound,full_run_qc_config=str(qc)))
+    # This is the authoritative generated case input. CSV/options/site files are
+    # projections, not independent places to edit patient bindings.
+    case_manifest=dict(schema_version='wigits.case-input.v1',case_id=case,phase=bound['tumor']['phase'],
+        input_selector=requested,analysis_id=aid,run_directory=str(run_root/aid),
+        assay_mode='WGTS' if 'rna' in bound else 'WGS',route='native_hartwig_fresh_frozen',
+        options=dict(blood_ch=args.blood_ch,rna_neoantigens=args.rna_neoantigens),
+        native_source=config['native_source'],native_source_commit=config['native_source_commit'],
+        resource_version=config['resource_version'],driver_panel_sha256=config['driver_panel_sha256'],
+        selected_libraries=declared_bound,declared_libraries=declared,
+        runnable_libraries=bound,rna=dict(status=rna_status,declared_sample_ids=[r['sample_submitter_id'] for r in rna_declared]),
+        files=objects,source_files=sources,workflow_version=config['workflow_version'],
+        workflow_commit=config['workflow_commit'],full_run_qc_config=str(qc),status='READY',
+        matching_policy='exact_then_unique_separator_and_case_prefix_normalization; sourced_noncosmetic_aliases',
+        original_laboratory_values_preserved=True)
+    save(out/'case_manifest.json',case_manifest)
     resources=dict(config['extension_resources'])
     optional=dict(schema_version='wigits.optional-extensions.v1',resources=resources,cases=[dict(case_id=case,
         results_case_dir=str(run_root/aid/'results'/case),native_genome='GRCh38_hmf',
@@ -233,25 +362,37 @@ def prepare(args):
         laboratory_qc_config=str(qc),route='native_hartwig_fresh_frozen',input_files=len(objects),
         blood_ch=args.blood_ch,rna_neoantigens=args.rna_neoantigens))
     return dict(prepared=str(out),case_id=case,lane_rows=len(samplesheet),fastqs=len(objects),
-        run_directory=str(run_root/aid),lab_qc_config=str(qc),analysis_submitted=False)
+        run_directory=str(run_root/aid),lab_qc_config=str(qc),analysis_submitted=False,
+        library_ids={key:lab['sample_submitter_id'] for key,lab in declared_bound.items()},rna_status=rna_status)
 
 
 def parser():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--lab-manifest',type=Path,action='append',required=True,help='Original laboratory CSV; repeat for tumour/normal/RNA runs')
-    p.add_argument('--case-id',required=True)
-    p.add_argument('--phase',choices=sorted(PHASES),required=True,help='Used only where the laboratory CSV has no phase')
-    p.add_argument('--config',type=Path,required=True,help='Shared site JSON, reused across samples')
+    p.add_argument('sample_id',nargs='?',help='Patient ID or full laboratory sample ID; original lab files are discovered automatically')
+    p.add_argument('--lab-manifest',type=Path,action='append',help='Optional explicit original CSV override; normally scan laboratory_sources')
+    p.add_argument('--case-id',help='Backward-compatible explicit patient selector')
+    p.add_argument('--phase',choices=sorted(PHASES),help='Optional phase override where absent in the source configuration')
+    p.add_argument('--config',type=Path,default=Path(__file__).resolve().parents[1]/'config/native_fir.json',help='Shared site JSON, automatically found in the project config directory')
     p.add_argument('--analysis-id',help='Optional explicit identifier; default <case>-native-<date>-r1')
     for kind in ('tumour','normal','rna'):p.add_argument('--'+kind+'-sample')
     p.add_argument('--dna-only',action='store_true',help='Explicitly omit laboratory RNA libraries')
     p.add_argument('--blood-ch',action='store_true')
     p.add_argument('--rna-neoantigens',action='store_true')
     p.add_argument('--run-info',type=Path,action='append',default=[],help='Optional original RunInfo.xml; otherwise read one FASTQ header')
+    p.add_argument('--json',action='store_true',help='Machine-readable output instead of the short human summary')
     return p
 
 
 if __name__=='__main__':
-    try: print(json.dumps(prepare(parser().parse_args()),indent=2))
+    try:
+        args=parser().parse_args();result=prepare(args)
+        if args.json:print(json.dumps(result,indent=2))
+        else:
+            print('Prepared: '+result['prepared'])
+            for key,sample in result['library_ids'].items():print(key+': '+sample)
+            print('RNA: '+result['rna_status'])
+            project=Path(result['prepared']).parent.parent;folder=Path(result['prepared'])
+            print('Run:\n'+shlex.join(['bash',str(project/'scripts/run_native_fir.sh'),
+                '--manifest',str(folder/'samplesheet.csv'),'--config',str(folder/'site.env')]))
     except (ValueError,KeyError,FileNotFoundError) as error:
         print(str(error),file=sys.stderr);sys.exit(2)

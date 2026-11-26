@@ -2,6 +2,8 @@ import csv
 import gzip
 import importlib.util
 import json
+import shutil
+import subprocess
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -163,6 +165,49 @@ class PrepareNativeTests(unittest.TestCase):
         state=qc.read(Path(config['state_directory'])/'RUN_T.run.json')
         manifest=qc.read(Path(state['execution_root'])/'manifest.json')
         self.assertEqual(len(manifest['samples']),2)
+
+    def test_standalone_command_takes_only_the_patient_id(self):
+        self.config['laboratory_sources']=[dict(glob=str(self.lab),phase='Phase_1')]
+        scripts=self.project/'scripts';scripts.mkdir(parents=True)
+        config_dir=self.project/'config';config_dir.mkdir()
+        (config_dir/'native_fir.json').write_text(json.dumps(self.config))
+        script=scripts/'prepare_native_manifest.py';shutil.copy2(ROOT/'workflow/prepare_native_manifest.py',script)
+        result=subprocess.run(['python3',str(script),'CASE_A','--json'],text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        output=json.loads(result.stdout);manifest=json.loads((Path(output['prepared'])/'case_manifest.json').read_text())
+        self.assertEqual(manifest['case_id'],'CASE_A')
+        self.assertEqual(set(manifest['runnable_libraries']),{'normal','tumor'})
+        self.assertIn(str(self.lab),manifest['source_files'])
+
+    def test_declared_rna_without_staged_fastqs_is_not_lost(self):
+        self.add_library('CASE_A','CASE_A-RNA','RUN_R','RNA','Primary','Tissue');self.write_lab()
+        for path in (self.scratch/'fastq/RUN_R/CASE_A-RNA').glob('*'):path.unlink()
+        package=self.prepared()
+        record=json.loads((package/'case_manifest.json').read_text())
+        self.assertEqual(record['rna'],dict(status='NOT_STAGED',declared_sample_ids=['CASE_A-RNA']))
+        self.assertIn('rna',record['selected_libraries'])
+        self.assertNotIn('rna',record['runnable_libraries'])
+
+    def test_unrelated_incomplete_original_rna_paths_do_not_block_scanning(self):
+        row=dict(self.rows[0],case_submitter_id='UNRELATED',sample_submitter_id='UNRELATED-RNA',analyte_type='RNA',fastq_parent_dir='/nfs/data//fastq')
+        self.rows.append(row);self.write_lab()
+        self.assertTrue(self.prepared().is_dir())
+
+    def test_phase1_separators_numbered_aliquots_and_patient_padding(self):
+        selected=[]
+        for kind,descriptor,specimen in [('2-DNA','Primary','Tissue'),('gDNA','Normal','Blood')]:
+            sample='KQ0004-2023-AAAD-'+kind
+            self.add_library('KQ4-2023-AAAD',sample,'RUN_K','DNA',descriptor,specimen)
+            folder=self.scratch/'fastq/RUN_K'/sample
+            prefix='KQ4_2023_AAAD_'+kind.replace('-','')
+            for path in list(folder.glob('*')):path.rename(path.with_name(path.name.replace(sample,prefix)))
+            folder.rename(folder.with_name(prefix));selected.append(sample)
+        self.write_lab();package=self.prepared('KQ0004')
+        record=json.loads((package/'case_manifest.json').read_text())
+        self.assertEqual({r['sample_submitter_id'] for r in record['runnable_libraries'].values()},set(selected))
+        self.assertEqual(record['runnable_libraries']['tumor']['_original']['case_submitter_id'],'KQ4-2023-AAAD')
+        self.assertNotEqual(tool.sample_key('KQ0004-gDNA'),tool.sample_key('KQ0004-DNA'))
+        self.assertNotEqual(tool.sample_key('KQ0004-1DNA'),tool.sample_key('KQ0004-DNA'))
 
 
 if __name__=='__main__':unittest.main()

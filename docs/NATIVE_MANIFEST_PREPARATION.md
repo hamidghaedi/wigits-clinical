@@ -50,3 +50,29 @@ shrink it. A cross-case QC test shows no submission for a partial run and exactl
 one submission after the other expected case is represented. Existing real-data
 native/CH/neo and laboratory-QC evidence remains separately recorded; target-site
 runtime requires an owner-launched execution.
+
+## v1.1.0 — original-source discovery
+
+The normal CLI is now `prepare_native_manifest.py <patient_or_sample_id>`.
+The shared site profile is found automatically beside the installed scripts.
+`laboratory_sources` supplies complete original CSV globs and source phase
+bindings; explicit CSV/phase flags remain optional compatibility overrides.
+All original sources are scanned before tumour/normal/RNA selection. Unrelated
+incomplete RNA paths do not block another patient's valid pair. If several DNA
+libraries exist, only a uniquely staged complete candidate can be selected
+automatically; otherwise the ambiguity remains explicit.
+
+Case-token normalization reproduces the tracker laboratory/Seqera rule.
+Separator matching reproduces the safe Phase1 standardizer behavior; suffix
+letters and numbered aliquots remain distinct. The broad historical pass4
+(GDNA→DNA and1DNA→DNA) is deliberately excluded: previous processed manifests
+contain one such potentially unsafe association. Exact source-confirmed aliases
+are loaded from the maintained registry, with its evidence retained. Source
+rows/IDs, actual storage names and matching method stay together.
+
+`case_manifest.json` is the generated workflow input SSOT: declared and runnable
+libraries, source-row metadata, phase, assay mode, options, run directory,
+actual file bindings and version/resource provenance. CSV/options/site files are
+projections from the same resolution, never independently edited masters. The
+launcher preserves this record in the execution package. RNA states distinguish
+NOT_DECLARED, NOT_STAGED, NOT_SELECTED, AMBIGUOUS and READY.
