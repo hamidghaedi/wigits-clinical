@@ -15,6 +15,11 @@ commit; see [v0.2.0 notes](docs/releases/v0.2.0.md) for validation and release s
 The previous `hartwig_adoptation` history is retained. New work uses short-lived
 branches and pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+The `codex/optional-chip-neo` integration candidate adds explicitly selected
+[blood CH and RNA-informed neoantigen Nextflow branches](docs/OPTIONAL_EXTENSIONS.md)
+after native completion. It incorporates `chip/reporting-layer` at `b618a90`;
+it is not yet a published replacement for main/v0.2.0 or a deployed Fir profile.
+
 The implemented workflow launches nf-core/oncoanalyser 3.0.0's native Hartwig
 analytical stack on Frontenac. The default installed source is
 `3.0.0-qlmp.2.2`, with the documented ORANGE source-value corrections; it is

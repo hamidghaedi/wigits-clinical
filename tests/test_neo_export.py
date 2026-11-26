@@ -3,6 +3,7 @@ import glob
 import gzip
 import json
 import os
+import shutil
 
 import pytest
 
@@ -112,21 +113,41 @@ def test_proximal_vcf_has_exactly_one_sample(exported):
 
 
 def test_expression_reaches_the_tumour_genotype(exported):
-    """GX/TX must reach the tumour genotype, or every pVACseq expression column comes out NA.
-
-    Skipped when the fixture carries no ISOFOX quantification: the fixture is a trimmed subject_a case
-    and gene-level expression is only present on a real RNA case.
-    """
+    """Expression is populated only where the trimmed ISOFOX data match a variant."""
     _, manifest = exported
     if not manifest["counts"].get("isofox_genes"):
         pytest.skip("fixture has no ISOFOX gene expression")
     vcf = manifest["outputs"]["somatic_selected_vcf"]
-    populated = 0
+    layout = ni.CaseLayout.from_results_dir(FIXTURE)
+    expression = {r['GeneName']: r['AdjTPM'] for r in ni.read_tsv(layout.files['isofox_gene_tsv'])}
     for line in open(vcf):
         if line.startswith("#"):
             continue
         f = line.rstrip("\n").split("\t")
         vals = dict(zip(f[8].split(":"), f[-1].split(":")))
-        if vals.get("GX", ".") != "." and "|" in vals["GX"]:
-            populated += 1
-    assert populated > 0, "no record carries gene expression in the tumour genotype"
+        gene = ni.parse_impact(ni.parse_info(f[7]).get('IMPACT', '')).get('Gene', '')
+        expected = f"{gene}|{expression[gene]}" if gene in expression else '.'
+        assert vals.get('GX', '.') == expected
+
+
+@pytest.mark.parametrize('tpm', ['0.000e+00', '2.500e+00'])
+def test_synthetic_matching_expression_reaches_genotype(tmp_path, tpm):
+    """Synthetic matching data prove that zero and nonzero expression survive."""
+    case = tmp_path / 'synthetic'
+    shutil.copytree(FIXTURE, case)
+    layout = ni.CaseLayout.from_results_dir(str(case))
+    with gzip.open(layout.files['purple_somatic_vcf'], 'rt') as stream:
+        variant = next(line for line in stream if not line.startswith('#') and ni.parse_impact(ni.parse_info(line.split('\t')[7]).get('IMPACT', '')).get('Gene'))
+    gene = ni.parse_impact(ni.parse_info(variant.split('\t')[7])['IMPACT'])['Gene']
+    with open(layout.files['isofox_gene_tsv'], 'w') as stream:
+        stream.write(f'GeneId\tGeneName\tAdjTPM\nSYNTHETIC_GENE\t{gene}\t{tpm}\n')
+    _, manifest = neo_export.Exporter(str(case), str(tmp_path / 'export'), keep_non_coding=True).run()
+    matching = []
+    for line in open(manifest['outputs']['somatic_selected_vcf']):
+        if line.startswith('#'):
+            continue
+        fields = line.rstrip('\n').split('\t')
+        if ni.parse_impact(ni.parse_info(fields[7]).get('IMPACT', '')).get('Gene') == gene:
+            matching.append(dict(zip(fields[8].split(':'), fields[-1].split(':')))['GX'])
+    assert matching
+    assert set(matching) == {f'{gene}|{tpm}'}

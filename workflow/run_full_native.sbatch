@@ -27,3 +27,24 @@ export WIGITS_WORKFLOW_DIR="$PACKAGE/workflow"
 bash "$PACKAGE/workflow/run_oncoanalyser_frontenac.sh" \
     "$RUN_ID" "$PACKAGE/samplesheet.csv" -c "$RUN_DIR/state/input_resources.config" \
     -c "$PACKAGE/workflow/conf/rna_duplicate_marking.config" "$@"
+
+# The native receipt is independent of the selected downstream research work.
+# Absent configuration preserves the historical native execution exactly.
+if [[ -f "$PACKAGE/optional_extensions.json" ]]; then
+    python3 - "$RUN_DIR/state/native_workflow_completed.json" "$RUN_ID" <<'PY'
+import json, sys
+from datetime import datetime, timezone
+with open(sys.argv[1], 'w') as stream:
+    json.dump(dict(run_id=sys.argv[2], status='COMPLETED', native_exit=0,
+                   recorded_at=datetime.now(timezone.utc).isoformat()), stream, indent=2)
+PY
+    # Modules loaded in the native child shell do not persist in this shell.
+    set +u
+    source /cvmfs/soft.computecanada.ca/config/profile/bash.sh
+    module load "$NEXTFLOW_MODULE" "$APPTAINER_MODULE"
+    set -u
+    # A downstream failure has its own nonzero exit and status; it never erases
+    # the native completion receipt or causes alignment to be repeated.
+    bash "$PACKAGE/workflow/run_optional_extensions.sh" \
+        "$PACKAGE/optional_extensions.json" "$RUN_DIR/extensions"
+fi
