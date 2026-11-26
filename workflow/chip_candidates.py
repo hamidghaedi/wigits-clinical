@@ -23,13 +23,13 @@ import os
 from datetime import datetime, timezone
 
 try:
-    from chip_curation import CuratedDefinition, sample_level_artefact_signature
+    from chip_curation import CuratedDefinition, parse_pave_ti
 except ImportError:  # the module sits beside this one in workflow/
     import sys
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from chip_curation import CuratedDefinition, sample_level_artefact_signature
+    from chip_curation import CuratedDefinition, parse_pave_ti
 
-RULES_VERSION = "docs/chip_reporting_proposal.md@2026-11-26"
+RULES_VERSION = "docs/chip_reporting_proposal.md@2026-11-26; whitelist Annovar_Whitelist_Filter_WDL@8af2f67"
 
 # A variant is treated as constitutional rather than as a clone at or above this allele fraction.
 CONSTITUTIONAL_AF = 0.35
@@ -124,7 +124,7 @@ def classify(af, alt_reads, gnomad_af, sage_filter, floor_confident):
 
 
 def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_depth=None,
-          curated_genes=None, artefact_variants=None, validated_variants=None):
+          panel_dir=None):
     os.makedirs(outdir, exist_ok=True)
     panel = []
     if panel_file and os.path.isfile(panel_file):
@@ -135,9 +135,7 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
             if g:
                 panel.append(g)
 
-    curation = None
-    if curated_genes and os.path.isfile(curated_genes):
-        curation = CuratedDefinition(curated_genes, artefact_variants, validated_variants)
+    curation = CuratedDefinition(panel_dir) if panel_dir and os.path.isdir(panel_dir) else None
 
     samples, rows = [], []
     depths = []
@@ -184,23 +182,48 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
             classification, band, warnings = classify(af, alt_reads, gnomad, sage_filter, floor_conf)
 
             gene = imp.get("gene", "")
-            protein = imp.get("hgvs_protein", "")
-            in_definition, curation_note, artefact, validated = "", "", "", ""
-            gene_status, gene_evidence = "", ""
+            cur = {k: "" for k in ("curated_gene_status", "gene_age_association_ukb", "curated_transcript",
+                                   "transcript_basis", "curated_effect", "curated_hgvs_coding",
+                                   "curated_hgvs_protein", "curated_exon", "curated_codon",
+                                   "whitelist_status", "whitelist_rule", "in_curated_definition",
+                                   "curation_note", "known_artefact", "recurrent_inherited_variant",
+                                   "cohort_validated")}
             if curation is not None:
-                gene_status = curation.gene_status(gene)
-                gene_evidence = curation.genes.get(gene, {}).get("age_association", "")
-                ok, reason = curation.classify(gene, imp.get("consequence", ""), protein)
-                in_definition = "yes" if ok else "no"
-                curation_note = reason
-                if not ok:
-                    warnings.append(f"outside the curated definition: {reason}")
-                artefact = "yes" if curation.is_known_artefact(gene, protein) else "no"
-                if artefact == "yes":
+                ann, basis = curation.annotation(gene, parse_pave_ti(info.get("PAVE_TI", "")),
+                                                 imp.get("transcript", ""))
+                ev = curation.evaluate(gene, ann, f[3], f[4])
+                art, germ, val = curation.reference_cohorts(gene, ann, f[3], f[4])
+                cur.update({
+                    "curated_gene_status": curation.gene_status(gene),
+                    "gene_age_association_ukb": curation.evidence.get(gene, ""),
+                    "curated_transcript": ann["transcript"] if ann else "",
+                    "transcript_basis": basis if gene in curation.genes else "",
+                    "curated_effect": ann["effects"] if ann else "",
+                    "curated_hgvs_coding": ann["hgvs_coding"] if ann else "",
+                    "curated_hgvs_protein": ann["hgvs_protein"] if ann else "",
+                    "curated_exon": ann["exon"] if ann else "",
+                    "curated_codon": ann["codon"] if ann else "",
+                    "whitelist_status": ev["status"], "whitelist_rule": ev["rule"],
+                    "in_curated_definition": curation.in_definition(gene, ev),
+                    "curation_note": ev["note"],
+                    "known_artefact": "yes" if art else "no",
+                    "recurrent_inherited_variant": "yes" if germ else "no",
+                    "cohort_validated": "yes" if val else "no"})
+                status = cur["curated_gene_status"]
+                if status == "removed_in_publication":
+                    cur["curation_note"] += "; the gene is one of the 16 the paper removes"
+                elif status == "added_after_publication":
+                    cur["curation_note"] += "; the gene was added to the authors' list after publication"
+                if cur["in_curated_definition"] == "no":
+                    warnings.append(f"outside the curated definition: {cur['curation_note']}")
+                elif cur["in_curated_definition"] == "review":
+                    warnings.append(f"needs manual review: {cur['curation_note']}")
+                if art:
                     warnings.append("matches a recurrent artefact reported in the reference cohorts")
-                validated = "yes" if curation.is_validated(gene, protein) else "no"
-                if validated == "yes":
-                    warnings.append("associated with age and the TERT risk allele in the reference "
+                if germ:
+                    warnings.append("matches a variant the reference cohorts found to be inherited")
+                if val:
+                    warnings.append("associated with age or the TERT risk allele in the reference "
                                     "cohorts, which supports a genuine clone")
 
             if classification == "clone candidate" and (num(tumour, "AF") or 0) > 0:
@@ -233,12 +256,7 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
                 "classification": classification,
                 "confidence_band": band,
                 "in_panel": "yes" if imp.get("gene", "") in panel else "no",
-                "curated_gene_status": gene_status,
-                "gene_age_association_ukb": gene_evidence,
-                "in_curated_definition": in_definition,
-                "curation_note": curation_note,
-                "known_artefact": artefact,
-                "cohort_validated": validated,
+                **cur,
                 "warnings": "; ".join(warnings),
             })
 
@@ -277,19 +295,23 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
                 round(binomial_floor(depth_for_floor, SUPPORTED_ALT_READS), 4) if depth_for_floor else None,
         },
         "curated_definition": None if curation is None else {
-            "source": curated_genes,
-            "candidate_genes": len(curation.genes),
-            "retained_genes": sum(1 for g in curation.genes.values() if g["retained"]),
+            "source": "panels/vlasschaert, Annovar_Whitelist_Filter_WDL at 8af2f67",
+            "genes": len(curation.genes),
+            "retained_genes": sum(1 for s in curation.status.values() if s == "retained"),
             "calls_by_gene_status": {s: sum(1 for r in rows if r["curated_gene_status"] == s)
-                                     for s in ("retained", "candidate_not_retained", "not_curated")},
+                                     for s in ("retained", "removed_in_publication",
+                                               "added_after_publication", "not_curated")},
+            "calls_by_whitelist_status": {s: sum(1 for r in rows if r["whitelist_status"] == s)
+                                          for s in ("whitelist", "manual_review", "not_whitelisted",
+                                                    "not_on_curated_transcript", "not_curated")},
             "calls_inside": sum(1 for r in rows if r["in_curated_definition"] == "yes"),
-            "calls_outside": sum(1 for r in rows if r["in_curated_definition"] == "no"),
+            "calls_for_manual_review": sum(1 for r in rows if r["in_curated_definition"] == "review"),
             "matching_a_known_artefact": sum(1 for r in rows if r["known_artefact"] == "yes"),
+            "matching_a_recurrent_inherited_variant":
+                sum(1 for r in rows if r["recurrent_inherited_variant"] == "yes"),
             "validated_in_the_reference_cohorts":
                 sum(1 for r in rows if r["cohort_validated"] == "yes"),
         },
-        "low_quality_sample_signature": dict(
-            zip(("fires", "note"), sample_level_artefact_signature(rows))),
         "classification_counts": {k: sum(1 for r in rows if r["classification"] == k)
                                    for k in ("clone candidate", "constitutional")},
         "confidence_counts": {k: sum(1 for r in rows if r["confidence_band"] == k)
@@ -315,19 +337,16 @@ def main(argv=None):
     ap.add_argument("--blood-sample", required=True)
     ap.add_argument("--tumour-sample", required=True)
     ap.add_argument("--panel-file", default=None)
-    ap.add_argument("--curated-genes", default=None,
-                    help="curated gene and variant definition, panels/chip_genes_vlasschaert.tsv")
-    ap.add_argument("--artefact-variants", default=None)
-    ap.add_argument("--validated-variants", default=None)
+    ap.add_argument("--panel-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "panels"),
+                    help="directory holding vlasschaert/ and the chip_*.tsv tables")
     ap.add_argument("--mean-depth", type=float, default=None,
                     help="mean depth of the blood sample, used for the reported detection floor")
     a = ap.parse_args(argv)
     s = build(a.annotated_vcf, a.outdir, a.case, a.blood_sample, a.tumour_sample,
-              a.panel_file, a.mean_depth, a.curated_genes, a.artefact_variants,
-              a.validated_variants)
+              a.panel_file, a.mean_depth, a.panel_dir)
     print(json.dumps({k: s[k] for k in ("variants_reported", "classification_counts",
                                         "confidence_counts", "clone_candidates_by_band",
-                                        "curated_definition", "low_quality_sample_signature",
+                                        "curated_definition",
                                         "detection_floor", "panel_genes",
                                         "panel_genes_with_a_call")}, indent=1))
     return 0

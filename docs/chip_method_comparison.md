@@ -8,7 +8,9 @@ Silver AJ, Xu Y, Savona M, Gibson C, Lanktree MB, Rauh MJ, Ebert BL, Natarajan P
 *A practical approach to curate clonal hematopoiesis of indeterminate potential in human genetic
 datasets.* Blood 2023;141(18):2214-2223, doi:10.1182/blood.2022018825, PMID 36652671. The supplementary
 tables (BLOOD_BLD-2022-018825-mmc1.xlsx) were supplied by the Rauh lab on 26 November 2026 and are
-incorporated in section 6 below, which supersedes the gene-level comparison in sections 1 to 5.
+incorporated in section 6 below, which supersedes the gene-level comparison in sections 1 to 5. The full
+text and the authors' code were read later the same day; **section 9 is the current statement** and
+corrects sections 6 to 8 where they differ.
 
 ## 1. The two designs answer different questions
 
@@ -297,6 +299,8 @@ call set: KQ0004 has no clonal haematopoiesis to report.
 
 ### 7.4 One independent confirmation
 
+*Withdrawn in section 9.3. The match was false.*
+
 CREBBP p.Ala1944Gly, one of the nine calls that passed their sequence filters, matches a recurrent
 artefact in their table S2. Eight of those nine are still called after the re-run, all eight outside the
 curated definition, and this one is documented as an artefact in two cohorts of a quarter of a million
@@ -306,6 +310,8 @@ people. That is the artefact blacklist doing the job it was built for on the fir
 ## 8. Table S6 read correctly, and the review table
 
 ### 8.1 Two errors in how the supplement was applied
+
+*Corrected in section 9.3. The paper removes 16 genes and keeps 58; the 55 and 19 below came from misreading a column of table S6.*
 
 Sections 6 and 7 described table S6 as the genes the authors considered and rejected. It holds the same
 74 genes as table S1, DNMT3A, TET2 and ASXL1 among them, with the count of carriers, the association
@@ -361,3 +367,116 @@ rule. Where the two encode the same protein nothing changes. Where they are diff
 residue numbering can differ and a curated missense position can be missed or matched wrongly. RUNX1 is
 the first to check, since NM_001754 and NM_001001890 are different isoforms. Truncating rules are
 unaffected. This has not been resolved and applies equally to the hotspot list built in section 7.
+
+
+## 9. The full text and the authors' code
+
+Sections 1 to 8 were written from the filtering criteria supplied by the Rauh laboratory and the
+supplementary tables. The full text of the paper and the repositories named in its author notes have
+now been read, and the layer has been rebuilt on them.
+
+- `briansha/Annovar_Whitelist_Filter_WDL` at commit 8af2f67, the annotation and filtering step. It holds
+  the filter script and, in `whitelist_filter_20230531.zip`, the files the script reads.
+- `weinstockj/pileup_region` at commit 96482f6, the separate U2AF1 step.
+- `briansha/Cloud_Development`, the Mutect2 calling applet.
+
+### 9.1 What the paper specifies and what the layer now does
+
+| Step in the paper | Now implemented as |
+|---|---|
+| Scan limited to the curated list of 74 genes, each with its own variant rule | The authors' files read directly: 77 genes, 1,435 listed substitutions, 47 loss-of-function genes, 29 splice genes |
+| Variant kept only when annotated on the named RefSeq accession | PAVE entry on the Ensembl transcript that maps to that accession; canonical fallback for the 11 accessions with none |
+| Exceptions in the filter script: ASXL1 and ASXL2 exons 11 to 12, PPM1D exons 5 to 6, TET2, CBL, CBLB and ZBTB33 domain missense | Same rules, with ASXL1 and ASXL2 exon numbers shifted by one to Ensembl numbering |
+| Classes the script sends to manual review: in-frame indels in nine genes, NPM1 frameshifts, GATA3 and CSF3R truncations | `whitelist_status = manual_review` |
+| Depth of 20, variant support in both orientations, allele fraction of 2% | One column each |
+| Supporting reads: 3 as the relaxed start, 5 final for UK Biobank exomes, 3 final for All of Us genomes | Both thresholds reported, each with its own outcome column |
+| Recurrent variants without an age or TERT association removed (S2) | Matched by class and position; substitution, nonsense, frameshift and splice entries all reachable |
+| Variant groups in which every carrier fits an inherited heterozygote removed (S4) | Matched the same way |
+| TET2 and CBL domain missense removed when the read counts fit an inherited heterozygote at P of 0.01, with TET2 H1904R, I1873T and T1884A exempt | `gene_specific_rule` |
+| ASXL1 p.G646Wfs*12 kept at an allele fraction of 10% or more; p.G645Vfs*58 removed | `gene_specific_rule`; p.G646Wfs*12 is exempt from the homopolymer flag |
+| Sixteen genes removed for want of an age association or myeloid cancer cases | `curated_gene_status = removed_in_publication` |
+| Samples with four or more variants inspected as possible poor libraries | Flag in `<case>.chip_review_summary.json` |
+| U2AF1 called by pileup at both loci, since GRCh38 duplicates the locus | Not needed: the duplicate locus is masked to N in the Hartwig reference, so SAGE calls U2AF1 directly |
+| Multiallelic Mutect2 records examined separately | Does not arise; SAGE writes one record per allele |
+
+### 9.2 Checks made while adopting the files
+
+Each listed substitution names a reference residue, so it can be checked against the protein sequence
+of the transcript it will be tested on. Of 1,435 substitutions, 1,407 name the residue present. The 28
+that do not are mostly alternative numberings the authors carry deliberately, GNAS positions on the long
+isoform and ETNK1 N244, which the paper notes is now N155. N155S, N155T and N155K are added as aliases.
+The remainder, in EZH2, DNMT3A, PRPF40B, SF1, SF3A1, SETDB1 and BRAF, cannot match a call on our
+transcripts and are listed in `chip_transcripts.tsv`.
+
+RUNX1 shows why the transcript matters. The rule is written against NM_001001890 and PAVE's canonical
+transcript is NM_001754; the same call reads p.Ser397= on one and p.Ser424= on the other.
+
+The exon shift for ASXL1 and ASXL2 was verified against the exon labels the supplement gives for 30
+ASXL1 and 3 ASXL2 variants.
+
+The filter script whitelists ASXL1 and ASXL2 truncating variants in every exon, because both genes are
+in the loss-of-function file and its exon test only ever adds. The stated rule restricts them to the
+last two exons. A truncating variant outside those exons is sent to manual review with both facts.
+
+Fourteen tests in `workflow/tests/test_chip_curation.py` fix these rules.
+
+### 9.3 Corrections to sections 6 to 8
+
+- The paper removes 16 genes and keeps 58. Section 8 gave 19 and 55 from the "Is on M-CHIP list" column
+  of table S6. CBLB, SETDB1 and U2AF2 carry a 0 in that column and are retained by the paper.
+- SRCAP, YLPM1 and ZBTB33, three of the genes we had added ourselves, are in the authors' current list.
+- CREBBP p.Ala1944Gly does not match a known artefact. Table S2 lists p.A1944Gfs*22, a frameshift at
+  the same codon, and the earlier matcher compared text loosely. Section 7.4 is withdrawn.
+- The earlier reading of table S1 recovered 1,072 of the 1,431 distinct substitutions and treated
+  splice variants as admitted wherever truncating variants were. The authors keep a separate and
+  shorter splice list of 29 genes.
+- PAVE joins consequences, as in `splice_donor_variant&intron_variant`, and the earlier classifier
+  compared the whole string. A DNMT3A splice-donor call was marked outside the definition for that
+  reason.
+- The sample-level artefact rule of section 6.4 used thresholds of our own. It is replaced by the
+  paper's cue of four or more retained variants.
+- The homopolymer exclusion is in the criteria supplied by the Rauh laboratory. The paper itself keeps
+  ASXL1 p.G646Wfs*12, which sits in a homopolymer, and that exemption is now applied.
+
+### 9.4 KQ0004 under the rebuilt layer
+
+Run end to end from the committed code with `workflow/chip_call.sh`: 119 calls across 52 of 82 genes.
+
+| | Calls |
+|---|---|
+| Whitelisted by the variant rules | 5 |
+| Inside the definition, gene retained | 4 |
+| Sent to manual review | 1 |
+| Retained at five supporting reads | 0 |
+| Retained at three supporting reads | 0 |
+
+The four inside the definition each rest on two reads. BRAF p.Asp594Glu, TP53 p.Leu330Arg and
+TP53 p.Tyr220Ser are also present in the tumour. The fourth is DNMT3A c.1429+1G>A, a splice-donor
+change that table S3 lists as associated with age or the TERT risk allele in the reference cohorts. It
+is on 2 of 160 blood reads, 1.3%, with base quality 47 and mapping quality 60, both reads on one strand,
+and none of 117 tumour reads. It is below every threshold and is not called. It is the one finding on
+this case that a reviewer should see, and at this depth it cannot be distinguished from error.
+
+KMT2D p.Leu804* is whitelisted by the variant rule and meets the sequence criteria; KMT2D is one of the
+16 genes the paper removes. The call for manual review is an in-frame ZBTB33 insertion at an allele
+fraction of 0.505 with a population frequency of 0.607, an inherited variant.
+
+Twenty-one clone candidates meet the sequence criteria at three reads and fifteen at five. One of the
+twenty-one is whitelisted, the KMT2D call. The paper's population filter would have learned the rest as
+recurrent artefacts from hundreds of thousands of samples; with one sample, the whitelist is what
+removes them.
+
+### 9.5 Differences that remain
+
+- The caller is SAGE where theirs is Mutect2. Orientation is taken from SAGE's fragment strand bias.
+- Inherited variants. Mutect2 applies its own germline model before their filters. Here a call is
+  constitutional when gnomAD frequency exceeds 0.1% or the allele fraction is 35% or more, so a clone
+  above 35% would be labelled constitutional. The paired tumour is the better discriminator and is not
+  yet used for this.
+- The supporting-read threshold was tuned per cohort from associations with age. That cannot be done on
+  a handful of cases, so both thresholds are reported and neither is tuned to our data.
+- Their artefact lists were learned from exomes and from 40x genomes called with Mutect2. Artefacts
+  specific to SAGE on deeper genomes will not be in them.
+- Hotspot seeding uses Hartwig's somatic hotspot catalogue filtered by the whitelist, 1,480 sites in 29
+  genes. Positions outside it are called at panel sensitivity.
+- The layer has not been run on a sample with a known clone.

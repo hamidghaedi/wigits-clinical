@@ -1,28 +1,26 @@
-# CHIP gene panel, version 2, 26 November 2026.
-# The curated genes are those of Vlasschaert C, Mack T, Heimlich JB, et al., Blood 2023;141(18):2214-2223,
-# doi:10.1182/blood.2022018825, taken from supplementary tables S1 and S6. The variant-level rule for each
-# is in chip_genes_vlasschaert.tsv and decides whether a call is inside the definition.
-# source is retained for the 55 genes on their M-CHIP list, candidate_not_retained for the 19 candidate
-# genes that are not on it, and added for the eight genes we call beyond their candidate list.
+# CHIP gene panel, version 3, 26 November 2026.
+# The 77 curated genes are those of the authors' file panels/vlasschaert/Full_CHIP_gene_list_08262022.txt,
+# with the status each has in Vlasschaert et al., Blood 2023;141(18):2214-2223 (see chip_gene_status.tsv).
+# The five added genes are called and reported and sit outside the curated list.
 gene	source	note
 ASXL1	retained	
 ASXL2	retained	
-ATM	added	outside the curated candidate list; no evidence either way from KQ0004, where one call remains after the hotspot input was corrected
+ATM	added	outside the curated list; no evidence either way from KQ0004, where one call remains after the hotspot input was corrected
 BCOR	retained	
 BCORL1	retained	
 BRAF	retained	
 BRCC3	retained	
-CALR	added	outside the curated candidate list; a myeloproliferative driver retained for haematology review
+CALR	added	outside the curated list; a myeloproliferative driver kept for haematology review
 CBL	retained	
-CBLB	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+CBLB	retained	
 CEBPA	retained	
-CHEK2	added	outside the curated candidate list; retained because it recurs in clonal haematopoiesis series
+CHEK2	added	outside the curated list; kept because it recurs in clonal haematopoiesis series
 CREBBP	retained	
-CSF1R	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+CSF1R	removed_in_publication	
 CSF3R	retained	
 CTCF	retained	
 CUX1	retained	
-DDX41	added	outside the curated candidate list; germline predisposition to myeloid malignancy
+DDX41	added	outside the curated list; germline predisposition to myeloid malignancy
 DNMT3A	retained	
 EED	retained	
 EP300	retained	
@@ -30,60 +28,60 @@ ETNK1	retained
 ETV6	retained	
 EZH2	retained	
 FLT3	retained	
-GATA1	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+GATA1	removed_in_publication	
 GATA2	retained	
-GATA3	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
-GNA13	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+GATA3	removed_in_publication	
+GNA13	removed_in_publication	
 GNAS	retained	
 GNB1	retained	
 IDH1	retained	
 IDH2	retained	
 IKZF1	retained	
-IKZF2	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
-IKZF3	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
-JAK1	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+IKZF2	removed_in_publication	
+IKZF3	removed_in_publication	
+JAK1	removed_in_publication	
 JAK2	retained	
-JAK3	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+JAK3	removed_in_publication	
 KDM6A	retained	
 KIT	retained	
-KMT2A	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
-KMT2D	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+KMT2A	removed_in_publication	
+KMT2D	removed_in_publication	
 KRAS	retained	
-LUC7L2	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+LUC7L2	removed_in_publication	
 MPL	retained	
 NF1	retained	
 NPM1	retained	
 NRAS	retained	
 PDS5B	retained	
-PDSS2	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+PDSS2	removed_in_publication	
 PHF6	retained	
 PHIP	retained	
 PPM1D	retained	
 PRPF40B	retained	
 PRPF8	retained	
-PTEN	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+PTEN	removed_in_publication	
 PTPN11	retained	
 RAD21	retained	
 RUNX1	retained	
 SETBP1	retained	
 SETD2	retained	
-SETDB1	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
-SF1	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
-SF3A1	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+SETDB1	retained	
+SF1	removed_in_publication	
+SF3A1	removed_in_publication	
 SF3B1	retained	
-SH2B3	added	outside the curated candidate list; retained for its role in myeloproliferative disease
+SH2B3	added	outside the curated list; kept for its role in myeloproliferative disease
 SMC1A	retained	
 SMC3	retained	
-SRCAP	added	outside the curated candidate list; chromatin regulator reported in clonal haematopoiesis
+SRCAP	added_after_publication	
 SRSF2	retained	
-STAG1	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+STAG1	removed_in_publication	
 STAG2	retained	
 SUZ12	retained	
 TET2	retained	
 TP53	retained	
 U2AF1	retained	
-U2AF2	candidate_not_retained	candidate gene in table S1 that is not on the M-CHIP list in table S6
+U2AF2	retained	
 WT1	retained	
-YLPM1	added	outside the curated candidate list; splicing regulator reported in clonal haematopoiesis
-ZBTB33	added	outside the curated candidate list; reported in clonal haematopoiesis series
+YLPM1	added_after_publication	
+ZBTB33	added_after_publication	
 ZRSR2	retained	

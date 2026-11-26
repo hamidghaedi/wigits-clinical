@@ -252,5 +252,60 @@
         "genes": 15
       }
     }
+  },
+  "current": {
+    "statement": "section 9 of chip_method_comparison.md",
+    "whitelist_source": "briansha/Annovar_Whitelist_Filter_WDL@8af2f67 (MIT)",
+    "genes": {
+      "curated": 77,
+      "retained": 58,
+      "removed_in_publication": 16,
+      "added_after_publication": 3,
+      "added_by_us": 5,
+      "panel": 82
+    },
+    "whitelist": {
+      "listed_substitutions": 1435,
+      "reference_residue_agrees": 1407,
+      "reference_residue_differs": 28,
+      "lof_genes": 47,
+      "splice_genes": 29,
+      "accessions_with_ensembl_transcript": 66,
+      "canonical_fallback": 11
+    },
+    "kq0004": {
+      "calls": 119,
+      "genes_with_a_call": 52,
+      "whitelisted": 5,
+      "inside_definition": 4,
+      "manual_review": 1,
+      "retained_min_ad5": 0,
+      "retained_min_ad3": 0,
+      "clone_candidates_meeting_sequence_criteria": {
+        "min_ad3": 21,
+        "min_ad5": 15,
+        "whitelisted_among_them": 1
+      },
+      "below_threshold_inside_definition": [
+        "BRAF p.Asp594Glu",
+        "TP53 p.Leu330Arg",
+        "TP53 p.Tyr220Ser",
+        "DNMT3A c.1429+1G>A"
+      ],
+      "dnmt3a_splice": {
+        "blood_alt_reads": 2,
+        "blood_depth": 160,
+        "blood_allele_fraction": 0.013,
+        "tumour_alt_reads": 0,
+        "tumour_depth": 117,
+        "cohort_validated": true
+      }
+    },
+    "withdrawn": [
+      "CREBBP p.Ala1944Gly as a known artefact",
+      "55 retained and 19 removed genes",
+      "ATM pattern as evidence for excluding ATM",
+      "NF1 p.Leu190* as nearest candidate"
+    ]
   }
 }

@@ -13,27 +13,39 @@ Outputs into --outdir:
   <case>.chip_review.tsv            one row per variant, every variant
   <case>.chip_review_columns.tsv    one row per column: where the value comes from and what it means
 
-The criteria columns apply the thresholds of Vlasschaert et al., Blood 2023;141(18):2214-2223, to SAGE
-calls. Their pipeline calls with Mutect2, so these columns are our application of their criteria and
-are not a reproduction of their output.
+Outputs also include <case>.chip_review_summary.json, the counts under each supporting-read threshold
+and whether the sample should be inspected as a possible poor library.
+
+The criteria columns apply the thresholds and gene-specific rules of Vlasschaert et al., Blood
+2023;141(18):2214-2223, to SAGE calls. Their pipeline calls with Mutect2, so these columns are our
+application of their criteria and are not a reproduction of their output.
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import json
 import math
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from chip_candidates import _open, parse_info, parse_impact  # noqa: E402
-from chip_curation import CuratedDefinition  # noqa: E402
+from chip_curation import (CuratedDefinition, short_protein, BINOMIAL_GENES, BINOMIAL_EXEMPT,  # noqa: E402
+                           MISSENSE_RANGES, ASXL1_G646W_MIN_ALLELE_FRACTION)
 
-# Published sequence criteria.
+# Sequence criteria of the paper. It sets the supporting-read threshold per cohort from the association
+# with age and the TERT risk allele: 5 for the UK Biobank exomes and 3 for the All of Us genomes.
 MIN_DEPTH = 20
-MIN_ALT_READS = 5
+MIN_ALT_READS_EXOME = 5
+MIN_ALT_READS_GENOME = 3
 MIN_ALLELE_FRACTION = 0.02
+# Applied by the Rauh laboratory in addition; the paper keeps ASXL1 p.G646Wfs*12 despite it.
 HOMOPOLYMER_MIN_LENGTH = 3
+# Probability below which the read counts are taken to differ from an inherited heterozygote.
+BINOMIAL_P = 0.01
+# The paper advises inspecting a sample with this many retained variants as a possible poor library.
+INSPECT_SAMPLE_AT = 4
 
 RC_PARTS = ("full", "partial_core", "core", "realigned", "reference", "total")
 UMI_PARTS = ("total_none", "total_single", "total_dual_strand", "alt_none", "alt_single",
@@ -192,45 +204,59 @@ HEAD = [
     ("ref", "VCF", "Reference allele."),
     ("alt", "VCF", "Variant allele."),
     ("variant_type", "derived", "SNV, MNV, insertion or deletion."),
-    ("hgvs_coding", "PAVE IMPACT", "Coding change on the canonical transcript."),
-    ("hgvs_protein", "PAVE IMPACT", "Protein change on the canonical transcript."),
-    ("consequence", "PAVE IMPACT", "Consequence on the canonical transcript."),
+    ("hgvs_coding", "PAVE IMPACT", "Coding change on the Ensembl canonical transcript."),
+    ("hgvs_protein", "PAVE IMPACT", "Protein change on the Ensembl canonical transcript."),
+    ("consequence", "PAVE IMPACT", "Consequence on the Ensembl canonical transcript."),
     ("coding_effect", "PAVE IMPACT", "Coding effect class."),
-    ("transcript", "PAVE IMPACT", "Canonical Ensembl transcript."),
-    ("refseq_id", "PAVE PAVE_TI", "RefSeq identifier of the canonical transcript."),
-    ("exon", "PAVE PAVE_TI", "Exon number on the canonical transcript."),
-    ("codon", "PAVE PAVE_TI", "Codon number on the canonical transcript."),
-    ("curated_accession", "curated definition", "RefSeq accession the curated rule for this gene is written against."),
-    ("transcript_matches_curated_accession", "derived",
-     "Whether the canonical transcript is the one the curated rule is written against. When it is "
-     "not, residue numbering can differ and a curated position may be missed."),
+    ("transcript", "PAVE IMPACT", "Ensembl canonical transcript."),
+    ("curated_accession", "authors' gene list", "RefSeq accession the curated rule for this gene is written against."),
+    ("curated_transcript", "chip_curation", "Ensembl transcript on which the curated rule was evaluated."),
+    ("transcript_basis", "chip_curation",
+     "curated_accession when that transcript maps to the accession of the rule; canonical_fallback "
+     "when no Ensembl transcript does and the canonical one was used."),
+    ("curated_hgvs_coding", "PAVE PAVE_TI", "Coding change on the curated transcript."),
+    ("curated_hgvs_protein", "PAVE PAVE_TI", "Protein change on the curated transcript. This is the change tested against the whitelist."),
+    ("curated_effect", "PAVE PAVE_TI", "Consequence on the curated transcript."),
+    ("curated_exon", "PAVE PAVE_TI", "Exon on the curated transcript, Ensembl numbering."),
+    ("curated_codon", "PAVE PAVE_TI", "Codon on the curated transcript."),
     ("classification", "chip_candidates", "Clone candidate or constitutional."),
     ("confidence_band", "chip_candidates", "Confident, supported or provisional."),
     ("in_panel", "chip_candidates", "Whether the gene is in the CHIP panel."),
-    ("curated_gene_status", "curated definition",
-     "retained: on the reference study's list. candidate_not_retained: a candidate gene the study "
-     "did not keep. not_curated: outside their candidate list."),
-    ("gene_age_association_ukb", "curated definition",
-     "Association of mutations in this gene with age in UK Biobank at five or more supporting "
-     "reads, odds ratio per year with significance."),
+    ("curated_gene_status", "chip_gene_status.tsv",
+     "retained: one of the 58 genes the paper keeps. removed_in_publication: one of the 16 it "
+     "removes. added_after_publication: added to the authors' list since. not_curated: outside it."),
+    ("gene_age_association_ukb", "supplementary table S6",
+     "Association of mutations in this gene with age in UK Biobank at five or more supporting reads."),
+    ("whitelist_status", "chip_curation",
+     "whitelist, manual_review, not_whitelisted, not_on_curated_transcript or not_curated, following "
+     "the authors' filter script."),
+    ("whitelist_rule", "chip_curation", "The rule that produced the status."),
     ("in_curated_definition", "chip_curation",
-     "Whether the gene is retained and the change is one the curated rule recognises in that gene."),
-    ("curation_note", "chip_curation", "Reason for the value in in_curated_definition."),
-    ("known_artefact", "chip_curation", "Matches a recurrent artefact or a binomial-test failure in the reference cohorts."),
-    ("cohort_validated", "chip_curation", "Associated with age and the TERT risk allele in the reference cohorts."),
+     "yes when the change is whitelisted and the gene is retained or added since; review when the "
+     "script sends it to manual review; no otherwise."),
+    ("curation_note", "chip_curation", "Reason for the status, in words."),
+    ("known_artefact", "supplementary table S2", "Matches a recurrent variant the paper removes as an artefact."),
+    ("recurrent_inherited_variant", "supplementary table S4", "Matches a variant group the paper removes as inherited."),
+    ("cohort_validated", "supplementary table S3", "Matches a variant associated with age or the TERT risk allele in the reference cohorts."),
+    ("gene_specific_rule", "derived",
+     "Outcome of a rule the paper sets for particular variants: ASXL1 p.G646Wfs*12 needs an allele "
+     "fraction of 10 percent, ASXL1 p.G645Vfs*58 is removed, and TET2 or CBL domain missense is "
+     "removed when its read counts fit an inherited heterozygote, three TET2 changes excepted."),
     ("meets_depth", "derived", f"Blood depth of {MIN_DEPTH} or more."),
-    ("meets_alt_reads", "derived", f"{MIN_ALT_READS} or more supporting reads in blood."),
+    ("meets_alt_reads_5", "derived", f"{MIN_ALT_READS_EXOME} or more supporting reads in blood, the threshold the paper sets for UK Biobank exomes."),
+    ("meets_alt_reads_3", "derived", f"{MIN_ALT_READS_GENOME} or more supporting reads in blood, the threshold the paper sets for All of Us genomes."),
     ("meets_allele_fraction", "derived", f"Blood allele fraction of {MIN_ALLELE_FRACTION:.0%} or more."),
     ("meets_orientation", "derived",
-     "Variant fragments in blood seen in both orientations, taken from SAGE fragment strand bias "
-     "as the counterpart of the F1R2 and F2R1 requirement."),
+     "Variant fragments in blood seen in both orientations, from SAGE fragment strand bias, the "
+     "counterpart of requiring F1R2 and F2R1 support."),
     ("clears_homopolymer_rule", "derived",
-     f"No for an insertion or deletion in a single-base repeat of {HOMOPOLYMER_MIN_LENGTH} or more."),
-    ("meets_all_sequence_criteria", "derived", "All five sequence criteria met."),
-    ("published_criteria_outcome", "derived",
-     "retained when the call meets every sequence criterion, is inside the curated definition, is "
-     "not classified as constitutional and matches no known artefact. Otherwise the criteria it "
-     "misses, in full."),
+     f"No for an insertion or deletion in a single-base repeat of {HOMOPOLYMER_MIN_LENGTH} or more. "
+     "ASXL1 p.G646Wfs*12 is exempt, as in the paper."),
+    ("published_criteria_outcome_min_ad5", "derived",
+     "retained when the call meets every criterion at five supporting reads, is inside the curated "
+     "definition, is not constitutional and falls to no artefact, inherited-variant or gene-specific "
+     "rule. Otherwise every criterion it misses."),
+    ("published_criteria_outcome_min_ad3", "derived", "The same at three supporting reads."),
     ("blood_af_ci95_low", "derived", "Lower bound of the 95 percent Wilson interval on the blood allele fraction."),
     ("blood_af_ci95_high", "derived", "Upper bound of the 95 percent Wilson interval on the blood allele fraction."),
     ("detection_floor_at_this_depth", "chip_candidates",
@@ -270,25 +296,18 @@ TAIL = [
     ("clinvar_conflict", "PAVE INFO: CLNSIGCONF", "ClinVar conflicting interpretations."),
     ("warnings", "chip_candidates", "Every warning raised for this call."),
 ]
-COLUMNS = (HEAD[:39] + sample_columns("blood", "blood")
-           + HEAD[39:] + sample_columns("tumour", "tumour") + TAIL)
+SPLIT = [c[0] for c in HEAD].index("tumour_to_blood_af_ratio")
+COLUMNS = (HEAD[:SPLIT] + sample_columns("blood", "blood")
+           + HEAD[SPLIT:] + sample_columns("tumour", "tumour") + TAIL)
 
 
-def transcript_details(info, transcript):
-    for entry in str(info.get("PAVE_TI", "")).split(","):
-        f = entry.split("|")
-        if len(f) >= 10 and f[2] == transcript:
-            return f[7], f[8], f[9]
-    return "", "", ""
-
-
-def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, curated_genes=None):
+def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, panel_dir=None):
     os.makedirs(outdir, exist_ok=True)
     with open(variants_tsv) as fh:
         called = list(csv.DictReader(fh, delimiter="\t"))
     order = {(r["chrom"], r["pos"], r["ref"], r["alt"]): i for i, r in enumerate(called)}
     by_key = {(r["chrom"], r["pos"], r["ref"], r["alt"]): r for r in called}
-    curation = CuratedDefinition(curated_genes) if curated_genes and os.path.isfile(curated_genes) else None
+    curation = CuratedDefinition(panel_dir) if panel_dir and os.path.isdir(panel_dir) else None
 
     rows, samples = [], []
     with _open(vcf) as fh:
@@ -310,16 +329,14 @@ def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, curated_
             row = {k: c.get(k, "") for k in (
                 "case", "gene", "chrom", "pos", "ref", "alt", "hgvs_coding", "hgvs_protein",
                 "consequence", "coding_effect", "transcript", "classification", "confidence_band",
-                "in_panel", "curated_gene_status", "gene_age_association_ukb",
-                "in_curated_definition", "curation_note", "known_artefact", "cohort_validated",
+                "in_panel", "curated_gene_status", "gene_age_association_ukb", "curated_transcript",
+                "transcript_basis", "curated_hgvs_coding", "curated_hgvs_protein", "curated_effect",
+                "curated_exon", "curated_codon", "whitelist_status", "whitelist_rule",
+                "in_curated_definition", "curation_note", "known_artefact",
+                "recurrent_inherited_variant", "cohort_validated",
                 "detection_floor_at_this_depth", "present_in_tumour", "sage_filter", "warnings")}
             row["variant_type"] = variant_type(f[3], f[4])
-            row["refseq_id"], row["exon"], row["codon"] = transcript_details(info, imp.get("transcript", ""))
-            acc = curation.genes.get(row["gene"], {}).get("accession", "") if curation else ""
-            row["curated_accession"] = acc
-            row["transcript_matches_curated_accession"] = (
-                "" if not acc or not row["refseq_id"] else
-                "yes" if row["refseq_id"].split(".")[0] == acc.split(".")[0] else "no")
+            row["curated_accession"] = curation.genes.get(row["gene"], {}).get("accession", "") if curation else ""
 
             row.update(sample_cells("blood", geno.get(blood_sample, {})))
             row.update(sample_cells("tumour", geno.get(tumour_sample, {})))
@@ -335,12 +352,38 @@ def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, curated_
 
             reps, repc = info.get("RC_REPS", ""), info.get("RC_REPC", "")
             is_indel = len(f[3]) != len(f[4])
+            rule = row["whitelist_rule"]
             homopolymer = (is_indel and isinstance(reps, str) and len(reps) == 1
-                           and str(repc).isdigit() and int(repc) >= HOMOPOLYMER_MIN_LENGTH)
-            checks = [
+                           and str(repc).isdigit() and int(repc) >= HOMOPOLYMER_MIN_LENGTH
+                           and rule != "asxl1_g646w")
+
+            # rules the paper sets for particular variants
+            specific, specific_miss = "", ""
+            short = short_protein(row["curated_hgvs_protein"])
+            if rule == "asxl1_g646w":
+                ok = af != "" and af >= ASXL1_G646W_MIN_ALLELE_FRACTION
+                specific = (f"ASXL1 p.G646Wfs*12 needs an allele fraction of "
+                            f"{ASXL1_G646W_MIN_ALLELE_FRACTION:.0%}: {'met' if ok else 'not met'}")
+                if not ok:
+                    specific_miss = "ASXL1 p.G646Wfs*12 below 10% allele fraction"
+            elif rule == "asxl1_g645v":
+                specific = "ASXL1 p.G645Vfs*58 is removed as an artefact"
+                specific_miss = specific
+            elif (row["gene"] in BINOMIAL_GENES and short and row["whitelist_status"] == "whitelist"
+                  and any(a <= int(short[1:-1]) <= b for a, b in MISSENSE_RANGES[row["gene"]])):
+                p = row["p_if_inherited_heterozygote"]
+                if (row["gene"], short) in BINOMIAL_EXEMPT:
+                    specific = f"{row['gene']} {short} is exempt from the binomial test"
+                elif p != "" and p >= BINOMIAL_P:
+                    specific = (f"{row['gene']} domain missense with read counts that fit an inherited "
+                                f"heterozygote (p = {p:.2g})")
+                    specific_miss = "read counts fit an inherited heterozygote"
+                else:
+                    specific = f"{row['gene']} domain missense, read counts differ from an inherited heterozygote"
+            row["gene_specific_rule"] = specific
+
+            shared = [
                 ("meets_depth", dp != "" and dp >= MIN_DEPTH, f"depth below {MIN_DEPTH}"),
-                ("meets_alt_reads", alt != "" and alt >= MIN_ALT_READS,
-                 f"fewer than {MIN_ALT_READS} supporting reads"),
                 ("meets_allele_fraction", af != "" and af >= MIN_ALLELE_FRACTION,
                  f"allele fraction below {MIN_ALLELE_FRACTION:.0%}"),
                 ("meets_orientation", both(row["blood_fragment_forward_fraction_alt"]) == "yes",
@@ -348,18 +391,27 @@ def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, curated_
                 ("clears_homopolymer_rule", not homopolymer, "insertion or deletion in a homopolymer"),
             ]
             misses = []
-            for name, ok, why in checks:
+            for name, ok, why in shared:
                 row[name] = "yes" if ok else "no"
                 if not ok:
                     misses.append(why)
-            row["meets_all_sequence_criteria"] = "no" if misses else "yes"
             if row["in_curated_definition"] == "no":
                 misses.append("outside the curated definition")
+            elif row["in_curated_definition"] == "review":
+                misses.append("awaiting manual review")
             if row["classification"] != "clone candidate":
                 misses.append("classified as constitutional")
             if row["known_artefact"] == "yes":
                 misses.append("matches a known artefact")
-            row["published_criteria_outcome"] = "retained" if not misses else "; ".join(misses)
+            if row["recurrent_inherited_variant"] == "yes":
+                misses.append("matches a recurrent inherited variant")
+            if specific_miss:
+                misses.append(specific_miss)
+            for n in (MIN_ALT_READS_EXOME, MIN_ALT_READS_GENOME):
+                ok = alt != "" and alt >= n
+                row[f"meets_alt_reads_{n}"] = "yes" if ok else "no"
+                these = ([] if ok else [f"fewer than {n} supporting reads"]) + misses
+                row[f"published_criteria_outcome_min_ad{n}"] = "retained" if not these else "; ".join(these)
 
             row["sage_tier"] = info.get("TIER", "")
             row["sage_quality"] = f[5]
@@ -413,7 +465,32 @@ def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, curated_
         w.writerows(COLUMNS)
     if len(rows) != len(called):
         raise SystemExit(f"{len(called)} variants in the table and {len(rows)} in the VCF")
-    return table, dictionary, [r for _, r in rows]
+    flat = [r for _, r in rows]
+    kept = {n: [r for r in flat if r[f"published_criteria_outcome_min_ad{n}"] == "retained"]
+            for n in (MIN_ALT_READS_EXOME, MIN_ALT_READS_GENOME)}
+    inside = [r for r in flat if r["in_curated_definition"] == "yes"]
+    summary = {
+        "case": case,
+        "variants": len(flat),
+        "inside_the_curated_definition": len(inside),
+        "awaiting_manual_review": sum(1 for r in flat if r["in_curated_definition"] == "review"),
+        "retained_at_5_supporting_reads": len(kept[MIN_ALT_READS_EXOME]),
+        "retained_at_3_supporting_reads": len(kept[MIN_ALT_READS_GENOME]),
+        "retained_variants_at_3_supporting_reads": [
+            f"{r['gene']} {r['curated_hgvs_protein'] or r['curated_hgvs_coding']}" for r in kept[MIN_ALT_READS_GENOME]],
+        "inside_the_definition_and_below_threshold": [
+            {"variant": f"{r['gene']} {r['curated_hgvs_protein'] if r['curated_hgvs_protein'] not in ('', 'p.?') else r['curated_hgvs_coding']}",
+             "blood_alt_reads": r["blood_alt_reads"], "blood_depth": r["blood_depth"],
+             "blood_allele_fraction": r["blood_allele_fraction"],
+             "present_in_tumour": r["present_in_tumour"], "cohort_validated": r["cohort_validated"],
+             "misses": r[f"published_criteria_outcome_min_ad{MIN_ALT_READS_GENOME}"]}
+            for r in inside if r[f"published_criteria_outcome_min_ad{MIN_ALT_READS_GENOME}"] != "retained"],
+        "inspect_sample_as_possible_poor_library": len(kept[MIN_ALT_READS_GENOME]) >= INSPECT_SAMPLE_AT,
+        "inspection_basis": f"{INSPECT_SAMPLE_AT} or more retained variants in one sample, as the paper advises",
+    }
+    with open(os.path.join(outdir, f"{case}.chip_review_summary.json"), "w") as fh:
+        json.dump(summary, fh, indent=1, default=str)
+    return table, dictionary, flat, summary
 
 
 def main(argv=None):
@@ -425,13 +502,12 @@ def main(argv=None):
     ap.add_argument("--case", required=True)
     ap.add_argument("--blood-sample", required=True)
     ap.add_argument("--tumour-sample", required=True)
-    ap.add_argument("--curated-genes", default=None)
+    ap.add_argument("--panel-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "panels"))
     a = ap.parse_args(argv)
-    table, dictionary, rows = build(a.annotated_vcf, a.variants_tsv, a.outdir, a.case,
-                                    a.blood_sample, a.tumour_sample, a.curated_genes)
+    table, dictionary, rows, summary = build(a.annotated_vcf, a.variants_tsv, a.outdir, a.case,
+                                             a.blood_sample, a.tumour_sample, a.panel_dir)
     print(f"variants {len(rows)}  columns {len(COLUMNS)}")
-    print(f"meet all sequence criteria {sum(r['meets_all_sequence_criteria'] == 'yes' for r in rows)}")
-    print(f"retained under the published criteria {sum(r['published_criteria_outcome'] == 'retained' for r in rows)}")
+    print(json.dumps(summary, indent=1, default=str))
     print(table)
     print(dictionary)
     return 0
