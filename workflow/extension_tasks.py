@@ -35,6 +35,17 @@ def chip(case, resources, out, threads, commands):
     if case.get("mean_blood_depth") is not None:
         args.append(str(case["mean_blood_depth"]))
     commands.run(args, env)
+    # chip_call stages native REDUX inputs as links for SAGE. These are task
+    # inputs, not analytical output. publishDir(copy) follows links inside a
+    # directory, so retire just these links before emitting the output folder.
+    stage = out / "stage"
+    if stage.is_dir():
+        links = list(stage.iterdir())
+        if any(not path.is_symlink() for path in links):
+            raise ValueError("Unexpected non-link in CH input staging; preserve it and stop publication")
+        for path in links:
+            path.unlink()
+        stage.rmdir()
     return dict(status="COMPLETED", reason="Dedicated blood SAGE/PAVE call, curation and review table completed")
 
 

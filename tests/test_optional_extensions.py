@@ -134,6 +134,33 @@ class OptionalExtensionTests(unittest.TestCase):
         self.assertEqual(calls.env["PAVE_SIF"], self.config["resources"]["pave_image"])
         self.assertEqual(calls.env["THREADS"], "8")
 
+    def test_chip_publication_never_copies_staged_input_bams(self):
+        out = self.root / "chip_output"
+        source = self.root / "original.bam"
+        source.write_bytes(b"preserve original")
+        stage = out / "stage"
+        stage.mkdir(parents=True)
+        (stage / "input.bam").symlink_to(source)
+        class Capture:
+            def run(self, argv, env):
+                pass
+        tasks.chip(self.case, self.config["resources"], out, 8, Capture())
+        self.assertFalse(stage.exists())
+        self.assertEqual(source.read_bytes(), b"preserve original")
+
+    def test_unknown_file_in_input_stage_is_preserved(self):
+        out = self.root / "chip_output"
+        stage = out / "stage"
+        stage.mkdir(parents=True)
+        source = stage / "unknown.bam"
+        source.write_bytes(b"do not delete")
+        class Capture:
+            def run(self, argv, env):
+                pass
+        with self.assertRaisesRegex(ValueError, "Unexpected non-link"):
+            tasks.chip(self.case, self.config["resources"], out, 8, Capture())
+        self.assertTrue(source.is_file())
+
     def test_native_head_only_runs_extensions_with_explicit_config(self):
         text = (ROOT / "workflow/run_full_native.sbatch").read_text()
         self.assertLess(text.index('bash "$PACKAGE/workflow/run_oncoanalyser_frontenac.sh"'), text.index('if [[ -f "$PACKAGE/optional_extensions.json" ]]'))
