@@ -1,15 +1,10 @@
 # Release bindings
 
-Development delta on `codex/rna-input-resources`: **input-v5** resolves RNA
-resources from each task's actual FASTQ/BAM bytes, with measured time/memory
-allowances. RNA recovery preparer0.4.0 adds explicit `--rna-resources`.
-Executions selecting this delta pin its tested commit; main v0.1.0 and existing
-component tags remain unchanged. See [RNA sizing](docs/RNA_RESOURCE_SIZING.md).
-
-Repository-wide release: **v0.1.0** (`VERSION`). This is the first consolidated
-release, incorporating the published `hartwig_adoptation` history through
-`7a8f207`. Component versions below have independent namespaces; v0.1.0 does
-not rename or replace their immutable tags.
+Repository version: **v0.2.0** (`VERSION`), prepared from v0.1.0 / `81998b3`
+with the laboratory-QC and RNA-resource branches consolidated. Existing component
+tags remain immutable. Publication of the new repository tag follows reviewed
+main integration; source preparation does not deploy a runtime. See
+[release notes](docs/releases/v0.2.0.md).
 
 | Component | Bound version / identity |
 |---|---|
@@ -17,7 +12,8 @@ not rename or replace their immutable tags.
 | Default installed source | **3.0.0-qlmp.2.2**, commit `05b8ec3ac953248d1f025528f03fe647c6f8ce30`; native analysis/eligibility plus [ORANGE source-value mapping](docs/ORANGE_SOURCE_VALUES.md) |
 | HMF reference bundle | **GRCh38, 3.0.0--8**, with the release's GRCh38_hmf genome/index configuration |
 | Site Nextflow / Apptainer modules | **26.04.4 / 1.3.5**, as selected in `workflow/conf/frontenac_paths.env` |
-| Lane/sample resource policy | `input-resources/v0.6.0`, **input-v4**; BWA64CPUs, lane-local RAM/walltime, sample-local REDUX |
+| DNA lane/sample resource policy | **input-v4**, from `input-resources/v0.6.0`; BWA64CPUs, lane-local RAM/walltime, sample-local REDUX |
+| RNA resource policy | **input-v5**, `85043737ebda623a2dc1e6f0b2a37e95cb60cb38`; STAR, sort, duplicate marking and ISOFOX use their actual task input sizes; WGS-only packages omit RNA selectors |
 | RNA optical-duplicate comparison policy | `rna-duplicates/v0.1.0`; ordinary duplicate marking retained |
 | Read-only allocation/queue reporting | `resource-report/v0.2.1` |
 | Native somatic output review | `native-qc/v0.1.0` |
@@ -33,7 +29,7 @@ the completed development-cluster source-version records. A run's emitted
 software versions, container identities and explicit overrides remain its own
 source of truth; do not infer a historical run's tools from this current table.
 
-Upstream currency checked November23,2026: GitHub's official latest stable
+Upstream currency checked November26,2026: GitHub's official latest stable
 release API returns **3.0.0**, published September1,2026. This checks release
 metadata, not universal compatibility or analytical performance.
 [Official release](https://github.com/nf-core/oncoanalyser/releases/tag/3.0.0),
@@ -45,6 +41,8 @@ Their component/model/source versions belong to their own issued packages;
 none replaces the native SAGE caller by default. The general new-FFPE route
 remains undecided; existing batch-specific authorizations retain their scope.
 
-Paths come from the existing site config and directory contract. No reference
+Site launch settings remain Frontenac-specific. Fir needs an explicit site
+profile before its owner-operated packages are issued. Paths come from the
+existing site config and directory contract. No reference
 bundle, container, installed pipeline or executing package is rebuilt or
 updated by publishing this version.

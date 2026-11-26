@@ -1,9 +1,10 @@
 # Task-input sizing for native RNA
 
-Policy **input-v5**, November24,2026. Development is from main v0.1.0 on
-`codex/rna-input-resources`. New execution packages pin the tested commit;
-the repository-wide main release is unchanged. DNA input-v4 resource rules and
-analytical arguments are unchanged. Do not overwrite an executing package.
+Policy **input-v5**, developed November24,2026 on `codex/rna-input-resources`
+at `8504373` and consolidated into the v0.2.0 source on November26. New execution
+packages pin the selected published release or exact commit. DNA input-v4 resource
+rules and analytical arguments are unchanged. Existing packages retain their
+original bindings. See [release notes](releases/v0.2.0.md).
 
 ## Evidence and failure
 
