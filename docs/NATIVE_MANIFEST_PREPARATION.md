@@ -76,3 +76,15 @@ actual file bindings and version/resource provenance. CSV/options/site files are
 projections from the same resolution, never independently edited masters. The
 launcher preserves this record in the execution package. RNA states distinguish
 NOT_DECLARED, NOT_STAGED, NOT_SELECTED, AMBIGUOUS and READY.
+
+## v1.1.1 — execution-site bindings
+
+Shared profiles may explicitly set `site`, `fastq_root`, `run_root`,
+`manifest_root` (including `{phase}`), `qc_registry_root` and `launcher`.
+Fir defaults remain unchanged. This lets Frontenac reuse its existing staged
+inputs and canonical run tree without copying data or hand-editing a case
+samplesheet. Optional `context_sources` locates approved clinical/runtime
+sidecars by their recorded case ID. Their values/provenance are preserved;
+conflicting contexts are not guessed. Original laboratory files still own
+biological identities. The generated case manifest and sidecars are retained
+with the actual execution package.

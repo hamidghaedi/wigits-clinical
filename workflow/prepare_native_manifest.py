@@ -22,7 +22,7 @@ import shlex
 import sys
 import xml.etree.ElementTree as ET
 
-VERSION = '1.1.0'
+VERSION = '1.1.1'
 FIELDS = 'group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath'.split(',')
 PHASES = {'Phase_1', 'phase_1.5', 'Phase_2'}
 PHASE_ALIASES = {'Phase 1':'Phase_1','Phase 1.5':'phase_1.5','Phase 2':'Phase_2'}
@@ -226,7 +226,7 @@ def fastq_rows(case, bound, fastq_root, run_infos):
 
 def register_labs(config, rows, sources):
     """Persist entire DNA-run scopes, independently of the selected case."""
-    project=Path(config['project_root']);root=project/'file_manifests/lab_qc'
+    project=Path(config['project_root']);root=Path(config.get('qc_registry_root',project/'file_manifests/lab_qc'))
     root.mkdir(parents=True,exist_ok=True)
     with (root/'.registry.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
@@ -251,7 +251,7 @@ def register_labs(config, rows, sources):
             previous=[p for p in qc.get('laboratories',[]) if p not in old_paths]
             if not path.exists(): write_csv(path,full);save(directory/'provenance.json',dict(sources=sources))
             qc['laboratories']=sorted(set(previous+[str(path)]))
-        qc['package_roots']=[str(project/'file_manifests')]
+        qc['package_roots']=sorted(set(qc.get('package_roots',[])+[str(config.get('_manifest_root',config.get('manifest_root',project/'file_manifests')))]))
         qc['config_path']=str(qc_path)
         save(qc_path,qc)
         return qc_path
@@ -279,7 +279,7 @@ def prepare(args):
         if len(exact)==1:
             selector='rna_sample' if exact[0]['analyte_type'].upper()=='RNA' else 'normal_sample' if role(exact[0])=='normal' else 'tumour_sample'
             if not getattr(args,selector):setattr(args,selector,exact[0]['sample_submitter_id'])
-    fastq_root=Path(config['scratch_root'])/'fastq'
+    fastq_root=Path(config.get('fastq_root',Path(config['scratch_root'])/'fastq'))
     bound=select(rows,case,args.tumour_sample,args.normal_sample,args.rna_sample,args.dna_only,fastq_root)
     declared_bound=dict(bound)
     rna_declared=[r for r in declared if r['analyte_type'].upper()=='RNA']
@@ -309,13 +309,14 @@ def prepare(args):
         sources[str(path.resolve())]=hashlib.sha256(path.read_bytes()).hexdigest()
     samplesheet,objects=fastq_rows(case,bound,fastq_root,run_infos)
     aid=identifier(args.analysis_id or f'{case}-native-{datetime.now().strftime("%Y%m%d")}-r1')
-    out=Path(config['project_root'])/'file_manifests'/aid
+    config['_manifest_root']=str(config.get('manifest_root',Path(config['project_root'])/'file_manifests')).format(phase=bound['tumor']['phase'])
+    out=Path(config['_manifest_root'])/aid
     if out.exists(): raise ValueError('Prepared inputs already exist; use them to run/resume, or choose another --analysis-id: '+str(out))
     # Enroll only acquisition runs bound to this case, retaining every library.
     runs={r['_run_id'] for r in bound.values()}
     qc=register_labs(config,[r for r in rows if r['_run_id'] in runs],sources)
-    out.mkdir()
-    run_root=Path(config['scratch_root'])/'analysis/WiGiTS'/config['workflow_version']
+    out.mkdir(parents=True)
+    run_root=Path(config.get('run_root',Path(config['scratch_root'])/'analysis/WiGiTS'/config['workflow_version']))
     workflow=Path(config['workflow_directory']);reference=Path(config['reference_root'])
     with (out/'samplesheet.csv').open('w',newline='') as stream:
         writer=csv.DictWriter(stream,fieldnames=FIELDS,lineterminator='\n');writer.writeheader();writer.writerows(samplesheet)
@@ -336,6 +337,26 @@ def prepare(args):
         matching_policy='exact_then_unique_separator_and_case_prefix_normalization; sourced_noncosmetic_aliases',
         original_laboratory_values_preserved=True)
     save(out/'case_manifest.json',case_manifest)
+    # Reuse approved clinical/runtime sidecars from enrolled preparation sources.
+    # They are supplementary context, never an alternative identity source.
+    contexts=[]
+    for pattern in config.get('context_sources',[]):
+        for name in sorted(glob.glob(pattern)):
+            path=Path(name);record=json.loads(path.read_text())
+            if record.get('case_id')==case:contexts.append((path,record))
+    runtime=[]
+    if contexts:
+        labels={r.get('native_cancer_type') for _,r in contexts if r.get('native_cancer_type')}
+        if len(labels)>1:raise ValueError('Conflicting approved native clinical context')
+        save(out/'clinical_context.json',dict(sources=[str(p) for p,_ in contexts],records=[r for _,r in contexts]))
+        for path,_ in contexts:
+            extra=path.with_name('native_runtime.config')
+            if extra.is_file() and extra.read_text() not in [p.read_text() for p in runtime]:runtime.append(extra)
+        if len(runtime)>1:raise ValueError('Conflicting approved native runtime sidecars')
+        if runtime:(out/'native_runtime.config').write_bytes(runtime[0].read_bytes())
+        case_manifest['approved_context_sources']=[str(p) for p,_ in contexts]
+        case_manifest['approved_runtime_sources']=[str(p) for p in runtime]
+        save(out/'case_manifest.json',case_manifest)
     resources=dict(config['extension_resources'])
     optional=dict(schema_version='wigits.optional-extensions.v1',resources=resources,cases=[dict(case_id=case,
         results_case_dir=str(run_root/aid/'results'/case),native_genome='GRCh38_hmf',
@@ -348,10 +369,13 @@ def prepare(args):
         WIGITS_RUN_ROOT=str(run_root),WIGITS_RUN_ID=aid,WIGITS_WORKFLOW_DIR=str(workflow),
         WIGITS_EXTENSIONS_CONFIG=str(out/'optional_extensions.json'),WIGITS_LAB_QC_CONFIG=str(qc),
         ONCO_SOURCE=config['native_source'],REF_CONFIG=str(reference/'reference_data.config'))
+    if runtime:values['WIGITS_NATIVE_EXTRA_CONFIG']=str(out/'native_runtime.config')
     for key,cfgkey in [('WIGITS_SLURM_ACCOUNT','account'),('WIGITS_NEXTFLOW_MODULE','nextflow_module'),('WIGITS_APPTAINER_MODULE','apptainer_module')]:
         if config.get(cfgkey): values[key]=config[cfgkey]
+    site=config.get('site','fir')
+    if site not in {'fir','frontenac'}:raise ValueError('Unknown configured site')
     (out/'site.env').write_text('\n'.join('export '+k+'='+shlex.quote(str(v)) for k,v in values.items())+
-                              '\nsource "$WIGITS_WORKFLOW_DIR/conf/fir_paths.env"\n')
+                              '\nsource "$WIGITS_WORKFLOW_DIR/conf/'+site+'_paths.env"\n')
     save(out/'input_plan.json',dict(case_id=case,run_id=aid,run_directory=str(run_root/aid),
         libraries=bound,objects=objects))
     save(out/'release.json',dict(preparer_version=VERSION,workflow_version=config['workflow_version'],
@@ -391,8 +415,9 @@ if __name__=='__main__':
             print('Prepared: '+result['prepared'])
             for key,sample in result['library_ids'].items():print(key+': '+sample)
             print('RNA: '+result['rna_status'])
-            project=Path(result['prepared']).parent.parent;folder=Path(result['prepared'])
-            print('Run:\n'+shlex.join(['bash',str(project/'scripts/run_native_fir.sh'),
+            profile=json.loads(args.config.read_text());folder=Path(result['prepared'])
+            launcher=profile.get('launcher',str(Path(profile['project_root'])/'scripts/run_native_fir.sh'))
+            print('Run:\n'+shlex.join(['bash',launcher,
                 '--manifest',str(folder/'samplesheet.csv'),'--config',str(folder/'site.env')]))
     except (ValueError,KeyError,FileNotFoundError) as error:
         print(str(error),file=sys.stderr);sys.exit(2)

@@ -166,6 +166,24 @@ class PrepareNativeTests(unittest.TestCase):
         manifest=qc.read(Path(state['execution_root'])/'manifest.json')
         self.assertEqual(len(manifest['samples']),2)
 
+    def test_site_paths_and_existing_context_are_configuration_inputs(self):
+        self.config.update(site='frontenac',fastq_root=str(self.scratch/'fastq'),
+            manifest_root=str(self.project/'{phase}/metadata/native_inputs'),
+            run_root=str(self.scratch/'native_runs'),qc_registry_root=str(self.project/'qc_registry'))
+        context=self.root/'approved/package';context.mkdir(parents=True)
+        (context/'clinical_context.json').write_text(json.dumps(dict(case_id='CASE_A',native_cancer_type='Recorded site')))
+        (context/'native_runtime.config').write_text('// approved existing runtime settings\n')
+        self.config['context_sources']=[str(self.root/'approved/*/clinical_context.json')];self.write_config()
+        package=self.prepared()
+        self.assertEqual(package,self.project/'Phase_1/metadata/native_inputs/CASE_A-test')
+        env=(package/'site.env').read_text()
+        self.assertIn('conf/frontenac_paths.env',env)
+        self.assertIn(str(self.scratch/'native_runs'),env)
+        self.assertTrue((package/'clinical_context.json').is_file())
+        self.assertEqual((package/'native_runtime.config').read_bytes(),(context/'native_runtime.config').read_bytes())
+        state=json.loads((package/'case_manifest.json').read_text())
+        self.assertIn(str(context/'clinical_context.json'),state['approved_context_sources'])
+
     def test_standalone_command_takes_only_the_patient_id(self):
         self.config['laboratory_sources']=[dict(glob=str(self.lab),phase='Phase_1')]
         scripts=self.project/'scripts';scripts.mkdir(parents=True)

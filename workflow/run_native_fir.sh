@@ -28,7 +28,7 @@ copy_once() {
 }
 copy_once "$manifest" "$package/samplesheet.csv"
 copy_once "$config" "$package/site.env"
-for name in input_plan.json release.json case_manifest.json laboratory.json; do
+for name in input_plan.json release.json case_manifest.json laboratory.json clinical_context.json native_runtime.config; do
     [[ ! -f "$(dirname "$manifest")/$name" ]] || copy_once "$(dirname "$manifest")/$name" "$package/$name"
 done
 if [[ -e "$package/workflow" || -L "$package/workflow" ]]; then
@@ -59,11 +59,15 @@ if [[ -f "$run_dir/state/head_job.txt" ]]; then
         echo "Previous head $previous is still active" >&2; exit 2
     fi
 fi
+native_args=()
+if [[ -n "${WIGITS_NATIVE_EXTRA_CONFIG:-}" ]]; then
+    native_args=(-c "$WIGITS_NATIVE_EXTRA_CONFIG")
+fi
 job="$(sbatch --parsable --account="$SLURM_ACCOUNT_CPU" --time=6-23:00:00 \
     --job-name="$WIGITS_RUN_ID" --chdir="$run_dir" \
     --output="$run_dir/logs/head-%j.out" --error="$run_dir/logs/head-%j.err" \
     --export="ALL,WIGITS_SITE_ENV=$package/site.env,WIGITS_WORKFLOW_DIR=$WIGITS_WORKFLOW_DIR" \
-    "$WIGITS_WORKFLOW_DIR/run_full_native.sbatch" "$package" "$WIGITS_RUN_ID")"
+    "$WIGITS_WORKFLOW_DIR/run_full_native.sbatch" "$package" "$WIGITS_RUN_ID" "${native_args[@]}")"
 printf '%s\n' "${job%%;*}" > "$run_dir/state/head_job.txt"
 echo "Submitted ${job%%;*}"
 echo "Run: $run_dir"
