@@ -93,5 +93,6 @@ python3 "$HERE/chip_candidates.py" --annotated-vcf "$OUT/pave/$CASE.chip.annotat
   --panel-file "$PANELS/chip_genes.tsv" --panel-dir "$PANELS" ${MEAN_DEPTH:+--mean-depth "$MEAN_DEPTH"}
 python3 "$HERE/chip_review_table.py" --annotated-vcf "$OUT/pave/$CASE.chip.annotated.vcf.gz" \
   --variants-tsv "$OUT/$CASE.chip_variants.tsv" --outdir "$OUT" --case "$CASE" \
-  --blood-sample "$BLOOD" --tumour-sample "$TUMOUR" --panel-dir "$PANELS"
+  --blood-sample "$BLOOD" --tumour-sample "$TUMOUR" --panel-dir "$PANELS" \
+  --purple-purity "$RESULTS/purple/$TUMOUR.purple.purity.tsv"
 echo "CHIP_CALL_DONE $CASE"

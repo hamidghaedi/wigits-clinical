@@ -46,6 +46,8 @@ HOMOPOLYMER_MIN_LENGTH = 3
 BINOMIAL_P = 0.01
 # The paper advises inspecting a sample with this many retained variants as a possible poor library.
 INSPECT_SAMPLE_AT = 4
+# Probability below which the tumour reads are taken to exceed what infiltrating blood cells can carry.
+INFILTRATION_P = 0.01
 
 RC_PARTS = ("full", "partial_core", "core", "realigned", "reference", "total")
 UMI_PARTS = ("total_none", "total_single", "total_dual_strand", "alt_none", "alt_single",
@@ -81,6 +83,20 @@ def p_if_heterozygote(k, n):
     obs = math.comb(n, k)
     total = sum(math.comb(n, i) for i in range(n + 1) if math.comb(n, i) <= obs)
     return total / (2 ** n)
+
+
+def upper_tail(k, n, q):
+    """P(X >= k) for X ~ Binomial(n, q)."""
+    if not n:
+        return ""
+    return max(0.0, 1.0 - sum(math.comb(n, i) * q ** i * (1 - q) ** (n - i) for i in range(k)))
+
+
+def normal_dna_fraction(purity, ploidy):
+    """Share of the DNA in the tumour sample that comes from non-tumour cells, taken as diploid."""
+    if purity is None or ploidy is None:
+        return None
+    return 2 * (1 - purity) / (2 * (1 - purity) + ploidy * purity)
 
 
 def variant_type(ref, alt):
@@ -266,9 +282,25 @@ HEAD = [
      "and heterozygous. Small values argue against an inherited heterozygous variant."),
     ("blood_alt_on_both_strands", "derived", "Variant reads in blood seen on both strands."),
     ("present_in_tumour", "chip_candidates", "Whether the variant has support in the tumour sample."),
-    ("tumour_to_blood_af_ratio", "derived",
-     "Tumour allele fraction over blood allele fraction. Near or above 1 at a low blood fraction is "
-     "what tumour material in the blood draw or an infiltrating clone would give."),
+    ("tumour_to_blood_af_ratio", "derived", "Tumour allele fraction over blood allele fraction."),
+    ("tumour_non_tumour_dna_fraction", "PURPLE purity and ploidy",
+     "Share of the DNA in the tumour sample that comes from non-tumour cells. A clone of blood origin "
+     "can only be carried by these cells."),
+    ("tumour_af_if_infiltrating_in_proportion", "derived",
+     "Tumour allele fraction expected if every non-tumour cell were a blood cell carrying the clone "
+     "in the proportion seen in blood: blood allele fraction times the non-tumour DNA fraction."),
+    ("tumour_af_ceiling_if_infiltrating", "derived",
+     "Highest tumour allele fraction infiltration can give: every non-tumour cell carrying the "
+     "variant on one of two copies, half the non-tumour DNA fraction."),
+    ("p_tumour_reads_within_ceiling", "derived",
+     "Probability of at least the observed tumour variant reads if the true tumour allele fraction "
+     "were at that ceiling. Small values mean tumour cells themselves carry the variant."),
+    ("tumour_pattern", "derived",
+     "absent from tumour: no tumour read. within infiltration: tumour reads present and no more "
+     "than blood cells in the tumour could carry, so a clone of blood origin infiltrating the tumour "
+     "remains possible. exceeds infiltration: more tumour reads than non-tumour cells can account "
+     "for, which points to an inherited variant, a tumour variant reaching the blood, or an artefact "
+     "common to both libraries. Blank when tumour purity was not supplied."),
 ]
 TAIL = [
     ("sage_tier", "SAGE INFO: TIER", "HOTSPOT, PANEL, HIGH_CONFIDENCE or LOW_CONFIDENCE. Thresholds are most permissive at hotspots."),
@@ -301,13 +333,16 @@ COLUMNS = (HEAD[:SPLIT] + sample_columns("blood", "blood")
            + HEAD[SPLIT:] + sample_columns("tumour", "tumour") + TAIL)
 
 
-def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, panel_dir=None):
+def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, panel_dir=None,
+          tumour_purity=None, tumour_ploidy=None):
     os.makedirs(outdir, exist_ok=True)
     with open(variants_tsv) as fh:
         called = list(csv.DictReader(fh, delimiter="\t"))
     order = {(r["chrom"], r["pos"], r["ref"], r["alt"]): i for i, r in enumerate(called)}
     by_key = {(r["chrom"], r["pos"], r["ref"], r["alt"]): r for r in called}
     curation = CuratedDefinition(panel_dir) if panel_dir and os.path.isdir(panel_dir) else None
+
+    non_tumour = normal_dna_fraction(tumour_purity, tumour_ploidy)
 
     rows, samples = [], []
     with _open(vcf) as fh:
@@ -349,6 +384,21 @@ def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, panel_di
             row["blood_alt_on_both_strands"] = both(row["blood_read_forward_fraction_alt"])
             taf = row["tumour_allele_fraction"]
             row["tumour_to_blood_af_ratio"] = (taf / af) if af not in ("", 0) and taf != "" else ""
+            tdp, talt = row["tumour_depth"], row["tumour_alt_reads"]
+            for k in ("tumour_non_tumour_dna_fraction", "tumour_af_if_infiltrating_in_proportion",
+                      "tumour_af_ceiling_if_infiltrating", "p_tumour_reads_within_ceiling",
+                      "tumour_pattern"):
+                row[k] = ""
+            if non_tumour is not None and tdp != "" and talt != "":
+                ceiling = 0.5 * non_tumour
+                row["tumour_non_tumour_dna_fraction"] = non_tumour
+                row["tumour_af_if_infiltrating_in_proportion"] = af * non_tumour if af != "" else ""
+                row["tumour_af_ceiling_if_infiltrating"] = ceiling
+                p_tail = upper_tail(min(talt, tdp), tdp, ceiling)
+                row["p_tumour_reads_within_ceiling"] = p_tail
+                row["tumour_pattern"] = ("absent from tumour" if talt == 0 else
+                                         "exceeds infiltration" if p_tail != "" and p_tail < INFILTRATION_P
+                                         else "within infiltration")
 
             reps, repc = info.get("RC_REPS", ""), info.get("RC_REPC", "")
             is_indel = len(f[3]) != len(f[4])
@@ -485,6 +535,13 @@ def build(vcf, variants_tsv, outdir, case, blood_sample, tumour_sample, panel_di
              "present_in_tumour": r["present_in_tumour"], "cohort_validated": r["cohort_validated"],
              "misses": r[f"published_criteria_outcome_min_ad{MIN_ALT_READS_GENOME}"]}
             for r in inside if r[f"published_criteria_outcome_min_ad{MIN_ALT_READS_GENOME}"] != "retained"],
+        "tumour": None if non_tumour is None else {
+            "purity": tumour_purity, "ploidy": tumour_ploidy,
+            "non_tumour_dna_fraction": round(non_tumour, 4),
+            "allele_fraction_ceiling_if_infiltrating": round(0.5 * non_tumour, 4),
+            "clone_candidates_by_tumour_pattern": {
+                k: sum(1 for r in flat if r["classification"] == "clone candidate" and r["tumour_pattern"] == k)
+                for k in ("absent from tumour", "within infiltration", "exceeds infiltration")}},
         "inspect_sample_as_possible_poor_library": len(kept[MIN_ALT_READS_GENOME]) >= INSPECT_SAMPLE_AT,
         "inspection_basis": f"{INSPECT_SAMPLE_AT} or more retained variants in one sample, as the paper advises",
     }
@@ -503,9 +560,18 @@ def main(argv=None):
     ap.add_argument("--blood-sample", required=True)
     ap.add_argument("--tumour-sample", required=True)
     ap.add_argument("--panel-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "panels"))
+    ap.add_argument("--purple-purity", default=None,
+                    help="<tumour>.purple.purity.tsv; purity and ploidy are read from it")
+    ap.add_argument("--tumour-purity", type=float, default=None)
+    ap.add_argument("--tumour-ploidy", type=float, default=None)
     a = ap.parse_args(argv)
+    purity, ploidy = a.tumour_purity, a.tumour_ploidy
+    if a.purple_purity:
+        with open(a.purple_purity) as fh:
+            rec = next(csv.DictReader(fh, delimiter="\t"))
+        purity, ploidy = float(rec["purity"]), float(rec["ploidy"])
     table, dictionary, rows, summary = build(a.annotated_vcf, a.variants_tsv, a.outdir, a.case,
-                                             a.blood_sample, a.tumour_sample, a.panel_dir)
+                                             a.blood_sample, a.tumour_sample, a.panel_dir, purity, ploidy)
     print(f"variants {len(rows)}  columns {len(COLUMNS)}")
     print(json.dumps(summary, indent=1, default=str))
     print(table)
