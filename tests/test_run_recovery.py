@@ -11,6 +11,24 @@ m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
 
 class RecoveryTests(unittest.TestCase):
+    def test_rna_resource_recovery_preserves_launch_and_only_overlays_rna(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); run=root/'run'; run.mkdir(); out=root/'recovery'
+            original='nextflow run /synthetic/oncoanalyser -c original.config --input sample.csv -work-dir work -resume'
+            (run/'launch.sh').write_text(original+'\n')
+            (run/'samplesheet.csv').write_text('sample\nsynthetic\n')
+            subprocess.run([sys.executable,str(Path(m.__file__)), '--run',str(run),
+                            '--out',str(out),'--route','rna','--rna-resources','--session','saved',
+                            '--native-source','/synthetic/oncoanalyser'],check=True)
+            config=(out/'recovery.config').read_text()
+            self.assertIn('--READ_NAME_REGEX null',config)
+            self.assertIn('RNA input-v5',config)
+            self.assertNotIn('BWAMEM2',config)
+            self.assertNotIn('REDUX',config)
+            args=shlex.split((out/'resume_command.sh').read_text().split('exec ',1)[1])
+            expected=shlex.split(original);expected.insert(expected.index('-resume')+1,'saved')
+            self.assertEqual(args,expected+['-c',str(out/'recovery.config')])
+
     def test_preserves_original_command_except_explicit_resume_and_last_config(self):
         original='nextflow run nf-core/oncoanalyser -r 3.0.0 -c original.config --input /run/samples.csv -work-dir /run/work -resume -c resources.config'
         new=shlex.split(m.resume_command(original,'original-session',Path('/recovery/fix.config')))

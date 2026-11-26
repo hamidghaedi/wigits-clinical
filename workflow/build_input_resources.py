@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate initial site resources from measured existing inputs or recovery records.
 
-Policy input-v4: BWA-MEM2 keeps64CPUs fixed; RAM and walltime use
+Policy input-v5: BWA-MEM2 keeps64CPUs fixed; RAM and walltime use
 each task's actual FASTQ pair and documented observed allowances. REDUX uses its
 own complete sample. Paired callers retain their combined workload sizing.
 For sample/case steps, units = ceil(primary reads / 250 million), or compressed
@@ -21,7 +21,62 @@ import math
 from pathlib import Path
 
 
-POLICY = 'input-v4'
+POLICY = 'input-v5'
+
+
+# Conservative envelopes from completed native RNA tasks; see RNA_RESOURCE_SIZING.md.
+# Size is a workload proxy, not a read count or prediction of duplicate complexity.
+RNA_RESOURCES = {
+    'STAR_ALIGN': dict(cpus=64, basis='all_task_FASTQ_bytes', memory_floor=96,
+        memory_base=96, memory_per_gib=0.5, time_floor=2, hours_per_gib=0.042,
+        time_multiplier=2, additional_hours=0.5, time_round_hours=1),
+    'SAMTOOLS_SORT': dict(cpus=64, basis='task_unsorted_BAM_bytes', memory_floor=80,
+        memory_base=80, memory_per_gib=0, time_floor=2, hours_per_gib=0.0016,
+        time_multiplier=2, additional_hours=0.5, time_round_hours=1),
+    'GATK4_MARKDUPLICATES': dict(cpus=8, basis='all_task_sorted_BAM_bytes', memory_floor=128,
+        memory_base=96, memory_per_gib=0.125, time_floor=12, hours_per_gib=0.060,
+        time_multiplier=2, additional_hours=1, time_round_hours=2),
+    'ISOFOX': dict(cpus=64, basis='task_duplicate_marked_BAM_bytes', memory_floor=160,
+        memory_base=96, memory_per_gib=0.25, time_floor=2, hours_per_gib=0.003,
+        time_multiplier=2, additional_hours=0.5, time_round_hours=1),
+}
+
+
+def rna_allocation(stage, input_bytes):
+    """Preview the task-local RNA request without reading any payload contents."""
+    if input_bytes <= 0:
+        raise ValueError('RNA sizing requires a positive task input size')
+    spec = RNA_RESOURCES[stage]
+    gib = input_bytes / 1024**3
+    memory = 16 * math.ceil(max(spec['memory_floor'], spec['memory_base'] + spec['memory_per_gib'] * gib) / 16)
+    rounding = spec['time_round_hours']
+    hours = rounding * math.ceil(max(spec['time_floor'], spec['time_multiplier'] * spec['hours_per_gib'] * gib + spec['additional_hours']) / rounding)
+    if memory > 768 or hours > 336:
+        raise ValueError('RNA workload exceeds the eligible resource envelope')
+    return dict(cpus=spec['cpus'], memory_gb=memory, time_hours=hours,
+                input_bytes=input_bytes, workload_basis=spec['basis'])
+
+
+def render_rna_config():
+    """Native module names/variables; evaluate sizes after preceding tools finish."""
+    inputs = {
+        'STAR_ALIGN': '[reads_fwds, reads_revs].flatten()',
+        'SAMTOOLS_SORT': '(bam instanceof Collection ? bam : [bam])',
+        'GATK4_MARKDUPLICATES': '(bam instanceof Collection ? bam : [bam])',
+        'ISOFOX': '(aln instanceof Collection ? aln : [aln])',
+    }
+    lines = ['// RNA input-v5: task-local sizes; 2x elapsed allowance plus startup.', 'process {']
+    for stage, spec in RNA_RESOURCES.items():
+        scope = 'ISOFOX_QUANTIFICATION' if stage == 'ISOFOX' else 'READ_ALIGNMENT_RNA'
+        lines.extend([f"    withName: '.*:{scope}:{stage}' {{", f"        cpus = {spec['cpus']}"])
+        size = f"def gib = {inputs[stage]}.collect {{ it.size() as double }}.sum() / 1073741824.0; "
+        memory = f"(16 * Math.ceil(Math.max({spec['memory_floor']}, {spec['memory_base']} + {spec['memory_per_gib']} * gib) / 16)).toLong()"
+        hours = f"({spec['time_round_hours']} * Math.ceil(Math.max({spec['time_floor']}, {spec['time_multiplier']} * {spec['hours_per_gib']} * gib + {spec['additional_hours']}) / {spec['time_round_hours']})).toLong()"
+        for directive, expression, ceiling, unit in [('memory', memory, 768, 'GB'), ('time', hours, 336, 'h')]:
+            lines.append(f"        {directive} = {{ {size}def request = {expression}; "
+                         f"if (request > {ceiling}) throw new IllegalArgumentException('RNA {directive} exceeds eligible limit'); request.{unit} }}")
+        lines.append('    }')
+    return '\n'.join(lines + ['}']) + '\n'
 
 
 def alignment_allocation(input_bytes):
@@ -88,14 +143,12 @@ def plan(libraries):
         'SAGE_APPEND.*': (max(t, r), 12, 0.75, 32, 2),
         'LINX_VISUALISER': (d, 8, 0.5, 32, 1),
     }
-    if rna:
-        specs.update({'STAR_ALIGN': (r, 12, 2, 64, 3),
-                      'ISOFOX': (r, 12, 2, 64, 4),
-                      'SAMTOOLS_SORT': (r, 8, 1, 32, 4)})
     out = {name: allocation(*args) for name, args in specs.items()}
     if rna:
-        # Picard MarkDuplicates is not a 64-thread algorithm.
-        out['GATK4_MARKDUPLICATES'] = allocation(r, 12, 1.5, 64, 4, threaded=False)
+        # Intermediate RNA BAM sizes are not known at launch. Resolve these
+        # requests from the real process inputs when each task is submitted.
+        out.update({name: dict(dynamic=True, **spec) for name, spec in RNA_RESOURCES.items()})
+
     return out
 
 
@@ -105,9 +158,11 @@ def redux_plan(libraries):
 
 
 def render_config(resources, redux, completed_cpus=None):
-    lines = ['// input-v4: fixed alignment CPU, measured-allowance lane RAM/time, sample-local REDUX.',
+    lines = ['// input-v5: task-local RNA resources; unchanged input-v4 DNA policies.',
              'process {', '    resourceLimits = [cpus: 64, memory: 768.GB, time: 14.d]']
     for name, v in resources.items():
+        if v.get('dynamic'):
+            continue
         lines.extend([f"    withName: '{name}' {{", f"        cpus = {v['cpus']}",
                       f"        memory = {v['memory_gb']}.GB", f"        time = {v['time_hours']}.h", '    }'])
     lines.append("    withName: 'REDUX' {")
@@ -117,6 +172,8 @@ def render_config(resources, redux, completed_cpus=None):
                      "if (value == null) throw new IllegalArgumentException('Unbound REDUX sample'); value }")
     lines.extend(['    }', '}'])
     lines.append((Path(__file__).parent / 'conf/lane_alignment_resources.config').read_text())
+    if any(v.get('dynamic') for v in resources.values()):
+        lines.append(render_rna_config())
     if completed_cpus:
         # Preserve old command hashes so completed16CPU lanes remain CACHED.
         # New alignment tasks always use64CPUs; this is explicit resume history.

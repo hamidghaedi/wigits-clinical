@@ -1,5 +1,11 @@
 # Release bindings
 
+Development delta on `codex/rna-input-resources`: **input-v5** resolves RNA
+resources from each task's actual FASTQ/BAM bytes, with measured time/memory
+allowances. RNA recovery preparer0.4.0 adds explicit `--rna-resources`.
+Executions selecting this delta pin its tested commit; main v0.1.0 and existing
+component tags remain unchanged. See [RNA sizing](docs/RNA_RESOURCE_SIZING.md).
+
 Repository-wide release: **v0.1.0** (`VERSION`). This is the first consolidated
 release, incorporating the published `hartwig_adoptation` history through
 `7a8f207`. Component versions below have independent namespaces; v0.1.0 does
