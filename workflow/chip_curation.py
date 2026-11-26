@@ -7,11 +7,17 @@ human genetic datasets", Blood 2023;141(18):2214-2223, doi:10.1182/blood.2022018
 
 The resource files are built from that supplement and live in workflow/panels/:
 
-  chip_genes_vlasschaert.tsv   74 genes, each with the mutation classes that count for that gene
+  chip_genes_vlasschaert.tsv   74 candidate genes, the mutation classes that count in each, and
+                               whether the gene is on the retained list
   chip_artefact_variants.tsv   recurrent artefacts and variants failing their binomial test
   chip_validated_variants.tsv  variants associated with age and the TERT risk allele rs7705526
 
-Three points of interpretation, stated because they change results:
+Four points of interpretation, stated because they change results:
+
+  The supplement lists 74 candidate genes in table S1 and gives the evidence for each in table S6,
+  whose column "Is on M-CHIP list" is true for 55 and false for 19. The 55 are taken here as the
+  retained definition. A variant in one of the other 19 is reported as a candidate gene that was not
+  retained, with the variant rule still evaluated so the reader can see what it would have been.
 
   A gene on the list does not accept every variant in it. Forty-seven of the 74 accept truncating
   variants, and 46 carry an explicit list of missense positions. CEBPA and NF1, for instance, accept
@@ -52,6 +58,9 @@ class CuratedDefinition:
                 "accession": r["accession"],
                 "admits_truncating": r["admits_truncating"] == "true",
                 "missense": set(x for x in r["curated_missense"].split(",") if x),
+                "retained": r.get("on_mchip_list", "true") == "true",
+                "age_association": " ".join(x for x in (r.get("ukb_age_association_min_ad5", ""),
+                                                        r.get("ukb_significance_min_ad5", "")) if x),
             }
         self.artefacts = {}
         if artefacts_tsv and os.path.isfile(artefacts_tsv):
@@ -73,8 +82,23 @@ class CuratedDefinition:
             return None
         return f"{THREE_TO_ONE[a]}{pos}{THREE_TO_ONE[b]}"
 
+    def gene_status(self, gene):
+        """retained, candidate_not_retained, or not_curated."""
+        entry = self.genes.get(gene)
+        if entry is None:
+            return "not_curated"
+        return "retained" if entry["retained"] else "candidate_not_retained"
+
     def classify(self, gene, consequence, hgvs_protein):
         """Return (in_definition: bool, reason: str)."""
+        ok, reason = self._classify_variant(gene, consequence, hgvs_protein)
+        entry = self.genes.get(gene)
+        if entry is not None and not entry["retained"]:
+            verdict = "the variant rule admits this change" if ok else reason
+            return False, f"candidate gene that the reference study did not retain; {verdict}"
+        return ok, reason
+
+    def _classify_variant(self, gene, consequence, hgvs_protein):
         entry = self.genes.get(gene)
         if entry is None:
             return False, "gene is not in the curated list"

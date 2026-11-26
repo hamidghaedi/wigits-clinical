@@ -183,7 +183,7 @@
     "artefact_variants_S2": 170,
     "binomial_failures_S4": 12,
     "validated_variants_S3": 182,
-    "genes_rejected_S6": 74,
+    "genes_rejected_S6": null,
     "panel_overlap": {
       "shared": 42,
       "ours_only": 8,
@@ -216,6 +216,40 @@
         "fires": true,
         "panel_only": true,
         "driver": "five ATM nonsense calls between 0.9% and 4.2%"
+      },
+      "superseded_by": "rerun_v2"
+    },
+    "candidate_genes_S1_S6": 74,
+    "on_mchip_list_S6": 55,
+    "not_on_mchip_list_S6": 19,
+    "note_S6": "S6 holds evidence for the same 74 genes as S1; reading the 19 flagged 0 as not retained is an inference from the sheet title"
+  },
+  "rerun_v2": {
+    "panel_genes": 82,
+    "hotspot_sites": 1475,
+    "calls": 119,
+    "off_panel_calls": 0,
+    "genes_with_a_call": 52,
+    "clone_candidates": 36,
+    "calls_by_gene_status": {
+      "retained": 74,
+      "candidate_not_retained": 33,
+      "not_curated": 12
+    },
+    "inside_retained_definition": 3,
+    "meet_all_sequence_criteria": 96,
+    "clone_candidates_meeting_all_sequence_criteria": 15,
+    "of_which_blood_only": 0,
+    "retained_under_published_criteria": 0,
+    "passes_under_74_gene_candidate_list": [
+      "KMT2D p.Leu804*"
+    ],
+    "review_table": {
+      "rows": 119,
+      "columns": 146,
+      "refseq_differs_from_curated_accession": {
+        "calls": 29,
+        "genes": 15
       }
     }
   }

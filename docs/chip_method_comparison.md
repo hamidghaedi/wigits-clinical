@@ -153,6 +153,9 @@ change is one the list recognises for that gene. Our layer applies only the firs
 
 ### 6.2 Panel overlap
 
+*Corrected by section 8. Table S6 holds the evidence for the same 74 genes as table S1 and marks 55 of
+them as on the M-CHIP list. The description of S6 below as a list of rejected genes is wrong.*
+
 Forty-two of our fifty genes are on their curated list. Eight are not: ATM, CALR, CHEK2, DDX41, SH2B3,
 SRCAP, YLPM1 and ZBTB33. None of the eight appears in S6 either, so they were not tested and rejected,
 they were outside the scope of the curation. Thirty-two of their genes are absent from our panel:
@@ -298,3 +301,63 @@ CREBBP p.Ala1944Gly, one of the nine calls that passed their sequence filters, m
 artefact in their table S2. Eight of those nine are still called after the re-run, all eight outside the
 curated definition, and this one is documented as an artefact in two cohorts of a quarter of a million
 people. That is the artefact blacklist doing the job it was built for on the first case we applied it to.
+
+
+## 8. Table S6 read correctly, and the review table
+
+### 8.1 Two errors in how the supplement was applied
+
+Sections 6 and 7 described table S6 as the genes the authors considered and rejected. It holds the same
+74 genes as table S1, DNMT3A, TET2 and ASXL1 among them, with the count of carriers, the association
+with age at three and at five supporting reads, and the myeloid cancer counts in each cohort. Its column
+"Is on M-CHIP list" is 1 for 55 genes and 0 for 19: CBLB, CSF1R, GATA1, GATA3, GNA13, IKZF2, IKZF3, JAK1,
+JAK3, KMT2A, KMT2D, LUC7L2, PDSS2, PTEN, SETDB1, SF1, SF3A1, STAG1 and U2AF2. The sheet is titled "CHIP
+genes removed", so the 19 are read here as the candidate genes the study did not keep and the 55 as the
+retained definition. That reading comes from the sheet title and the flag, and it should be confirmed
+with the Rauh lab before it is relied on.
+
+The second error was in the code. KMT2A and KMT2D were keyed under the names printed in the supplement,
+MLL/KMT2A and MLL2/KMT2D, so calls in either gene were marked as outside the candidate list. The
+resource file now carries HGNC symbols with the printed name kept alongside.
+
+Each gene therefore has one of three states, and the tables carry it as `curated_gene_status`:
+
+| State | Genes | KQ0004 calls |
+|---|---|---|
+| retained | 55 | 74 |
+| candidate_not_retained | 19 | 33 |
+| not_curated, the eight we added | 8 | 12 |
+
+### 8.2 What this changes on KQ0004
+
+Three calls remain inside the retained definition, the same three as in section 7.3. One further call
+needs to be stated. KMT2D p.Leu804* is a nonsense change at 4.3% with 5 of 116 reads, it meets every
+published sequence criterion, and the variant rule for KMT2D admits it. KMT2D is one of the 19 genes
+that were not kept, with no association with age in UK Biobank (odds ratio 1.007, p = 0.212). Under the
+55-gene reading KQ0004 has no call that passes; under the 74-gene candidate list it has this one.
+
+The evidence on the call itself is poor. It sits two bases from KMT2D p.Glu803Asp, both fail the SAGE
+base-quality filter, the neighbour has a mean variant base quality of 15 with strand imbalance, and both
+are present in the tumour. Fifteen clone candidates meet all five sequence criteria and every one of
+them is also present in the tumour.
+
+### 8.3 The review table
+
+`workflow/chip_review_table.py` is now a step of the layer and runs after `chip_candidates.py` on every
+case. It writes `<case>.chip_review.tsv`, one row per variant with one value per cell, and
+`<case>.chip_review_columns.tsv`, which names the source and meaning of each column. For KQ0004 that is
+119 rows and 146 columns. The table carries, for blood and for tumour separately, depth, reference and
+variant reads, the read-context breakdown and its summed quality, base quality before and after
+recalibration, mapping quality, the forward fraction of reads and of fragments, position within the
+read, distinct fragment positions, improper pairs, repeat jitter and duplicate-consensus counts. It adds
+the Wilson interval on the blood allele fraction, the exact binomial probability of the counts under an
+inherited heterozygous variant, the tumour-to-blood ratio, and each published criterion as its own
+column with the criteria a call misses written out in full.
+
+One column was added because the table exposed a weakness. The curated missense rules are written
+against named RefSeq accessions, and PAVE annotates on the Ensembl canonical transcript. For 29 of the
+119 calls, across 15 genes, the RefSeq identifier PAVE reports differs from the accession in the curated
+rule. Where the two encode the same protein nothing changes. Where they are different isoforms the
+residue numbering can differ and a curated missense position can be missed or matched wrongly. RUNX1 is
+the first to check, since NM_001754 and NM_001001890 are different isoforms. Truncating rules are
+unaffected. This has not been resolved and applies equally to the hotspot list built in section 7.

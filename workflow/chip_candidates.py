@@ -186,7 +186,10 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
             gene = imp.get("gene", "")
             protein = imp.get("hgvs_protein", "")
             in_definition, curation_note, artefact, validated = "", "", "", ""
+            gene_status, gene_evidence = "", ""
             if curation is not None:
+                gene_status = curation.gene_status(gene)
+                gene_evidence = curation.genes.get(gene, {}).get("age_association", "")
                 ok, reason = curation.classify(gene, imp.get("consequence", ""), protein)
                 in_definition = "yes" if ok else "no"
                 curation_note = reason
@@ -230,6 +233,8 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
                 "classification": classification,
                 "confidence_band": band,
                 "in_panel": "yes" if imp.get("gene", "") in panel else "no",
+                "curated_gene_status": gene_status,
+                "gene_age_association_ukb": gene_evidence,
                 "in_curated_definition": in_definition,
                 "curation_note": curation_note,
                 "known_artefact": artefact,
@@ -273,7 +278,10 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
         },
         "curated_definition": None if curation is None else {
             "source": curated_genes,
-            "genes": len(curation.genes),
+            "candidate_genes": len(curation.genes),
+            "retained_genes": sum(1 for g in curation.genes.values() if g["retained"]),
+            "calls_by_gene_status": {s: sum(1 for r in rows if r["curated_gene_status"] == s)
+                                     for s in ("retained", "candidate_not_retained", "not_curated")},
             "calls_inside": sum(1 for r in rows if r["in_curated_definition"] == "yes"),
             "calls_outside": sum(1 for r in rows if r["in_curated_definition"] == "no"),
             "matching_a_known_artefact": sum(1 for r in rows if r["known_artefact"] == "yes"),
