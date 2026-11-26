@@ -11,7 +11,7 @@ from pathlib import Path
 import shlex
 import shutil
 
-VERSION='0.3.0'
+VERSION='0.4.0'
 
 
 def resume_command(original, session, config, native_source=None):
@@ -54,11 +54,18 @@ def main():
     p.add_argument('--patched-jar',type=Path)
     p.add_argument('--kraken-work',type=Path)
     p.add_argument('--tumor-id')
+    p.add_argument('--rna-resources', action='store_true',
+                   help='Use measured task-input RNA resources on an RNA recovery; preserve DNA allocations')
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
+    if a.rna_resources and a.route != 'rna':
+        p.error('--rna-resources requires --route rna')
     here=Path(__file__).resolve().parent
     config=a.out/'recovery.config'
     if a.route=='rna':
         config.write_text((here/'conf/rna_duplicate_marking.config').read_text())
+        if a.rna_resources:
+            from build_input_resources import render_rna_config
+            config.write_text(config.read_text() + render_rna_config())
     elif a.route in ('bam','esvee'):
         env_file=a.out/'esvee_jvm_recovery.env'
         shutil.copyfile(here/'conf/esvee_jvm_recovery.env',env_file)
@@ -76,7 +83,7 @@ def main():
     (a.out/'resume_command.sh').write_text('#!/usr/bin/env bash\nset -euo pipefail\nexec '+resume_command(original,a.session,config.resolve(),a.native_source)+'\n')
     (a.out/'run_directory.txt').write_text(str(a.run.resolve())+'\n')
     shutil.copyfile(here/'resume_completed_run.sbatch',a.out/'resume_completed_run.sbatch')
-    evidence=dict(version=VERSION,route=a.route,session=a.session,
+    evidence=dict(version=VERSION,route=a.route,session=a.session,rna_resource_policy='input-v5' if a.rna_resources else None,
         original_command=original,original_samplesheet_sha256=hashlib.sha256((a.run/'samplesheet.csv').read_bytes()).hexdigest(),
         files={f.name:hashlib.sha256(f.read_bytes()).hexdigest() for f in a.out.iterdir() if f.is_file()})
     (a.out/'release.json').write_text(json.dumps(evidence,indent=2)+'\n')

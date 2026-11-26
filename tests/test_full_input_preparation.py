@@ -87,11 +87,12 @@ class ResourceTests(unittest.TestCase):
         small = [dict(role=r, read_pairs=50_000_000) for r in ['tumor', 'normal', 'rna']]
         large = [dict(role=r, read_pairs=3_000_000_000) for r in ['tumor', 'normal', 'rna']]
         low, high = module.plan(small), module.plan(large)
-        for name in ['ESVEE', 'SAGE_SOMATIC', 'ISOFOX']:
+        for name in ['ESVEE', 'SAGE_SOMATIC']:
             self.assertEqual(high[name]['cpus'], 64)
             self.assertGreater(high[name]['memory_gb'], low[name]['memory_gb'])
         self.assertGreater(high['ESVEE']['time_hours'], low['ESVEE']['time_hours'])
         self.assertEqual(high['GATK4_MARKDUPLICATES']['cpus'], 8)
+        self.assertTrue(high['ISOFOX']['dynamic'])
 
     def test_oversized_input_is_not_silently_clamped(self):
         with self.assertRaises(ValueError):

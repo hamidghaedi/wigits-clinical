@@ -8,10 +8,12 @@ Hartwig's WiGiTS tools (PURPLE, LINX, SAGE, ORANGE and the rest) are open source
 
 ## What is here now
 
-The maintained branch is **`main`**; the first consolidated repository release
-is **v0.1.0**. Production uses a numbered release or exact commit. The previous
-`hartwig_adoptation` development history is retained in this baseline. New work
-uses short-lived branches and pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md).
+The maintained integration branch is **`main`**. The source version is **v0.2.0**,
+consolidating manifest-complete laboratory QC and task-local RNA resource sizing
+on the v0.1.0 baseline. Production uses a published numbered release or exact
+commit; see [v0.2.0 notes](docs/releases/v0.2.0.md) for validation and release state.
+The previous `hartwig_adoptation` history is retained. New work uses short-lived
+branches and pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The implemented workflow launches nf-core/oncoanalyser 3.0.0's native Hartwig
 analytical stack on Frontenac. The default installed source is
@@ -42,6 +44,8 @@ here; see [the migration record](docs/migrations/DNA_HARTWIG_ADOPTATION_20261110
 | `docs/FULL_NATIVE_EXECUTION.md` | Full original-FASTQ entry using the native HMF reference and all DNA lanes. |
 | `docs/NATIVE_BAM_ENTRY.md` | Existing-BAM entry with explicit custom reference and optional mate preparation. |
 | `docs/RESOURCE_REPORTING.md` | CSV/HTML efficiency reporting and the non-blocking future-launch completion hook. |
+| `docs/LABORATORY_QC.md` | Event-driven, manifest-complete laboratory run QC: 32-thread Parabricks coverage, Picard inserts, QC-only fastp and Phase1 presentation. |
+| `docs/RNA_RESOURCE_SIZING.md` | Input-v5 sizing from each RNA task's actual FASTQ/BAM size; DNA resource rules retained. |
 | `docs/RESOURCE_TUNING.md` | Full-case CPU diagnosis and isolated64-CPU performance experiments before changing defaults. |
 | `docs/DEEPSOMATIC_SUBSTITUTION.md` | Isolated Google caller test and the minimal somatic-VCF substitution boundary; native defaults unchanged. |
 | `docs/DEEPSOMATIC_DISTRIBUTED_TEST.md` | Two-node example-generation benchmark, measured-count/native-annotation adapter and genuine SAGE context probe. |

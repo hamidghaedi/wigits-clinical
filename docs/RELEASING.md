@@ -31,6 +31,13 @@ merging this source does not replace its deployed runtime. Keep all known
 lanes/mates and existing tumour/normal bindings. No new bulk counting or
 hashing gates are introduced.
 
+## Current consolidation
+
+[v0.2.0](releases/v0.2.0.md) combines the lab-qc/v0.4.1 operational work and
+input-v5 RNA sizing without changing upstream source/resource or native caller
+bindings. The source review, tests and publication state are recorded there.
+Fir site configuration/deployment is a separate step.
+
 ## When upstream publishes a new version
 
 Use a branch such as `codex/update-oncoanalyser-X.Y.Z` from our current `main`.
