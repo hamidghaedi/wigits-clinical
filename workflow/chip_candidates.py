@@ -22,7 +22,14 @@ import math
 import os
 from datetime import datetime, timezone
 
-RULES_VERSION = "docs/chip_reporting_proposal.md@2026-11-24"
+try:
+    from chip_curation import CuratedDefinition, sample_level_artefact_signature
+except ImportError:  # the module sits beside this one in workflow/
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from chip_curation import CuratedDefinition, sample_level_artefact_signature
+
+RULES_VERSION = "docs/chip_reporting_proposal.md@2026-11-26"
 
 # A variant is treated as constitutional rather than as a clone at or above this allele fraction.
 CONSTITUTIONAL_AF = 0.35
@@ -116,7 +123,8 @@ def classify(af, alt_reads, gnomad_af, sage_filter, floor_confident):
     return classification, band, warnings
 
 
-def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_depth=None):
+def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_depth=None,
+          curated_genes=None, artefact_variants=None, validated_variants=None):
     os.makedirs(outdir, exist_ok=True)
     panel = []
     if panel_file and os.path.isfile(panel_file):
@@ -126,6 +134,10 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
             g = line.split("\t")[0].strip()
             if g:
                 panel.append(g)
+
+    curation = None
+    if curated_genes and os.path.isfile(curated_genes):
+        curation = CuratedDefinition(curated_genes, artefact_variants, validated_variants)
 
     samples, rows = [], []
     depths = []
@@ -171,6 +183,27 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
             sage_filter = info.get("SAGE_FILTER", f[6])
             classification, band, warnings = classify(af, alt_reads, gnomad, sage_filter, floor_conf)
 
+            gene = imp.get("gene", "")
+            protein = imp.get("hgvs_protein", "")
+            in_definition, curation_note, artefact, validated = "", "", "", ""
+            if curation is not None:
+                ok, reason = curation.classify(gene, imp.get("consequence", ""), protein)
+                in_definition = "yes" if ok else "no"
+                curation_note = reason
+                if not ok:
+                    warnings.append(f"outside the curated definition: {reason}")
+                artefact = "yes" if curation.is_known_artefact(gene, protein) else "no"
+                if artefact == "yes":
+                    warnings.append("matches a recurrent artefact reported in the reference cohorts")
+                validated = "yes" if curation.is_validated(gene, protein) else "no"
+                if validated == "yes":
+                    warnings.append("associated with age and the TERT risk allele in the reference "
+                                    "cohorts, which supports a genuine clone")
+
+            if classification == "clone candidate" and (num(tumour, "AF") or 0) > 0:
+                warnings.append("also called in the tumour, so tumour material in the blood draw and "
+                                "a clone infiltrating the tumour are both open explanations")
+
             rows.append({
                 "case": case,
                 "gene": imp.get("gene", ""),
@@ -197,6 +230,10 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
                 "classification": classification,
                 "confidence_band": band,
                 "in_panel": "yes" if imp.get("gene", "") in panel else "no",
+                "in_curated_definition": in_definition,
+                "curation_note": curation_note,
+                "known_artefact": artefact,
+                "cohort_validated": validated,
                 "warnings": "; ".join(warnings),
             })
 
@@ -234,6 +271,17 @@ def build(vcf, outdir, case, blood_sample, tumour_sample, panel_file=None, mean_
             "allele_fraction_for_3_reads_at_95pc_power":
                 round(binomial_floor(depth_for_floor, SUPPORTED_ALT_READS), 4) if depth_for_floor else None,
         },
+        "curated_definition": None if curation is None else {
+            "source": curated_genes,
+            "genes": len(curation.genes),
+            "calls_inside": sum(1 for r in rows if r["in_curated_definition"] == "yes"),
+            "calls_outside": sum(1 for r in rows if r["in_curated_definition"] == "no"),
+            "matching_a_known_artefact": sum(1 for r in rows if r["known_artefact"] == "yes"),
+            "validated_in_the_reference_cohorts":
+                sum(1 for r in rows if r["cohort_validated"] == "yes"),
+        },
+        "low_quality_sample_signature": dict(
+            zip(("fires", "note"), sample_level_artefact_signature(rows))),
         "classification_counts": {k: sum(1 for r in rows if r["classification"] == k)
                                    for k in ("clone candidate", "constitutional")},
         "confidence_counts": {k: sum(1 for r in rows if r["confidence_band"] == k)
@@ -259,13 +307,19 @@ def main(argv=None):
     ap.add_argument("--blood-sample", required=True)
     ap.add_argument("--tumour-sample", required=True)
     ap.add_argument("--panel-file", default=None)
+    ap.add_argument("--curated-genes", default=None,
+                    help="curated gene and variant definition, panels/chip_genes_vlasschaert.tsv")
+    ap.add_argument("--artefact-variants", default=None)
+    ap.add_argument("--validated-variants", default=None)
     ap.add_argument("--mean-depth", type=float, default=None,
                     help="mean depth of the blood sample, used for the reported detection floor")
     a = ap.parse_args(argv)
     s = build(a.annotated_vcf, a.outdir, a.case, a.blood_sample, a.tumour_sample,
-              a.panel_file, a.mean_depth)
+              a.panel_file, a.mean_depth, a.curated_genes, a.artefact_variants,
+              a.validated_variants)
     print(json.dumps({k: s[k] for k in ("variants_reported", "classification_counts",
                                         "confidence_counts", "clone_candidates_by_band",
+                                        "curated_definition", "low_quality_sample_signature",
                                         "detection_floor", "panel_genes",
                                         "panel_genes_with_a_call")}, indent=1))
     return 0

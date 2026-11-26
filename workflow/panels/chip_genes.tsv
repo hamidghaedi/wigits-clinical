@@ -1,62 +1,88 @@
-# Clonal haematopoiesis gene panel, version 1, 2026-11-24
-#
-# Curated from the clonal haematopoiesis literature. in_hartwig_driver_panel records whether the gene
-# appears in DriverGenePanel.38.tsv from hmf_pipeline_resources.38_v3.0.0--8, and
-# hartwig_report_germline_variant records that panel's reportGermlineVariant setting, which is why the
-# existing SAGE germline output cannot serve this purpose: every gene here except TP53 is set to NONE.
-#
-# The curated 74-gene list and variant-level rules in the supplement to Vlasschaert et al, Blood 2023
-# (doi:10.1182/blood.2022018825) are not open access and have not been read. This panel is therefore a
-# literature-curated starting set rather than a reproduction of that standard, and should be reconciled
-# with it when the supplement becomes available.
-gene	functional_class	in_hartwig_driver_panel	hartwig_report_germline_variant	notes
-ASXL1	chromatin	true	NONE	third most frequent; requires gene-specific artefact filtering per Vlasschaert 2023
-ATM	DNA damage response	true	NONE	also a cancer predisposition gene already reported by the germline layer
-BCOR	chromatin	true	NONE	
-BCORL1	chromatin	false	absent	
-BRAF	signalling	true	NONE	
-BRCC3	DNA damage response	false	absent	
-CALR	signalling	true	NONE	
-CBL	signalling	true	NONE	
-CEBPA	transcription factor	true	NONE	
-CHEK2	DNA damage response	true	NONE	also a cancer predisposition gene already reported by the germline layer
-CREBBP	chromatin	true	NONE	
-CSF3R	signalling	true	NONE	
-DDX41	DNA damage response	false	absent	
-DNMT3A	DNA methylation	true	NONE	most frequent clonal haematopoiesis driver; R882 is the recurrent hotspot
-ETV6	transcription factor	false	absent	
-EZH2	chromatin	true	NONE	
-FLT3	signalling	true	NONE	
-GNAS	signalling	true	NONE	
-GNB1	signalling	false	absent	
-IDH1	DNA methylation	true	NONE	
-IDH2	DNA methylation	true	NONE	
-JAK2	signalling	true	NONE	V617F is the recurrent hotspot and defines a myeloproliferative phenotype
-KDM6A	chromatin	true	NONE	
-KIT	signalling	true	NONE	
-KRAS	signalling	true	NONE	
-LUC7L2	spliceosome	false	absent	
-MPL	signalling	true	NONE	
-NF1	signalling	true	NONE	
-NPM1	nucleolar chaperone	true	NONE	
-NRAS	signalling	true	NONE	
-PHF6	chromatin	true	NONE	
-PPM1D	DNA damage response	true	NONE	enriched after cytotoxic therapy; truncating variants in the final exon
-PRPF8	spliceosome	false	absent	
-PTPN11	signalling	true	NONE	
-RAD21	cohesin	true	NONE	
-RUNX1	transcription factor	true	NONE	
-SETBP1	transcription factor	true	NONE	
-SF3B1	spliceosome	true	NONE	K700E and surrounding hotspots
-SH2B3	signalling	true	NONE	
-SMC3	cohesin	true	NONE	
-SRCAP	chromatin	false	absent	
-SRSF2	spliceosome	true	NONE	P95 hotspot
-STAG2	cohesin	true	NONE	
-TET2	DNA methylation	true	NONE	second most frequent; requires gene-specific artefact filtering per Vlasschaert 2023
-TP53	DNA damage response	true	ANY	enriched after cytotoxic therapy; also a germline predisposition gene, so allele fraction must be read carefully
-U2AF1	spliceosome	true	NONE	S34 and Q157 hotspots; sits in a region with known mapping difficulty on GRCh38
-WT1	transcription factor	true	NONE	
-YLPM1	chromatin	false	absent	
-ZBTB33	chromatin	false	absent	
-ZRSR2	spliceosome	true	NONE	
+# CHIP gene panel, version 2, 26 November 2026.
+# The curated genes are those of Vlasschaert C, Mack T, Heimlich JB, et al., Blood 2023;141(18):2214-2223,
+# doi:10.1182/blood.2022018825, taken from the supplementary tables. The variant-level rule for each of
+# them is in chip_genes_vlasschaert.tsv and is what decides whether a call is inside the definition.
+# The eight added genes are reported with a note saying they sit outside that definition.
+gene	source	note
+ASXL1	curated	
+ASXL2	curated	
+ATM	added	outside the curated definition; on KQ0004 it produced five nonsense calls between 0.9 and 4.2 per cent, a pattern that indicates artefact rather than clonal history
+BCOR	curated	
+BCORL1	curated	
+BRAF	curated	
+BRCC3	curated	
+CALR	added	outside the curated definition; a myeloproliferative driver retained for haematology review
+CBL	curated	
+CBLB	curated	
+CEBPA	curated	
+CHEK2	added	outside the curated definition; retained because it recurs in clonal haematopoiesis series
+CREBBP	curated	
+CSF1R	curated	
+CSF3R	curated	
+CTCF	curated	
+CUX1	curated	
+DDX41	added	outside the curated definition; germline predisposition to myeloid malignancy
+DNMT3A	curated	
+EED	curated	
+EP300	curated	
+ETNK1	curated	
+ETV6	curated	
+EZH2	curated	
+FLT3	curated	
+GATA1	curated	
+GATA2	curated	
+GATA3	curated	
+GNA13	curated	
+GNAS	curated	
+GNB1	curated	
+IDH1	curated	
+IDH2	curated	
+IKZF1	curated	
+IKZF2	curated	
+IKZF3	curated	
+JAK1	curated	
+JAK2	curated	
+JAK3	curated	
+KDM6A	curated	
+KIT	curated	
+KMT2A	curated	
+KMT2D	curated	
+KRAS	curated	
+LUC7L2	curated	
+MPL	curated	
+NF1	curated	
+NPM1	curated	
+NRAS	curated	
+PDS5B	curated	
+PDSS2	curated	
+PHF6	curated	
+PHIP	curated	
+PPM1D	curated	
+PRPF40B	curated	
+PRPF8	curated	
+PTEN	curated	
+PTPN11	curated	
+RAD21	curated	
+RUNX1	curated	
+SETBP1	curated	
+SETD2	curated	
+SETDB1	curated	
+SF1	curated	
+SF3A1	curated	
+SF3B1	curated	
+SH2B3	added	outside the curated definition; retained for its role in myeloproliferative disease
+SMC1A	curated	
+SMC3	curated	
+SRCAP	added	outside the curated definition; chromatin regulator reported in clonal haematopoiesis
+SRSF2	curated	
+STAG1	curated	
+STAG2	curated	
+SUZ12	curated	
+TET2	curated	
+TP53	curated	
+U2AF1	curated	
+U2AF2	curated	
+WT1	curated	
+YLPM1	added	outside the curated definition; splicing regulator reported in clonal haematopoiesis
+ZBTB33	added	outside the curated definition; reported in clonal haematopoiesis series
+ZRSR2	curated	
