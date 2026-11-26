@@ -5,7 +5,7 @@
 #SBATCH --job-name=lab_run_qc
 set -eo pipefail
 HERE="${WIGITS_WORKFLOW_DIR:?Set WIGITS_WORKFLOW_DIR to the frozen release workflow directory}"
-source "$HERE/conf/frontenac_paths.env"
+source "${WIGITS_SITE_ENV:-$HERE/conf/frontenac_paths.env}"
 source /cvmfs/soft.computecanada.ca/config/profile/bash.sh
 module load "$NEXTFLOW_MODULE" "$APPTAINER_MODULE"
 set -u
@@ -16,10 +16,10 @@ mkdir -p "$TASK_ROOT/logs"
 cd "$TASK_ROOT"
 RELEASE_COMMIT="$(git -C "$HERE" rev-parse HEAD)"
 export NXF_APPTAINER_CACHEDIR="$CONTAINER_DIR" NXF_SINGULARITY_CACHEDIR="$CONTAINER_DIR"
-export APPTAINER_CACHEDIR="$CONTAINER_DIR" NXF_ANSI_LOG=false
+export APPTAINER_CACHEDIR="${WIGITS_APPTAINER_CACHE:-$CONTAINER_DIR}" NXF_ANSI_LOG=false
 export NXF_SYNTAX_PARSER=v1
 nextflow run "$HERE/laboratory_qc.nf" -entry LAB_RUN_QC \
-  -c "$HERE/conf/frontenac.config" --manifest "$MANIFEST" --outdir "$TASK_ROOT/results" \
+  -c "${WIGITS_SITE_CONFIG:-$HERE/conf/frontenac.config}" --manifest "$MANIFEST" --outdir "$TASK_ROOT/results" \
   --picard_image "$CONTAINER_DIR/picard-3.1.0.sif" \
   --parabricks_image "$CONTAINER_DIR/clara-parabricks-4.6.0-1.sif" --slurm_account "$SLURM_ACCOUNT_CPU" \
   --fastp_image "$CONTAINER_DIR/fastp-1.0.1--heae3180_0.sif" \

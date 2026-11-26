@@ -182,3 +182,16 @@ Samplesheets are the run manifests of this project and are versioned here, mirro
 - Whether `RELEASE_ROOT` should hold full per-case oncoanalyser `results/` (a few GB per case without
   alignments) or only the ORANGE outputs and clinical-layer reports. Default until decided: full `results/`
   minus alignments.
+
+## Fir owner-operated site (November26)
+
+The coordinator's approved Fir view is
+`/home/ghaedi/projects/def-ghaedi/ghaedi/mohcc/`, with source under
+`releases/WiGiTS/<version>/` and `releases/oncoanalyser/<version>/` and shared
+assets under `resources/`. Physical FASTQs are only in
+`/scratch/ghaedi/mohcc/fastq/<original_run>/<laboratory_sample>/`.
+New executions use `/scratch/ghaedi/mohcc/analysis/WiGiTS/<version>/<analysis_id>/`.
+Project `fastq`/`analysis` links expose that scratch tree without duplicating it.
+The executable binding is `workflow/conf/fir_paths.env`; case `site.env` sets
+these roots, analysis ID, release and selected options explicitly. Existing
+Frontenac defaults and issued jobs are unchanged. See [Fir guide](FIR_EXECUTION.md).

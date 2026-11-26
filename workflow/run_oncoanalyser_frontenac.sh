@@ -23,7 +23,7 @@ fi
     echo "workflow configuration not found in $HERE; set WIGITS_WORKFLOW_DIR" >&2
     exit 2
 }
-source "$HERE/conf/frontenac_paths.env"
+source "${WIGITS_SITE_ENV:-$HERE/conf/frontenac_paths.env}"
 source /cvmfs/soft.computecanada.ca/config/profile/bash.sh
 module load "$NEXTFLOW_MODULE" "$APPTAINER_MODULE"
 set -u
@@ -39,8 +39,9 @@ RUN_DIR="$RUN_ROOT/$RUN_ID"
 
 export NXF_SINGULARITY_CACHEDIR="$CONTAINER_DIR"
 export NXF_APPTAINER_CACHEDIR="$CONTAINER_DIR"
-export APPTAINER_CACHEDIR=/global/scratch/hpc6049/tmp
-export APPTAINER_TMPDIR="${SLURM_TMPDIR:-/global/scratch/hpc6049/tmp}"
+export APPTAINER_CACHEDIR="${WIGITS_APPTAINER_CACHE:-/global/scratch/hpc6049/tmp}"
+export APPTAINER_TMPDIR="${SLURM_TMPDIR:-$APPTAINER_CACHEDIR}"
+export WIGITS_EXTENSIONS_SITE_CONFIG="${WIGITS_EXTENSIONS_SITE_CONFIG:-${WIGITS_SITE_CONFIG:-$HERE/conf/frontenac.config}}"
 export NXF_OPTS='-Xms1g -Xmx4g'
 export NXF_ANSI_LOG=false
 
@@ -56,8 +57,8 @@ else
     CMD=(nextflow run "$ONCO_SOURCE")
 fi
 CMD+=(-profile apptainer
-     -c "$HERE/conf/frontenac.config"
-     -c "$HERE/conf/frontenac_limits.config"
+     -c "${WIGITS_SITE_CONFIG:-$HERE/conf/frontenac.config}"
+     -c "${WIGITS_SITE_LIMITS_CONFIG:-$HERE/conf/frontenac_limits.config}"
      -c "$REF_CONFIG"
      --mode wgts --genome "$ONCO_GENOME"
      --input "$RUN_DIR/samplesheet.csv"

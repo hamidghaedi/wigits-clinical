@@ -31,7 +31,15 @@ merging this source does not replace its deployed runtime. Keep all known
 lanes/mates and existing tumour/normal bindings. No new bulk counting or
 hashing gates are introduced.
 
-## Current consolidation
+## Current release
+
+[v0.3.0](releases/v0.3.0.md) adds independently optional blood CH and
+RNA-informed neoantigen execution, plus explicit Fir site selection and an
+owner-operated launcher. The owner explicitly authorized direct Git merge/tag/
+push for this promotion on November26 after the passing real-data tests. This
+is a separate one-time exception; future changes retain the normal PR policy.
+
+## Previous consolidation
 
 [v0.2.0](releases/v0.2.0.md) combines the lab-qc/v0.4.1 operational work and
 input-v5 RNA sizing without changing upstream source/resource or native caller

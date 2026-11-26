@@ -1,10 +1,9 @@
 # Release bindings
 
-Repository version: **v0.2.0** (`VERSION`), prepared from v0.1.0 / `81998b3`
-with the laboratory-QC and RNA-resource branches consolidated. Existing component
-tags remain immutable. Publication of the new repository tag follows reviewed
-main integration; source preparation does not deploy a runtime. See
-[release notes](docs/releases/v0.2.0.md).
+Repository version: **v0.3.0** (`VERSION`), adding the tested independently
+optional blood CH and RNA-informed neoantigen branches to v0.2.0. Native
+Oncoanalyser/source/reference bindings remain unchanged. See
+[release notes](docs/releases/v0.3.0.md) and [Fir execution](docs/FIR_EXECUTION.md).
 
 | Component | Bound version / identity |
 |---|---|
@@ -41,8 +40,9 @@ Their component/model/source versions belong to their own issued packages;
 none replaces the native SAGE caller by default. The general new-FFPE route
 remains undecided; existing batch-specific authorizations retain their scope.
 
-Site launch settings remain Frontenac-specific. Fir needs an explicit site
-profile before its owner-operated packages are issued. Paths come from the
+Site launch settings default to Frontenac. Fir has an explicitly selected
+profile and owner-operated launcher; its first full target-site run remains
+a runtime validation, separate from the completed Frontenac feature tests. Paths come from the
 existing site config and directory contract. No reference
 bundle, container, installed pipeline or executing package is rebuilt or
 updated by publishing this version.
