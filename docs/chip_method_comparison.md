@@ -190,12 +190,18 @@ changes that are too thinly supported to call. The honest reading of KQ0004 unde
 is that there is no clonal haematopoiesis to report, which is what the earlier power analysis predicted
 for a 128x blood genome.
 
+*Corrected by section 7: NF1 p.Leu190* was also a hotspot-forced call and is not present after
+the re-run.*
+
 The nearest thing to a candidate is NF1 p.Leu190*, a nonsense change in a curated gene at 3.5% allele
 fraction with 4 supporting reads, absent from the tumour. It misses their five-read rule by one read.
 Our layer places it in the supported band. This single variant is the clearest illustration of where the
 two designs part company, and it is worth putting to the Rauh lab directly.
 
 ### 6.4 The low-quality sample signature fires on KQ0004
+
+*Corrected by section 7. The ATM observation below rests on calls that the wrong hotspot input had
+forced, and does not survive the re-run.*
 
 Table S5 shows a sample they classified as likely artefact: seven variants in SETD2, NF1, CUX1, EZH2 and
 CREBBP, all between 4.9% and 6.2% allele fraction. The pattern they are describing is several
@@ -228,3 +234,67 @@ Three things are not yet done: the germline hotspot file is still the wrong inpu
 off-panel records; the tumour-sharing column is populated but unused; and the whole comparison rests on
 one glioma case at 128x, so the depth distribution of the bladder cohort has to be pulled before any of
 these numbers are treated as general.
+
+
+## 7. The re-run, and two corrections to section 6
+
+The panel was widened to the 82 genes, the germline hotspot file was replaced, and SAGE and PAVE were
+re-run on the same blood alignment. The replacement hotspot list keeps the positions that are both in
+the CHIP panel and recognised by the curated definition: 1,475 sites across 29 genes, against the
+36,614 cancer-predisposition sites that were being supplied before.
+
+| | Before | After |
+|---|---|---|
+| Panel genes | 50 | 82 |
+| Hotspot sites supplied to SAGE | 36,614 predisposition | 1,475 CHIP |
+| Calls | 178 | 119 |
+| Off-panel calls | 103 | 0 |
+| Genes with a call | 28 of 50 | 52 of 82 |
+| Clone candidates | 117 | 36 |
+| Inside the curated definition | 4 | 3 |
+| Low-quality sample signature | fires | does not fire |
+
+### 7.1 The ATM pattern was our artefact, not ATM's
+
+Section 6.4 reported five ATM nonsense calls between 0.9% and 4.2% and took them as evidence that the
+curated list is right to leave ATM out. That reading was wrong. ATM is a cancer-predisposition gene, so
+its positions were in the germline hotspot file, and SAGE evaluates every hotspot position at hotspot
+sensitivity whatever the panel says. Four of the five calls were forced by that input. With the CHIP
+hotspot list in place ATM has one call left, p.Ser421* at 4.2% with 6 supporting reads.
+
+The sample-level artefact signature no longer fires. The whole sample now carries two truncating calls,
+ATM p.Ser421* and KMT2D p.Leu804*, at 4.2% and 4.3%. We have no evidence either way on whether ATM
+belongs in a CHIP panel, and the earlier claim is withdrawn.
+
+### 7.2 NF1 p.Leu190* was also hotspot-forced
+
+Section 6.3 named NF1 p.Leu190* as the nearest thing to a candidate on this case. NF1 is likewise a
+predisposition gene, that position was likewise in the germline hotspot file, and the call does not
+survive the re-run. The three NF1 calls that remain are p.Thr25Lys at 5.4% and two synonymous changes
+at germline allele fractions.
+
+This is worth stating plainly: a wrong resource file does not merely add noise at the edges, it
+manufactures exactly the kind of call that looks most interesting, a truncating variant in a
+recognisable gene at a plausible clonal allele fraction.
+
+### 7.3 What the curated definition now admits
+
+Three of the 119 calls are inside the definition, and all three are weak:
+
+| Gene | Change | Blood | Tumour | SAGE |
+|---|---|---|---|---|
+| BRAF | p.Asp594Glu | 1.6%, 2 of 128 reads | 0.5% | minTumorQual, minTumorSupport |
+| TP53 | p.Leu330Arg | 1.5%, 2 of 137 reads | 0.7% | minTumorQual, minTumorSupport |
+| TP53 | p.Tyr220Ser | 1.5%, 2 of 135 reads | 1.9% | minMQF, minTumorQual, minTumorSupport |
+
+Each rests on two supporting reads, each is in the provisional band, and each is present at a similar
+low fraction in the tumour as well, which is what tumour material in the blood draw looks like. None
+would pass their five-read rule. The conclusion of section 6.3 is unchanged and now rests on a cleaner
+call set: KQ0004 has no clonal haematopoiesis to report.
+
+### 7.4 One independent confirmation
+
+CREBBP p.Ala1944Gly, one of the nine calls that passed their sequence filters, matches a recurrent
+artefact in their table S2. Eight of those nine are still called after the re-run, all eight outside the
+curated definition, and this one is documented as an artefact in two cohorts of a quarter of a million
+people. That is the artefact blacklist doing the job it was built for on the first case we applied it to.
