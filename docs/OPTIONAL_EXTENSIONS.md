@@ -150,8 +150,9 @@ prose are not regenerated, replaced or extended by this integration.
 
 Offline unit/feature results and the compute-node CLI inspection are recorded in
 `tests/results/optional-extensions/README.md`. The feature branch is pushed.
-All four Nextflow option combinations pass the stub canary; the real CH task
-passes, and the real neoantigen end-to-end test is in progress at this checkpoint.
+All four Nextflow option combinations pass the stub canary; the real CH and
+neoantigen end-to-end tests pass. The separate review reuse reproduces all69
+standalone candidate rows in every column, with no repeated model inference.
 Source promotion/review follows the normal release policy. No new source is
 selected by active native jobs or transfer queues. Fir additionally needs its
 explicit site profile and staged tool/reference assets before owner-operated
