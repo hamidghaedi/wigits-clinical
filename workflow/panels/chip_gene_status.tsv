@@ -1,0 +1,83 @@
+# Status of each curated gene, from Vlasschaert et al., Blood 2023;141(18):2214-2223.
+# retained: one of the 58 genes kept. removed_in_publication: one of the 16 genes the paper removes under
+# 'Revisiting the CHIP gene list', with no positive association with age and no myeloid cancer cases.
+# added_after_publication: in the authors' August 2022 gene list and outside the 74 genes of the paper.
+# The evidence columns are from supplementary table S6 at five or more supporting reads.
+gene	status	ukb_carriers	ukb_age_association	ukb_p	ukb_significance	aou_carriers	aou_age_association	aou_p	ukb_incident_myeloid_cancer
+ASXL1	retained	1654	OR 1.116 (1.107-1.125)	<2e-16	***	199	OR 1.090 (1.077-1.103)	<2e-16	44
+ASXL2	retained	47	OR 1.069 (1.025-1.115)	0.00156	**	3	OR 0.960 (0.891-1.034)	0.266	1
+BCOR	retained	26	OR 1.013 (0.964-1.065)	0.593		7	OR 1.054 (0.999-1.113)	0.0505	2
+BCORL1	retained	31	OR 1.117 (1.052-1.187)	0.00022	***	6	OR 1.068 (1.004-1.137)	0.0332	0
+BRAF	retained	13	OR 1.166 (1.047-1.299)	0.00445	**	3	OR 1.042 (0.964-1.126)	0.293	1
+BRCC3	retained	36	OR 1.003 (0.963-1.046)	0.873		21	OR 1.012 (0.985-1.039)	0.385	0
+CBL	retained	59	OR 1.056 (1.018-1.095)	0.00273	**	16	OR 1.089 (1.045-1.135)	3.62e-05	1
+CBLB	retained	3	OR 1.157 (0.930-1.441)	0.18212		1	OR 1.142 (0.943-1.383)	0.1648	0
+CEBPA	retained	29	OR 0.975 (0.933-1.020)	0.268		11	OR 1.013 (0.977-1.051)	0.465	0
+CREBBP	retained	34	OR 1.027 (0.983-1.074)	0.223		7	OR 1.069 (1.010-1.133)	0.0202	0
+CSF1R	removed_in_publication	1	OR 0.407 (0.079-2.109)	0.274					0
+CSF3R	retained	3	OR 1.018 (0.879-1.179)	0.80891		0			0
+CTCF	retained	7	OR 1.061 (0.954-1.180)	0.267		2	OR 1.018 (0.933-1.110)	0.688	1
+CUX1	retained	41	OR 0.970 (0.934-1.008)	0.112		7	OR 1.011 (0.966-1.058)	0.633	2
+DNMT3A	retained	9029	OR 1.069 (1.066-1.073)	<2e-16	***	1196	OR 1.061 (1.057-1.066)	<2e-16	92
+EED	retained	1	OR 0.889 (0.675-1.171)	0.394		0			0
+EP300	retained	25	OR 1.008 (0.959-1.059)	0.755		1	OR 0.997 (0.885-1.121)	0.95	0
+ETNK1	retained					6	OR 1.121 (1.009 - 1.246)	0.0302	0
+ETV6	retained	21	OR 1.017 (0.962-1.075)	0.54		3	OR 1.188 (1.055-1.339)	0.00371	3
+EZH2	retained	16	OR 0.979 (0.922-1.040)	0.487		2	OR 1.068 (1.096-1.190)	0.218	1
+FLT3	retained								0
+GATA1	removed_in_publication	4	OR 1.011 (0.892-1.146)	0.859773		1	OR 1.121 (0.934-1.346)	0.21	0
+GATA2	retained	3	OR 1.068 (0.905-1.261)	0.42735		3	OR 1.000 (0.933-1.070)	0.989	0
+GATA3	removed_in_publication	0							0
+GNA13	removed_in_publication								0
+GNAS	retained	79	OR 1.098 (1.060-1.138)	1.21e-07	***	19	OR 1.067 (1.031-1.105)	0.000178	1
+GNB1	retained	103	OR 1.094 (1.061-1.128)	4.2e-09	***	37	OR 1.055 (1.031-1.080)	4.99e-06	0
+IDH1	retained	8	OR 1.100 (0.983-1.230)	0.089	.	5	OR 1.111 (1.026-1.204)	0.00789	1
+IDH2	retained	52	OR 1.160 (1.100-1.223)	2.29e-08	***	17	OR 1.082 (1.040-1.125)	5.6e-05	16
+IKZF1	retained	3	OR 1.007 (0.872-1.163)	0.92066		0			0
+IKZF2	removed_in_publication	6	OR 0.889 (0.794-0.995)	0.0368	*	1	OR 0.982 (0.872-1.106)	0.761422	0
+IKZF3	removed_in_publication	3	OR 0.940 (0.816-1.083)	0.3809		1	OR 1.047 (0.912-1.202)	0.504	0
+JAK1	removed_in_publication	2	OR 0.956 (0.806-1.135)	0.6009		0			0
+JAK2	retained	177	OR 1.091 (1.066-1.117)	4.93e-14	***	50	OR 1.056 (1.034-1.077)	9.77e-08	56
+JAK3	removed_in_publication	5	OR 0.975 (0.875-1.086)	0.633384		0			0
+KDM6A	retained	15	OR 1.023 (0.958-1.094)	0.485		6	OR 1.088 (1.017-1.163)	0.0123	0
+KIT	retained	15	OR 0.990 (0.929-1.054)	0.75		0			0
+KMT2A	removed_in_publication	127	OR 0.995 (0.974-1.017)	0.646		6	OR 0.995 (0.948-1.044)	0.84	0
+KMT2D	removed_in_publication	523	OR 1.007 (0.996-1.018)	0.212		35	OR 1.005 (0.985-1.025)	0.63	0
+KRAS	retained	25	OR 1.078 (1.016-1.144)	0.0113	*	2	OR 1.088 (0.968-1.223)	0.147107	2
+LUC7L2	removed_in_publication	2	OR 0.601 (0.309-1.169)	0.126		0			0
+MPL	retained	22	OR 1.116 (1.040-1.198)	0.00199	**	2	OR 1.157 (1.007-1.329)	0.036214	4
+NF1	retained	93	OR 1.025 (0.998-1.053)	0.0619	.	20	OR 1.017 (0.989-1.045)	0.223	2
+NPM1	retained								0
+NRAS	retained	20	OR 1.052 (0.989-1.118)	0.101		2	OR 1.089 (0.969-1.224)	0.14412	1
+PDS5B	retained	14	OR 1.035 (0.964-1.110)	0.333		5	OR 1.051 (0.987-1.120)	0.112	0
+PDSS2	removed_in_publication	11	OR 1.019 (0.944-1.100)	0.626		5	OR 1.027 (0.970-1.086)	0.354	0
+PHF6	retained	14	OR 0.997 (0.934-1.065)	0.935		2	OR 1.173 (1.017-1.353)	0.02494	0
+PHIP	retained	27	OR 1.016 (0.968-1.067)	0.513		19	OR 1.096 (1.054-1.139)	2.56e-06	0
+PPM1D	retained	463	OR 1.111 (1.094-1.128)	<2e-16	***	114	OR 1.095 (1.078-1.113)	<2e-16	9
+PRPF40B	retained	87	OR 0.996 (0.970-1.023)	0.786		3	OR 1.056 (0.972-1.148)	0.189	0
+PRPF8	retained	37	OR 1.129 (1.066-1.195)	2.19e-05		25	OR 1.107 (1.068-1.146)	8.07e-09	1
+PTEN	removed_in_publication	25	OR 0.990 (0.943-1.040)	0.686		0			0
+PTPN11	retained	16	OR 0.969 (0.913-1.030)	0.303		2	OR 0.931 (0.835-1.039)	0.192	0
+RAD21	retained	22	OR 1.099 (1.027-1.175)	0.00506	**	11	OR 1.035 (0.995-1.077)	0.0815	0
+RUNX1	retained	12	OR 1.018 (0.946-1.095)	0.629		4	OR 1.035 (0.969-1.105)	0.294	0
+SETBP1	retained	2	OR 1.111 (0.881-1.400)	0.365		1	OR 1.155 (0.950-1.405)	0.14111	0
+SETD2	retained	7	OR 1.134 (0.992-1.295)	0.0596	.	10	OR 0.986 (0.950-1.024)	0.468	0
+SETDB1	retained	34	OR 0.964 (0.924-1.004)	0.0738	.	2	OR 0.901 (0.783-1.037)	0.13771	0
+SF1	removed_in_publication	27	OR 0.983 (0.938-1.030)	0.456		0			0
+SF3A1	removed_in_publication	22	OR 0.958 (0.910-1.009)	0.0971	.	3	OR 0.941 (0.866-1.023)	0.144	0
+SF3B1	retained	121	OR 1.193 (1.148-1.239)	<2e-16	***	49	OR 1.111 (1.083-1.140)	<2e-16	13
+SMC1A	retained	2	OR 0.897 (0.742-1.085)	0.254		0			0
+SMC3	retained	18	OR 1.020 (0.960-1.083)	0.516		3	OR 1.020 (0.949-1.095)	0.588	0
+SRCAP	added_after_publication								
+SRSF2	retained	215	OR 1.159 (1.130-1.190)	<2e-16	***	39	OR 1.120 (1.088-1.153)	8.97e-15	46
+STAG1	removed_in_publication	9	OR 0.987 (0.910-1.071)	0.748		1	OR 0.845 (0.622-1.149)	0.273	0
+STAG2	retained	24	OR 1.089 (1.023-1.159)	0.00643	**	6	OR 1.136 (1.052-1.227)	0.00096	0
+SUZ12	retained	14	OR 1.008 (0.943-1.078)	0.804		4	OR 1.040 (0.973-1.113)	0.235	0
+TET2	retained	2056	OR 1.099 (1.092-1.107)	<2e-16	***	456	OR 1.084 (1.076-1.093)	<2e-16	51
+TP53	retained	235	OR 1.092 (1.070-1.114)	<2e-16	***	51	OR 1.078 (1.054-1.102)	1.27e-11	10
+U2AF1	retained	42	OR 1.138 (1.077-1.202)	2.74e-06	***	54	OR 1.092 (1.068-1.117)	9.85e-15	8
+U2AF2	retained	1	OR 1.144 (0.795-1.647)	0.4596		0			1
+WT1	retained	12	OR 1.061 (0.978-1.151)	0.146		3	OR 0.938 (0.861-1.021)	0.129	0
+YLPM1	added_after_publication								
+ZBTB33	added_after_publication								
+ZRSR2	retained	13	OR 1.320 (1.126-1.549)	0.000491	***	9	OR 1.006 (0.967-1.047)	0.747	1

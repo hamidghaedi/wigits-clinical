@@ -24,3 +24,7 @@ reference/
 *.crai
 *.vcf.gz
 *.vcf.gz.tbi
+
+# Test fixtures are tiny cuts of the public nf-core test case (no patient data) and must be
+# versioned so the interface tests run on a fresh clone.
+!tests/fixtures/**

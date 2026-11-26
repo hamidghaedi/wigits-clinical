@@ -1,0 +1,311 @@
+{
+  "case": "KQ0004",
+  "blood_mean_depth": 127.7,
+  "our_calls": 178,
+  "filter_cascade": {
+    "all": 178,
+    "depth >= 20x": 178,
+    "alt reads >= 5": 77,
+    "VAF >= 2%": 77,
+    "homopolymer indels removed": 75,
+    "restricted to CHIP genes": 48,
+    "excluding inherited variants": 9
+  },
+  "survivors": [
+    {
+      "gene": "RUNX1",
+      "hgvs_protein": "p.Ser424=",
+      "consequence": "synonymous_variant",
+      "chrom": "chr21",
+      "pos": "34792306",
+      "ref": "C",
+      "alt": "G",
+      "blood_allele_fraction": "0.1870",
+      "blood_alt_reads": "15",
+      "blood_depth": "82",
+      "present_in_tumour": "yes",
+      "confidence_band": "confident",
+      "warnings": "mapping quality at this position is poor; base qualities of the supporting reads are low"
+    },
+    {
+      "gene": "CREBBP",
+      "hgvs_protein": "p.Thr1932Pro",
+      "consequence": "missense_variant",
+      "chrom": "chr16",
+      "pos": "3729253",
+      "ref": "T",
+      "alt": "G",
+      "blood_allele_fraction": "0.0980",
+      "blood_alt_reads": "12",
+      "blood_depth": "122",
+      "present_in_tumour": "yes",
+      "confidence_band": "confident",
+      "warnings": "mapping quality at this position is poor; base qualities of the supporting reads are low"
+    },
+    {
+      "gene": "SETBP1",
+      "hgvs_protein": "p.Leu1573Arg",
+      "consequence": "missense_variant",
+      "chrom": "chr18",
+      "pos": "45063625",
+      "ref": "T",
+      "alt": "G",
+      "blood_allele_fraction": "0.0720",
+      "blood_alt_reads": "6",
+      "blood_depth": "83",
+      "present_in_tumour": "yes",
+      "confidence_band": "confident",
+      "warnings": "base qualities of the supporting reads are low"
+    },
+    {
+      "gene": "CEBPA",
+      "hgvs_protein": "p.Phe33Cys",
+      "consequence": "missense_variant",
+      "chrom": "chr19",
+      "pos": "33302317",
+      "ref": "A",
+      "alt": "C",
+      "blood_allele_fraction": "0.0600",
+      "blood_alt_reads": "7",
+      "blood_depth": "117",
+      "present_in_tumour": "yes",
+      "confidence_band": "confident",
+      "warnings": "base qualities of the supporting reads are low"
+    },
+    {
+      "gene": "NF1",
+      "hgvs_protein": "p.Met1?",
+      "consequence": "start_lost",
+      "chrom": "chr17",
+      "pos": "31095311",
+      "ref": "T",
+      "alt": "G",
+      "blood_allele_fraction": "0.0580",
+      "blood_alt_reads": "7",
+      "blood_depth": "120",
+      "present_in_tumour": "yes",
+      "confidence_band": "confident",
+      "warnings": ""
+    },
+    {
+      "gene": "NF1",
+      "hgvs_protein": "p.Thr25Lys",
+      "consequence": "missense_variant",
+      "chrom": "chr17",
+      "pos": "31155996",
+      "ref": "C",
+      "alt": "A",
+      "blood_allele_fraction": "0.0540",
+      "blood_alt_reads": "7",
+      "blood_depth": "129",
+      "present_in_tumour": "yes",
+      "confidence_band": "confident",
+      "warnings": "base qualities of the supporting reads are low"
+    },
+    {
+      "gene": "ATM",
+      "hgvs_protein": "p.Ser421*",
+      "consequence": "stop_gained",
+      "chrom": "chr11",
+      "pos": "108250727",
+      "ref": "C",
+      "alt": "A",
+      "blood_allele_fraction": "0.0420",
+      "blood_alt_reads": "6",
+      "blood_depth": "143",
+      "present_in_tumour": "yes",
+      "confidence_band": "supported",
+      "warnings": "allele fraction 0.042 is below the 0.063 this depth resolves with 95 percent power; base qualities of the supporting reads are low"
+    },
+    {
+      "gene": "CREBBP",
+      "hgvs_protein": "p.Ala1944Gly",
+      "consequence": "missense_variant",
+      "chrom": "chr16",
+      "pos": "3729216",
+      "ref": "G",
+      "alt": "C",
+      "blood_allele_fraction": "0.1310",
+      "blood_alt_reads": "14",
+      "blood_depth": "106",
+      "present_in_tumour": "yes",
+      "confidence_band": "provisional",
+      "warnings": "supporting reads are imbalanced across strands; mapping quality at this position is poor; base qualities of the supporting reads are low"
+    },
+    {
+      "gene": "CREBBP",
+      "hgvs_protein": "p.Lys1495Asn",
+      "consequence": "missense_variant",
+      "chrom": "chr16",
+      "pos": "3736725",
+      "ref": "C",
+      "alt": "G",
+      "blood_allele_fraction": "0.0950",
+      "blood_alt_reads": "14",
+      "blood_depth": "150",
+      "present_in_tumour": "yes",
+      "confidence_band": "provisional",
+      "warnings": "supporting reads are imbalanced across strands; mapping quality at this position is poor; base qualities of the supporting reads are low"
+    }
+  ],
+  "survivors_present_in_tumour": 9,
+  "clone_candidates_in_panel_lost_to_the_five_read_rule": 26,
+  "reference": "Vlasschaert et al., Blood 2023;141(18):2214-2223, doi:10.1182/blood.2022018825",
+  "genes_removed_at_panel_restriction": [
+    "APC",
+    "BAP1",
+    "BARD1",
+    "BRCA1",
+    "BRCA2",
+    "BRIP1",
+    "CYP3A4",
+    "CYP3A5",
+    "MEN1",
+    "MLH1",
+    "PMS2",
+    "RB1",
+    "SDHA",
+    "SDHB",
+    "TSC2",
+    "VHL"
+  ],
+  "survivor_consequences": {
+    "synonymous_variant": 1,
+    "missense_variant": 6,
+    "start_lost": 1,
+    "stop_gained": 1
+  },
+  "supplement": {
+    "source": "BLOOD_BLD-2022-018825-mmc1.xlsx, supplied 2026-11-26",
+    "curated_genes": 74,
+    "genes_admitting_truncating": 47,
+    "genes_with_curated_missense": 46,
+    "artefact_variants_S2": 170,
+    "binomial_failures_S4": 12,
+    "validated_variants_S3": 182,
+    "genes_rejected_S6": null,
+    "panel_overlap": {
+      "shared": 42,
+      "ours_only": 8,
+      "theirs_only": 32,
+      "ours_only_genes": [
+        "ATM",
+        "CALR",
+        "CHEK2",
+        "DDX41",
+        "SH2B3",
+        "SRCAP",
+        "YLPM1",
+        "ZBTB33"
+      ]
+    },
+    "kq0004": {
+      "total_calls": 178,
+      "sequence_filters_only": 9,
+      "curated_definition_only": 4,
+      "both": 0,
+      "nearest_candidate": {
+        "gene": "NF1",
+        "protein": "p.Leu190*",
+        "vaf": 0.035,
+        "alt_reads": 4,
+        "present_in_tumour": "no",
+        "fails": "five-read rule by one read"
+      },
+      "low_quality_signature": {
+        "fires": true,
+        "panel_only": true,
+        "driver": "five ATM nonsense calls between 0.9% and 4.2%"
+      },
+      "superseded_by": "rerun_v2"
+    },
+    "candidate_genes_S1_S6": 74,
+    "on_mchip_list_S6": 55,
+    "not_on_mchip_list_S6": 19,
+    "note_S6": "S6 holds evidence for the same 74 genes as S1; reading the 19 flagged 0 as not retained is an inference from the sheet title"
+  },
+  "rerun_v2": {
+    "panel_genes": 82,
+    "hotspot_sites": 1475,
+    "calls": 119,
+    "off_panel_calls": 0,
+    "genes_with_a_call": 52,
+    "clone_candidates": 36,
+    "calls_by_gene_status": {
+      "retained": 74,
+      "candidate_not_retained": 33,
+      "not_curated": 12
+    },
+    "inside_retained_definition": 3,
+    "meet_all_sequence_criteria": 96,
+    "clone_candidates_meeting_all_sequence_criteria": 15,
+    "of_which_blood_only": 0,
+    "retained_under_published_criteria": 0,
+    "passes_under_74_gene_candidate_list": [
+      "KMT2D p.Leu804*"
+    ],
+    "review_table": {
+      "rows": 119,
+      "columns": 146,
+      "refseq_differs_from_curated_accession": {
+        "calls": 29,
+        "genes": 15
+      }
+    }
+  },
+  "current": {
+    "statement": "section 9 of chip_method_comparison.md",
+    "whitelist_source": "briansha/Annovar_Whitelist_Filter_WDL@8af2f67 (MIT)",
+    "genes": {
+      "curated": 77,
+      "retained": 58,
+      "removed_in_publication": 16,
+      "added_after_publication": 3,
+      "added_by_us": 5,
+      "panel": 82
+    },
+    "whitelist": {
+      "listed_substitutions": 1435,
+      "reference_residue_agrees": 1407,
+      "reference_residue_differs": 28,
+      "lof_genes": 47,
+      "splice_genes": 29,
+      "accessions_with_ensembl_transcript": 66,
+      "canonical_fallback": 11
+    },
+    "kq0004": {
+      "calls": 119,
+      "genes_with_a_call": 52,
+      "whitelisted": 5,
+      "inside_definition": 4,
+      "manual_review": 1,
+      "retained_min_ad5": 0,
+      "retained_min_ad3": 0,
+      "clone_candidates_meeting_sequence_criteria": {
+        "min_ad3": 21,
+        "min_ad5": 15,
+        "whitelisted_among_them": 1
+      },
+      "below_threshold_inside_definition": [
+        "BRAF p.Asp594Glu",
+        "TP53 p.Leu330Arg",
+        "TP53 p.Tyr220Ser",
+        "DNMT3A c.1429+1G>A"
+      ],
+      "dnmt3a_splice": {
+        "blood_alt_reads": 2,
+        "blood_depth": 160,
+        "blood_allele_fraction": 0.013,
+        "tumour_alt_reads": 0,
+        "tumour_depth": 117,
+        "cohort_validated": true
+      }
+    },
+    "withdrawn": [
+      "CREBBP p.Ala1944Gly as a known artefact",
+      "55 retained and 19 removed genes",
+      "ATM pattern as evidence for excluding ATM",
+      "NF1 p.Leu190* as nearest candidate"
+    ]
+  }
+}
