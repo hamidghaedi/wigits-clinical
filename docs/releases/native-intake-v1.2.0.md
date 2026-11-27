@@ -44,3 +44,7 @@ release. New operations use this common launcher. The separate phasing limitatio
 recorded in v1.1.5 remains; no scientific thresholds or models change here.
 
 Verification: [entry and portability tests](../../tests/results/optional-portability/README.md).
+200 unit tests (3 existing skips),54 feature tests and3 adapter tests pass.
+Real review-only execution through the launcher completes0:0 and retains63/63
+candidate rows exactly, without repeating inference. The underlying model/export
+implementation is unchanged from the full v1.1.5 runtime tests.

@@ -4,6 +4,8 @@ Reviewed 27 November 2026 against native-intake/v1.1.4 (`295c0f1`).
 The technical repairs below are now published in **native-intake/v1.1.5**;
 see [release and recovery commands](releases/native-intake-v1.1.5.md) and the
 [verification receipt](../tests/results/optional-portability/README.md).
+Current reusable operation uses the same launcher's explicit
+[v1.2.0 entry points](releases/native-intake-v1.2.0.md), retaining those fixes.
 Frontenac's successful executions are the reference deployment. Reuse their
 exact source, images, resources and selected options; put cluster differences
 in the shared site configuration. A successful source-site run does not establish

@@ -42,3 +42,23 @@ incomplete pVACseq proximal-phasing interface (gap `OP-NEO-PHASING`). Its missin
 anchor warnings and empty proximal-context tables are not cleared by a zero
 execution exit. No clinical/vaccine validity or universal portability is claimed.
 The actual Fir retry is prepared for the owner, not submitted by these tests.
+
+## v1.2.0 common-launcher extension
+
+The owner then requested explicit entry points in existing reusable scripts.
+Published tested source `7461da8` adds `--entry native|neo-predict|neo-review`
+to the existing launcher and generalises its internal optional Slurm head.
+No case-specific operator script is added. The prediction/export/model/review
+implementation files are byte-identical to v1.1.5.
+
+- Primary suite:200 tests,3 existing skips; exit0. Native default behavior,
+  optional entry dispatch, receipt separation, repeat-submission handling,
+  dependencies/walltime overrides and required review inputs are exercised.
+- Existing54 feature tests and3 adapter tests pass; shell/diff checks pass.
+- The existing launcher submitted real review-only head12516192 (COMPLETED0:0,
+  1m14) and child12516193 (COMPLETED0:0,24.9s). The trace contains only
+  `REVIEW_EXISTING_NEO:NEO_REVIEW`.63/63 candidate rows match all66 columns
+  exactly, with no repeated model inference/native/CH/export work.
+- Exact command, submission receipt, trace and full-row comparison are retained
+  in the same private evidence directory. Source/image/model/threshold bindings
+  and the separately recorded phasing limitation remain unchanged.
