@@ -184,6 +184,40 @@ class PrepareNativeTests(unittest.TestCase):
         state=json.loads((package/'case_manifest.json').read_text())
         self.assertIn(str(context/'clinical_context.json'),state['approved_context_sources'])
 
+    def test_narval_site_retains_canonical_roots_and_selected_branches(self):
+        self.config.update(site='narval',launcher='/synthetic/scripts/run_native_workflow.sh')
+        self.add_library('CASE_A','CASE_A-RNA','RUN_R','RNA','Primary','Tissue')
+        self.write_lab();self.write_config()
+        package=self.prepared(extra=['--blood-ch','--rna-neoantigens'])
+        env=(package/'site.env').read_text()
+        self.assertIn('conf/narval_paths.env',env)
+        self.assertIn(str(self.scratch/'analysis/WiGiTS/vTEST'),env)
+        manifest=json.loads((package/'case_manifest.json').read_text())
+        self.assertEqual(manifest['assay_mode'],'WGTS')
+        self.assertEqual(set(manifest['runnable_libraries']),{'normal','tumor','rna'})
+        self.assertEqual(manifest['options'],dict(blood_ch=True,rna_neoantigens=True))
+        paths=ROOT/'workflow/conf/narval_paths.env'
+        result=subprocess.run(['bash','-c',
+            'export WIGITS_WORKFLOW_DIR="$1" WIGITS_PROJECT_ROOT="$2" WIGITS_SCRATCH_ROOT="$3" WIGITS_RUN_ROOT="$3/analysis/WiGiTS/test"; '
+            'source "$1/conf/narval_paths.env"; printf "%s\\n" "$RUN_ROOT" "$CONTAINER_DIR" "$WIGITS_SITE_CONFIG"',
+            'test',str(ROOT/'workflow'),str(self.project),str(self.scratch)],text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(result.stdout.splitlines(),[str(self.scratch/'analysis/WiGiTS/test'),
+            str(self.project/'resources/containers'),str(ROOT/'workflow/conf/narval.config')])
+
+    def test_standalone_prefers_shared_site_config(self):
+        self.config['laboratory_sources']=[dict(glob=str(self.lab),phase='Phase_1')]
+        self.config['site']='narval'
+        scripts=self.project/'scripts';scripts.mkdir(parents=True)
+        config_dir=self.project/'config';config_dir.mkdir()
+        (config_dir/'native_site.json').write_text(json.dumps(self.config))
+        (config_dir/'native_fir.json').write_text('{}')
+        script=scripts/'prepare_native_manifest.py';shutil.copy2(ROOT/'workflow/prepare_native_manifest.py',script)
+        result=subprocess.run(['python3',str(script),'CASE_A','--json'],text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        package=Path(json.loads(result.stdout)['prepared'])
+        self.assertIn('conf/narval_paths.env',(package/'site.env').read_text())
+
     def test_standalone_command_takes_only_the_patient_id(self):
         self.config['laboratory_sources']=[dict(glob=str(self.lab),phase='Phase_1')]
         scripts=self.project/'scripts';scripts.mkdir(parents=True)

@@ -22,7 +22,7 @@ import shlex
 import sys
 import xml.etree.ElementTree as ET
 
-VERSION = '1.1.1'
+VERSION = '1.1.2'
 FIELDS = 'group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath'.split(',')
 PHASES = {'Phase_1', 'phase_1.5', 'Phase_2'}
 PHASE_ALIASES = {'Phase 1':'Phase_1','Phase 1.5':'phase_1.5','Phase 2':'Phase_2'}
@@ -373,7 +373,7 @@ def prepare(args):
     for key,cfgkey in [('WIGITS_SLURM_ACCOUNT','account'),('WIGITS_NEXTFLOW_MODULE','nextflow_module'),('WIGITS_APPTAINER_MODULE','apptainer_module')]:
         if config.get(cfgkey): values[key]=config[cfgkey]
     site=config.get('site','fir')
-    if site not in {'fir','frontenac'}:raise ValueError('Unknown configured site')
+    if site not in {'fir','frontenac','narval'}:raise ValueError('Unknown configured site')
     (out/'site.env').write_text('\n'.join('export '+k+'='+shlex.quote(str(v)) for k,v in values.items())+
                               '\nsource "$WIGITS_WORKFLOW_DIR/conf/'+site+'_paths.env"\n')
     save(out/'input_plan.json',dict(case_id=case,run_id=aid,run_directory=str(run_root/aid),
@@ -390,13 +390,19 @@ def prepare(args):
         library_ids={key:lab['sample_submitter_id'] for key,lab in declared_bound.items()},rna_status=rna_status)
 
 
+def default_site_config():
+    root=Path(__file__).resolve().parents[1]/'config'
+    shared=root/'native_site.json'
+    return shared if shared.is_file() else root/'native_fir.json'
+
+
 def parser():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('sample_id',nargs='?',help='Patient ID or full laboratory sample ID; original lab files are discovered automatically')
     p.add_argument('--lab-manifest',type=Path,action='append',help='Optional explicit original CSV override; normally scan laboratory_sources')
     p.add_argument('--case-id',help='Backward-compatible explicit patient selector')
     p.add_argument('--phase',choices=sorted(PHASES),help='Optional phase override where absent in the source configuration')
-    p.add_argument('--config',type=Path,default=Path(__file__).resolve().parents[1]/'config/native_fir.json',help='Shared site JSON, automatically found in the project config directory')
+    p.add_argument('--config',type=Path,default=default_site_config(),help='Shared site JSON, automatically found in the project config directory')
     p.add_argument('--analysis-id',help='Optional explicit identifier; default <case>-native-<date>-r1')
     for kind in ('tumour','normal','rna'):p.add_argument('--'+kind+'-sample')
     p.add_argument('--dna-only',action='store_true',help='Explicitly omit laboratory RNA libraries')

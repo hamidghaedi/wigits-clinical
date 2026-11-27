@@ -88,3 +88,20 @@ sidecars by their recorded case ID. Their values/provenance are preserved;
 conflicting contexts are not guessed. Original laboratory files still own
 biological identities. The generated case manifest and sidecars are retained
 with the actual execution package.
+
+## v1.1.2 — Narval site binding
+
+The canonical worker layout and original-source intake are shared with Narval.
+A shared `config/native_site.json` is preferred when present; the existing
+`config/native_fir.json` fallback preserves issued Fir installations. Narval
+selects `site: narval`, a site-specific profile identity and the same worker
+executor, task-local resource policies and release ceilings. Roots, account and
+module versions are configuration inputs; no scientific module changes.
+Target module/hardware/runtime verification remains pending until executed on
+Narval. Staging is not runtime validation. Existing Fir packages remain pinned.
+The generic owner guide is [NATIVE_EXECUTION.md](NATIVE_EXECUTION.md).
+
+Narval site validation:179 primary offline tests pass (3 existing skips),3
+adapter tests pass, shell syntax and `git diff --check` pass. These tests cover
+generated WGTS/CH/neo inputs and shared root bindings; they do not establish
+Narval module availability, scheduler execution or performance.
