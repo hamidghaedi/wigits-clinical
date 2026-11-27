@@ -33,6 +33,7 @@ def check(outdir):
               '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tTUMOUR\n')
 
     def row(pos, protein, alt='T', aa='S', gt='0/1', lps='7', support='4', transcript='ENST_SYNTHETIC'):
+        pos += 1000
         codon = 'Gcc/' + ('Acc' if alt == 'A' else 'Tcc')
         info = f'CSQ={alt}|missense_variant|{transcript}|SYNTHETIC|ENSG_SYNTHETIC|{protein}|A/{aa}|{codon}|1|protein_coding|' + 'A'*30 + '|'
         if lps:
@@ -52,7 +53,7 @@ def check(outdir):
     somatic = out/'somatic.vcf';somatic.write_text(header+anchor+cis)
     germline = out/'germline.vcf';germline.write_text(header+unknown+homozygous+other_group+other_transcript)
     neo_phasing.export_context(str(somatic),str(germline),str(source),'TUMOUR',
-        {('chr1','100','G','A'),('chr1','103','G','T')},adapted,out/'evidence.json')
+        {('chr1','1100','G','A'),('chr1','1103','G','T')},adapted,out/'evidence.json')
 
     def index(path):
         target = str(path)+'.gz'
@@ -64,16 +65,16 @@ def check(outdir):
     main = next(vcfpy.Reader.from_path(selected_gz))
     parser = ProximalVariant(context_gz,True,100)
     positions = sorted(r.POS for r, csq, alt in parser.extract(main,'A','ENST_SYNTHETIC'))
-    assert positions == [103,109], positions
+    assert positions == [1103,1109], positions
     converted, proximal = out/'converted.tsv', out/'proximal.tsv'
     VcfConverter(input_file=selected_gz,output_file=str(converted),sample_name='TUMOUR',
         proximal_variants_vcf=context_gz,proximal_variants_tsv=str(proximal),
         flanking_bases=100,pass_only=True).execute()
     rows = list(csv.DictReader(proximal.open(),delimiter='\t'))
     anchor_rows = [r for r in rows if r['main_somatic_variant'].startswith('1.')]
-    assert sorted(int(r['stop']) for r in anchor_rows) == [103,109], rows
-    assert {r['type'] for r in anchor_rows if r['stop']=='103'} == {'somatic'}
-    assert {r['type'] for r in anchor_rows if r['stop']=='109'} == {'germline'}
+    assert sorted(int(r['stop']) for r in anchor_rows) == [1103,1109], rows
+    assert {r['type'] for r in anchor_rows if r['stop']=='1103'} == {'somatic'}
+    assert {r['type'] for r in anchor_rows if r['stop']=='1109'} == {'germline'}
     fasta = out/'peptides.fasta'
     generate_protein_fasta.main([selected_gz,'10',str(fasta),'-s','TUMOUR','-p',context_gz,'--pass-only'])
     peptides = list(SeqIO.parse(str(fasta),'fasta'))
@@ -89,7 +90,7 @@ def check(outdir):
     unresolved.write_text(header+row(100,10,'A','T',lps='')+unknown)
     unresolved_out = out/'unresolved.vcf'
     neo_phasing.export_context(str(unresolved),None,str(unresolved),'TUMOUR',
-        {('chr1','100','G','A')},unresolved_out,out/'unresolved_evidence.json')
+        {('chr1','1100','G','A')},unresolved_out,out/'unresolved_evidence.json')
     assert ProximalVariant(index(unresolved_out),True,100).extract(main,'A','ENST_SYNTHETIC') == []
     result = dict(status='PASS',tool='pVACtools 5.4.0',accepted_positions=positions,
                   converter_rows=len(rows),mutant=mutant,wildtype=wildtype,
