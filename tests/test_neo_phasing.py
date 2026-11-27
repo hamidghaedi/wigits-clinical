@@ -77,6 +77,17 @@ class PhasingTests(unittest.TestCase):
         self.assertNotEqual(rows['100'][-1], rows['103'][-1])
         self.assertNotIn('HP', rows['106'][8].split(':'))
 
+    def test_native_sage_missing_gt_uses_measured_support_and_purple_genotype(self):
+        rows, evidence, _ = self.export(row(100),source=row(100,gt='./.'))
+        self.assertEqual(rows['100'][8:],['GT:AD:HP','0/1:10,9:SAGE_chr1_7'])
+        self.assertEqual(evidence['records'][0]['phase']['gt'],'./.')
+        self.assertEqual(evidence['records'][0]['phase']['ad'],[10,9])
+
+    def test_no_alt_reads_or_conflicting_source_gt_cannot_link(self):
+        for source in [row(100,gt='./.').replace('10,9','19,0'),row(100,gt='0/0')]:
+            rows, _, _ = self.export(row(100),source=source)
+            self.assertNotIn('HP', rows['100'][8].split(':'))
+
     def test_chromosomes_are_separate_namespaces_and_proximity_is_bounded(self):
         rows, _, _ = self.export(row(100)+row(103,chrom='chr2')+row(300))
         self.assertEqual(set(rows), {'100'})

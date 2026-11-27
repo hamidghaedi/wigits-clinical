@@ -36,6 +36,7 @@ def phase_fields(fields, values):
     info = ni.parse_info(fields[7])
     return dict(lps=ni.int_list(info.get('LPS'), default=[]) or [],
                 read_counts=ni.int_list(info.get('LPS_RC'), default=[]) or [],
+                ad=ni.int_list(values.get('AD'), default=[]) or [],
                 gt=values.get('GT', '.'), filter=fields[6])
 
 
@@ -131,8 +132,10 @@ def export_context(somatic, germline, phase_source, tumour, anchors, output, evi
                 status = 'DUPLICATE_PHASE_SOURCE'
             elif not phase:
                 status = 'NO_SOMATIC_PHASE_RECORD'
-            elif not heterozygous(phase['gt']):
+            elif not (heterozygous(phase['gt']) or phase['gt'] in ('.','./.','.|.')):
                 status = 'PHASE_SOURCE_GENOTYPE_UNRESOLVED'
+            elif len(phase['ad']) != 2 or phase['ad'][1] <= 0:
+                status = 'NO_TUMOUR_ALT_READ_SUPPORT'
             elif len(phase['lps']) != 1 or (fields[0], phase['lps'][0]) in ambiguous:
                 status = 'AMBIGUOUS_OR_ABSENT_LPS'
             elif len(phase['read_counts']) != 1 or phase['read_counts'][0] <= 0:

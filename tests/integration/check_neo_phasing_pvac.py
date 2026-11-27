@@ -30,6 +30,7 @@ def check(outdir):
               '##INFO=<ID=LPS_RC,Number=.,Type=Integer,Description="Phase support">\n'
               f'##INFO=<ID=CSQ,Number=.,Type=String,Description="Consequence annotations. Format: {csq}">\n'
               '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n'
+              '##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depth">\n'
               '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tTUMOUR\n')
 
     def row(pos, protein, alt='T', aa='S', gt='0/1', lps='7', support='4', transcript='ENST_SYNTHETIC'):
@@ -38,7 +39,7 @@ def check(outdir):
         info = f'CSQ={alt}|missense_variant|{transcript}|SYNTHETIC|ENSG_SYNTHETIC|{protein}|A/{aa}|{codon}|1|protein_coding|' + 'A'*30 + '|'
         if lps:
             info += f';LPS={lps};LPS_RC={support}'
-        return f'chr1\t{pos}\t.\tG\t{alt}\t50\tPASS\t{info}\tGT\t{gt}\n'
+        return f'chr1\t{pos}\t.\tG\t{alt}\t50\tPASS\t{info}\tGT:AD\t{gt}:20,10\n'
 
     anchor = row(100,10,'A','T')
     cis = row(103,11)
@@ -47,7 +48,7 @@ def check(outdir):
     other_group = row(112,14,lps='8')
     other_transcript = row(115,15,transcript='ENST_OTHER')
     source = out/'source.vcf'
-    source.write_text(header+anchor+cis+unknown+homozygous+other_group+other_transcript)
+    source.write_text(header+(anchor+cis+unknown+homozygous+other_group+other_transcript).replace('0/1:20,10','./.:20,10'))
     selected = out/'selected.vcf';selected.write_text(header+anchor+cis)
     adapted = out/'context.vcf'
     somatic = out/'somatic.vcf';somatic.write_text(header+anchor+cis)

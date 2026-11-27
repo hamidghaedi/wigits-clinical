@@ -90,11 +90,13 @@ selected VCF and its measured DNA/RNA/expression values are unchanged.
 Heterozygous phase comes only from exact-allele matches in the native **somatic**
 SAGE tumour namespace (`sage/somatic/*.sage.somatic.vcf.gz`), falling back explicitly
 to PURPLE somatic when the raw file is absent. One LPS with positive LPS_RC and
-matching tumour heterozygosity becomes an opaque, chromosome-scoped FORMAT/HP
+positive measured tumour alternate AD and PURPLE tumour heterozygosity becomes an opaque, chromosome-scoped FORMAT/HP
 token. Multiple/overlapping LPS, duplicate records and missing support stay
 unresolved. Unknown HP is omitted from that record's FORMAT, not encoded as
 HP='.' (pVACtools can compare two missing values as equal). Source HP is retained
-as SW_ORIGINAL_HP, not trusted across caller namespaces. No GT phasing, clean
+as SW_ORIGINAL_HP, not trusted across caller namespaces. Raw SAGE may carry GT=./.; its positive AD/LPS_RC supports phase while the
+PURPLE genotype is retained. A contradictory called source genotype is unresolved.
+No GT phasing, clean
 normal counts, long-range phase or RNA phase is inferred.
 
 Germline LPS identifiers belong to a separate call and **cannot** be joined by
