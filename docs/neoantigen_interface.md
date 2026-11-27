@@ -106,7 +106,9 @@ handling remains pVACtools' native genotype rule. A missing tumour column never
 uses a normal genotype as its substitute. PASS filters are retained. Nonselected
 somatic context is recorded in the evidence ledger but not exported: pVACtools
 classifies context absent from the main VCF as germline and would incorrectly
-alter WT peptides. No previously selected candidate is removed by this limitation.
+alter WT peptides. Distinct germline alleles at an anchor position are also
+recorded as unsupported context: pVACtools tests position rather than exact
+allele when assigning context origin. No selected candidate is removed.
 
 The adapter writes `<case>.phasing_evidence.json` with per-allele source/support,
 derived HP/status, omitted context and limitations; it is referenced in the
@@ -157,7 +159,9 @@ Allele-name normalisation (the join key across NEO, LILAC and pVACseq):
 | File | Content |
 |---|---|
 | `<case>.pvacseq_input.vcf.gz` | VEP-annotated somatic PASS variants with `AD/DP/AF`, `RAD/RDP/RAF`, `GX`, `TX` |
-| `<case>.proximal.vcf.gz` | §5 proximal variants |
+| `<case>.proximal.vcf` | §5 anchors/context before VEP and indexing |
+| `<case>.phasing_evidence.json` | Original phase/read/genotype evidence, derived HP, unresolved/omitted context |
+| `phasing_usage.json` (prediction directory) | Actual pVAC converter uptake, distinct from available source evidence |
 | `<case>.hla_alleles.txt` | de-duplicated `HLA-…` class I (and class II) allele list |
 | `<case>.interface_manifest.json` | source file paths + sha256, tool versions, record counts, rule version of this document |
 

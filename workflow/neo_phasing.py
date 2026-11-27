@@ -64,6 +64,7 @@ def export_context(somatic, germline, phase_source, tumour, anchors, output, evi
 
     context = {}
     omitted = []
+    anchor_positions = {(a[0], a[1]) for a in anchors}
     missing_tumour = 0
     for origin, path in [('somatic', somatic), ('germline', germline)]:
         if not path:
@@ -74,6 +75,13 @@ def export_context(somatic, germline, phase_source, tumour, anchors, output, evi
             allele = key(fields)
             if allele in context:
                 continue  # identical allele retains somatic anchor/context evidence
+            if origin == 'germline' and (fields[0], fields[1]) in anchor_positions:
+                # The pVAC converter tests main-VCF position, not exact allele,
+                # when labelling context origin. A different germline allele
+                # here would be incorrectly labelled somatic.
+                omitted.append(dict(allele=list(allele), source=str(path),
+                    status='AMBIGUOUS_SHARED_POSITION_CONTEXT_NOT_EXPORTED', original=phase_fields(fields, values)))
+                continue
             if origin == 'somatic' and allele not in anchors:
                 # pVACtools determines somatic/germline context by presence in
                 # the main selected VCF. Supplying a non-selected somatic allele

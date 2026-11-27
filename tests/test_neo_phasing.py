@@ -97,6 +97,14 @@ class PhasingTests(unittest.TestCase):
         self.assertEqual(set(rows),{'100'})
         self.assertEqual(evidence['omitted_context'][0]['status'],'NONSELECTED_SOMATIC_CONTEXT_NOT_EXPORTED')
 
+    def test_distinct_germline_allele_at_anchor_position_is_recorded_not_mislabelled(self):
+        germline=row(100,gt='1/1').replace('\tA\tT\t50','\tA\tG\t50')
+        rows, evidence, _ = self.export(row(100),germline)
+        self.assertEqual(rows['100'][4],'T')
+        self.assertEqual(len(evidence['records']),1)
+        self.assertEqual(evidence['omitted_context'][0]['status'],
+            'AMBIGUOUS_SHARED_POSITION_CONTEXT_NOT_EXPORTED')
+
     def test_duplicate_phase_source_is_unresolved(self):
         rows, evidence, _ = self.export(row(100), source=row(100)+row(100,'8'))
         self.assertNotIn('HP',rows['100'][8].split(':'))
