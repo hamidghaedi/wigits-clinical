@@ -36,7 +36,7 @@ corrected failure; do not change the frozen package or rerun completed work.
 For completed native/CH results with failed additional neo prediction, use
 the same launcher with `--entry neo-predict --run-dir ORIGINAL_RUN --workflow-dir
 PINNED_WORKFLOW`. `--entry neo-review --existing-predictions DIR` starts after
-model inference. See [entry-point commands](releases/native-intake-v1.2.0.md).
+model inference. See [entry-point commands](releases/native-intake-v1.3.0.md).
 Original packages/exports are retained and recovery results are separate.
 
 `case_manifest.json` is the generated input SSOT; its CSV/site/options files
@@ -100,3 +100,14 @@ bash "$mohcc/scripts/run_native_workflow.sh" \
 ```
 
 On Narval the maintained script is `run_native_workflow.sh` with the same options.
+
+## Corrected phased export from completed native results
+
+Use the same launcher with `--entry neo-prepare --run-dir ORIGINAL_RUN
+--workflow-dir PINNED_WORKFLOW` to build new derivative neo inputs. Once that
+entry completes, use `--entry neo-predict --existing-export NEW_EXPORT_DIRECTORY`
+with the same original run and pinned workflow. Export-only writes
+`entry_status.json` with prediction `NOT_RUN`; it does not declare model completion.
+No native or CH task is in either recovery graph. See the
+[phase interface](neoantigen_interface.md#5-phasing--sage-phase-sets--germline).
+Do not point an active attempt to new source or overwrite its exports.

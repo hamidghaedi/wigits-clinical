@@ -18,6 +18,21 @@ status=0
 NXF_SYNTAX_PARSER=v1 nextflow run "$HERE/optional_extensions.nf" -entry "${WIGITS_EXTENSIONS_ENTRY:-OPTIONAL_EXTENSIONS}" \
   -c "$site_config" -c "$HERE/conf/optional_extensions.config" --plan "$RUN_DIR/state/plan.json" --outdir "$RUN_DIR/results" \
   -work-dir "$RUN_DIR/work" -with-trace "$RUN_DIR/logs/trace.tsv" -resume "$@" || status=$?
+# Export-only is an entry result, not a claim that prediction is completed.
+if [[ "${WIGITS_EXTENSIONS_ENTRY:-}" == PREPARE_EXISTING_NEO ]]; then
+    python3 - "$RUN_DIR" <<'PY_ENTRY' || status=1
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+products = list((root/'results').glob('*/neo_export/status.json'))
+records = [json.loads(p.read_text()) for p in products]
+ok = len(records) == 1 and records[0]['status'] in {'PREPARED','NO_CANDIDATES','NOT_ASSESSED'}
+(root/'state/entry_status.json').write_text(json.dumps(dict(entry='neo-prepare',
+    status='COMPLETED' if ok else 'INCOMPLETE', prediction='NOT_RUN', products=records), indent=2)+'\n')
+sys.exit(not ok)
+PY_ENTRY
+    exit "$status"
+fi
 prior=()
 [[ -z "${WIGITS_EXTENSIONS_PRIOR_RESULTS:-}" ]] || prior=(--prior-results "$WIGITS_EXTENSIONS_PRIOR_RESULTS")
 python3 "$HERE/optional_extensions.py" status --plan "$RUN_DIR/state/plan.json" \

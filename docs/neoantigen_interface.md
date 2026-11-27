@@ -82,12 +82,43 @@ LILAC 2.0 does **not** report `DRB1/3/4/5`; DR typing needs an external typer (p
 
 ## 5. Phasing — SAGE phase sets (+ germline)
 
-Phase 1 uses `INFO/LPS` / `LPS_RC` from §1 plus `LPSA` from §2: variants sharing an `LPS` id within a sample
-are *cis* by read evidence. Output a pVACseq-compatible proximal-variant VCF containing (a) somatic variants
-sharing an `LPS` with the candidate and (b) `PASS` germline variants from
-`purple/<T>.purple.germline.vcf.gz` within the peptide window. `phasing_status` ∈
-`CIS_SAGE_PHASE_SET`, `GERMLINE_PROXIMAL`, `UNRESOLVED`, `NOT_APPLICABLE`. Phasing beyond fragment length
-(WhatsHap) is phase 2.
+The maintained adapter is `workflow/neo_phasing.py` (`sage-lps-to-pvac-hp-v1`).
+It copies all selected somatic anchors into the single-tumour proximal VCF,
+retaining original LPS/LPS_RC and genotypes. Neighbourhood is ±100bp. The main
+selected VCF and its measured DNA/RNA/expression values are unchanged.
+
+Heterozygous phase comes only from exact-allele matches in the native **somatic**
+SAGE tumour namespace (`sage/somatic/*.sage.somatic.vcf.gz`), falling back explicitly
+to PURPLE somatic when the raw file is absent. One LPS with positive LPS_RC and
+matching tumour heterozygosity becomes an opaque, chromosome-scoped FORMAT/HP
+token. Multiple/overlapping LPS, duplicate records and missing support stay
+unresolved. Unknown HP is omitted from that record's FORMAT, not encoded as
+HP='.' (pVACtools can compare two missing values as equal). Source HP is retained
+as SW_ORIGINAL_HP, not trusted across caller namespaces. No GT phasing, clean
+normal counts, long-range phase or RNA phase is inferred.
+
+Germline LPS identifiers belong to a separate call and **cannot** be joined by
+integer equality. A nearby PASS germline allele gets HP only if that exact allele
+has supported phase in the tumour somatic source. Actual tumour homozygous-alt
+handling remains pVACtools' native genotype rule. A missing tumour column never
+uses a normal genotype as its substitute. PASS filters are retained. Nonselected
+somatic context is recorded in the evidence ledger but not exported: pVACtools
+classifies context absent from the main VCF as germline and would incorrectly
+alter WT peptides. No previously selected candidate is removed by this limitation.
+
+The adapter writes `<case>.phasing_evidence.json` with per-allele source/support,
+derived HP/status, omitted context and limitations; it is referenced in the
+interface manifest. After prediction, `phasing_usage.json` records actual pVAC
+converter-table rows separately from available phase evidence. Neither technical
+completion nor an HP tag proves incorporation into every peptide.
+
+Pinned [SAGE 5.0.2 phasing documentation](https://github.com/hartwigmedical/hmftools/blob/sage-v5.0.2/sage/README.md#7-phasing)
+describes local read evidence. [pVACtools 5.4 proximal parser](https://github.com/griffithlab/pVACtools/blob/v5.4.0/pvactools/lib/proximal_variant.py)
+requires anchors and applies same-transcript **missense** proximal consequences;
+non-missense context remains an explicit library limitation. The
+[input converter](https://github.com/griffithlab/pVACtools/blob/v5.4.0/pvactools/lib/input_file_converter.py)
+determines somatic/germline context by presence in the main VCF. Synthetic
+container tests exercise these actual methods and the resulting protein sequence.
 
 ## 6. Native predictions to compare against — `neo/`
 

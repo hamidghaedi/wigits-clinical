@@ -7,8 +7,8 @@ writes, into an output directory:
   <case>.somatic.selected.vcf.gz   PASS somatic variants with a phase-1 coding effect, carrying
                                    tumour/normal DNA and tumour RNA depths in the FORMAT fields
                                    pVACseq reads (AD/DP/AF and RAD/RDP/RAF) plus GX/TX expression
-  <case>.proximal.vcf.gz           somatic variants sharing a SAGE phase set with a selected variant,
-                                   plus PASS germline variants within the peptide window
+  <case>.proximal.vcf.gz           selected anchors and nearby PASS somatic/germline context,
+                                   with supported tumour LPS translated to FORMAT/HP
   <case>.hla_alleles.txt           de-duplicated HLA alleles (class I by default)
   <case>.interface_manifest.json   source paths + sha256, record counts, tool versions, rule version
 
@@ -30,8 +30,9 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import neo_interface as ni  # noqa: E402
+import neo_phasing  # noqa: E402
 
-RULES_VERSION = "docs/neoantigen_interface.md@2026-11-23"
+RULES_VERSION = "docs/neoantigen_interface.md@2026-11-27"
 
 # Phase 1 carries point mutations and small indels; fusions stay with NEO/LINX (spec section 7).
 CODING_EFFECTS = {"MISSENSE", "NONSENSE_OR_FRAMESHIFT", "INFRAME_INDEL"}
@@ -189,50 +190,19 @@ class Exporter:
 
     # -- proximal variants -----------------------------------------------------------------
     def write_proximal(self, kept_keys, phase_sets):
-        """Single-sample VCF: pVACseq rejects a proximal VCF carrying more than one sample."""
+        """Include anchors and supported tumour phase without changing selected calls."""
         out_vcf = os.path.join(self.outdir, f"{self.case}.proximal.vcf")
-        positions = {(c, int(p)) for c, p, _, _ in kept_keys}
-        n_som = n_germ = 0
-        src = self.layout.files["purple_somatic_vcf"]
-        samples = ni.vcf_samples(src)
-        t_idx = samples.index(self.layout.tumour_dna)
-        with open(out_vcf, "w") as out:
-            with ni._open(src) as fh:
-                for line in fh:
-                    if line.startswith("##"):
-                        out.write(line)
-                        continue
-                    if line.startswith("#CHROM"):
-                        cols = line.rstrip("\n").split("\t")
-                        out.write("\t".join(cols[:9] + [self.layout.tumour_dna]) + "\n")
-                        continue
-                    f = line.rstrip("\n").split("\t")
-                    if f[6] != "PASS":
-                        continue
-                    key = (f[0], f[1], f[3], f[4])
-                    if key in kept_keys:
-                        continue
-                    info = ni.parse_info(f[7])
-                    lps = set(ni.int_list(info.get("LPS"), default=[]) or [])
-                    if lps & phase_sets:
-                        out.write("\t".join(f[:9] + [f[9 + t_idx]]) + "\n")
-                        n_som += 1
-            germ = self.layout.files.get("purple_germline_vcf")
-            if germ:
-                g_samples = ni.vcf_samples(germ)
-                g_idx = g_samples.index(self.layout.tumour_dna) if self.layout.tumour_dna in g_samples else 0
-                with ni._open(germ) as fh:
-                    for line in fh:
-                        if line.startswith("#"):
-                            continue
-                        f = line.rstrip("\n").split("\t")
-                        if f[6] != "PASS":
-                            continue
-                        pos = int(f[1])
-                        if any(f[0] == c and abs(pos - p) <= PEPTIDE_WINDOW_BP for c, p in positions):
-                            out.write("\t".join(f[:9] + [f[9 + g_idx]]) + "\n")
-                            n_germ += 1
-        self.counts.update({"proximal_somatic": n_som, "proximal_germline": n_germ})
+        self.phasing_evidence = os.path.join(self.outdir, f"{self.case}.phasing_evidence.json")
+        somatic = self.layout.files["purple_somatic_vcf"]
+        counts = neo_phasing.export_context(
+            somatic, self.layout.files.get("purple_germline_vcf"),
+            self.layout.files.get("sage_somatic_vcf") or somatic,
+            self.layout.tumour_dna, kept_keys, out_vcf, self.phasing_evidence,
+            PEPTIDE_WINDOW_BP)
+        self.counts.update({"proximal_somatic": counts.get("proximal_somatic", 0),
+                            "proximal_germline": counts.get("proximal_germline", 0),
+                            "proximal_anchors": counts.get("anchors", 0),
+                            "phase_supported_records": counts.get("SUPPORTED_SOMATIC_LPS", 0)})
         return out_vcf
 
     # -- alleles ---------------------------------------------------------------------------
@@ -292,7 +262,8 @@ class Exporter:
         vcf, kept, phase_sets = self.write_vcf()
         prox = self.write_proximal(kept, phase_sets)
         allele_file, alleles, qc_status = self.write_alleles()
-        outputs = {"somatic_selected_vcf": vcf, "proximal_vcf": prox, "hla_alleles": allele_file}
+        outputs = {"somatic_selected_vcf": vcf, "proximal_vcf": prox, "hla_alleles": allele_file,
+                   "phasing_evidence": self.phasing_evidence}
         manifest_path, manifest = self.write_manifest(outputs, alleles, qc_status)
         return manifest_path, manifest
 

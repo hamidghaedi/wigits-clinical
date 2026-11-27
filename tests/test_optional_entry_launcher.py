@@ -49,7 +49,7 @@ class OptionalEntryLauncherTests(unittest.TestCase):
         self.assertIn('--time=1-00:00:00',args)
         self.assertIsNone(capture['dependency'])
         self.assertEqual((self.run/'state/head_job.txt').read_text(),'777\n')
-        recovery=self.run/'extensions/recovery/native-intake-v1.2.0/neo-predict/state'
+        recovery=self.run/'extensions/recovery/native-intake-v1.3.0/neo-predict/state'
         self.assertEqual((recovery/'head_job.txt').read_text(),'12345\n')
         self.assertEqual((recovery/'entry.txt').read_text(),'neo-predict\n')
 
@@ -65,10 +65,28 @@ class OptionalEntryLauncherTests(unittest.TestCase):
         result=self.launch('neo-review',['--existing-predictions',str(predictions)])
         self.assertEqual(result.returncode,0,result.stderr)
         args=json.loads(self.capture.read_text())['args']
-        self.assertEqual(args[-3:],[str(self.run),'neo-review',str(predictions)])
+        self.assertEqual(args[-4:],[str(self.run),'neo-review',str(predictions),''])
 
     def test_review_without_predictions_never_submits(self):
         result=self.launch('neo-review')
+        self.assertNotEqual(result.returncode,0)
+        self.assertFalse(self.capture.exists())
+
+    def test_prepare_entry_is_separate_and_preserves_original_head(self):
+        result = self.launch('neo-prepare')
+        self.assertEqual(result.returncode,0,result.stderr)
+        args=json.loads(self.capture.read_text())['args']
+        self.assertEqual(args[-4:],[str(self.run),'neo-prepare','',''])
+        self.assertEqual((self.run/'state/head_job.txt').read_text(),'777\n')
+
+    def test_prediction_can_select_a_new_prepared_export(self):
+        prepared=self.root/'prepared';prepared.mkdir()
+        result=self.launch(extra=['--existing-export',str(prepared)])
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(json.loads(self.capture.read_text())['args'][-1],str(prepared))
+
+    def test_prepare_cannot_select_an_existing_export(self):
+        result=self.launch('neo-prepare',['--existing-export',str(self.root)])
         self.assertNotEqual(result.returncode,0)
         self.assertFalse(self.capture.exists())
 

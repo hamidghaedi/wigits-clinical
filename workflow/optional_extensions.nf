@@ -140,3 +140,16 @@ workflow PREDICT_EXISTING_NEO {
     if (taskMeta.status != 'PREPARED') error 'Supply a successfully prepared export'
     NEO_PREDICT(Channel.of(tuple(meta, prepared, taskMeta.resources, planFile)))
 }
+
+// Rebuild derivative export from completed native small products only. Does
+// not invoke BLOOD_CH, NEO_PREDICT or any native process.
+workflow PREPARE_EXISTING_NEO {
+    if (!params.plan || !params.outdir || !params.case_id)
+        error 'Supply --plan, --outdir and --case_id'
+    def planFile = file(params.plan, checkIfExists: true)
+    def plan = new groovy.json.JsonSlurper().parse(planFile.toFile())
+    def matches = plan.cases.findAll { it.case_id == params.case_id }
+    if (matches.size() != 1) error 'Select exactly one configured case'
+    if (matches[0].rna_neoantigens.status != 'READY') error 'RNA neoantigens are not ready in the bound plan'
+    NEO_PREPARE(Channel.of(tuple(matches[0], planFile)))
+}

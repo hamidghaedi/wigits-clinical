@@ -9,6 +9,7 @@ import subprocess
 import sys
 
 from optional_extensions import resource_allowance, timestamp, write_json
+from neo_phasing import summarise_usage
 
 HERE = Path(__file__).resolve().parent
 
@@ -123,6 +124,9 @@ def neo_predict(case, resources, out, threads, commands, prepared):
     commands.container("pvactools_image", "pvacseq", "coverage_filter", binding, covered, *coverage)
     commands.container("pvactools_image", "pvacseq", "transcript_support_level_filter", covered, supported)
     commands.container("pvactools_image", "pvacseq", "top_score_filter", supported, top)
+    phase_evidence = prepared / (sample + ".phasing_evidence.json")
+    if phase_evidence.is_file():
+        summarise_usage(prediction_dir,phase_evidence,out / "phasing_usage.json")
     write_json(out / "prediction_complete.json", dict(case_id=sample, completed_at=timestamp()))
     return neo_review(case, resources, out, threads, commands, prepared, out)
 

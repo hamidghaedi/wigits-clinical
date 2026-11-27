@@ -171,6 +171,7 @@ class CaseLayout:
             "purple_purity_tsv": one("purple/*.purple.purity.tsv"),
             "purple_qc": one("purple/*.purple.qc", required=False),
             "sage_append_vcf": append,
+            "sage_somatic_vcf": one("sage/somatic/*.sage.somatic.vcf.gz", required=False),
             "lilac_tsv": one("lilac/*.lilac.tsv", required=False),
             "lilac_qc_tsv": one("lilac/*.lilac.qc.tsv", required=False),
             "isofox_gene_tsv": one("isofox/*.isf.gene_data.tsv", required=False),

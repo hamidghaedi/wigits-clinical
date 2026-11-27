@@ -62,7 +62,7 @@ If native analysis and CH completed and only additional neo prediction failed,
 use the same launcher with `--entry neo-predict --run-dir ORIGINAL_RUN
 --workflow-dir PINNED_WORKFLOW`. It reuses the completed export. If predictions
 already completed, `--entry neo-review --existing-predictions DIR` reuses those
-too. See [entry-point commands](releases/native-intake-v1.2.0.md); neither entry
+too. See [entry-point commands](releases/native-intake-v1.3.0.md); neither entry
 starts native/CH analysis or export generation.
 
 ## Laboratory QC
@@ -136,3 +136,14 @@ bash "$mohcc/scripts/run_native_fir.sh" \
 ```
 
 On Narval the maintained script is `run_native_workflow.sh` with the same options.
+
+## Corrected phased export from completed native results
+
+Use the same launcher with `--entry neo-prepare --run-dir ORIGINAL_RUN
+--workflow-dir PINNED_WORKFLOW` to build new derivative neo inputs. Once that
+entry completes, use `--entry neo-predict --existing-export NEW_EXPORT_DIRECTORY`
+with the same original run and pinned workflow. Export-only writes
+`entry_status.json` with prediction `NOT_RUN`; it does not declare model completion.
+No native or CH task is in either recovery graph. See the
+[phase interface](neoantigen_interface.md#5-phasing--sage-phase-sets--germline).
+Do not point an active attempt to new source or overwrite its exports.

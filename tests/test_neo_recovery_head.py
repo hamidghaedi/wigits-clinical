@@ -58,7 +58,7 @@ Path(os.environ['TEST_RECORD']).write_text(json.dumps({'args':sys.argv[1:],
         self.assertEqual(invocation['entry'], 'PREDICT_EXISTING_NEO')
         self.assertEqual(invocation['prior'], str(run/'extensions/results'))
         self.assertIsNone(invocation['dependency'])
-        self.assertEqual(invocation['args'], [str(config),str(run/'extensions/recovery/native-intake-v1.2.0/neo-predict'),
+        self.assertEqual(invocation['args'], [str(config),str(run/'extensions/recovery/native-intake-v1.3.0/neo-predict'),
                          '--case_id','SYNTHETIC','--existing_export',str(run/'extensions/results/SYNTHETIC/neo_export')])
 
     def test_head_cannot_start_when_native_did_not_complete(self):
@@ -67,13 +67,22 @@ Path(os.environ['TEST_RECORD']).write_text(json.dumps({'args':sys.argv[1:],
         self.assertIn('Native completion is required', result.stderr)
         self.assertFalse(record.exists())
 
+    def test_prepare_selects_export_only_without_existing_export(self):
+        result, record, run, config = self.run_head('COMPLETED','neo-prepare')
+        self.assertEqual(result.returncode,0,result.stderr)
+        invocation=json.loads(record.read_text())
+        self.assertEqual(invocation['entry'],'PREPARE_EXISTING_NEO')
+        self.assertNotIn('--existing_export',invocation['args'])
+        self.assertEqual(invocation['args'],[str(config),
+            str(run/'extensions/recovery/native-intake-v1.3.0/neo-prepare'),'--case_id','SYNTHETIC'])
+
     def test_review_entry_passes_existing_predictions_without_prediction(self):
         result, record, run, config = self.run_head('COMPLETED', 'neo-review')
         self.assertEqual(result.returncode, 0, result.stderr)
         invocation = json.loads(record.read_text())
         self.assertEqual(invocation['entry'], 'REVIEW_EXISTING_NEO')
         self.assertIn('--existing_predictions', invocation['args'])
-        self.assertEqual(invocation['args'][1],str(run/'extensions/recovery/native-intake-v1.2.0/neo-review'))
+        self.assertEqual(invocation['args'][1],str(run/'extensions/recovery/native-intake-v1.3.0/neo-review'))
 
 
 if __name__ == '__main__':

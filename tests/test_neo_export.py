@@ -75,11 +75,12 @@ def test_coding_filter_is_narrower_than_all_pass():
     assert all_pass["counts"]["selected"] == all_pass["counts"]["somatic_pass"]
 
 
-def test_proximal_vcf_excludes_the_selected_variants(exported):
+def test_proximal_vcf_contains_every_selected_anchor(exported):
     out, manifest = exported
     sel = {tuple(l.split("\t")[:2]) for l in open(manifest["outputs"]["somatic_selected_vcf"]) if not l.startswith("#")}
     prox = {tuple(l.split("\t")[:2]) for l in open(manifest["outputs"]["proximal_vcf"]) if not l.startswith("#")}
-    assert not (sel & prox)
+    assert sel <= prox
+    assert manifest["counts"]["proximal_anchors"] == manifest["counts"]["selected"]
 
 
 def test_hla_alleles_file_is_pvacseq_ready(exported):
