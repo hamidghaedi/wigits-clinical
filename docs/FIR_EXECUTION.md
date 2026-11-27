@@ -2,7 +2,7 @@
 
 For a new installation, use the [deployment requirements](DEPLOYMENT_REQUIREMENTS.md)
 once to record host, container and selected-feature readiness. The current Fir
-native/CH successes and unresolved additional neo failures are distinguished there.
+native/CH successes, repaired neo execution and remaining phasing limitation are distinguished there.
 
 Use the same tools for every patient. The preparer scans the **original lab
 manifest files** configured for this project and finds the tumour, matched
@@ -57,6 +57,11 @@ Native results are in `results/<patient_id>/`; optional CH/neo outputs are in
 `extensions/results/<patient_id>/`. After correcting a failed job, repeat the
 same submission command with `--resume`. A different analysis needs a new
 `--analysis-id`, not edits inside an existing execution.
+
+If native analysis and CH completed and only additional neo prediction failed,
+use the [prediction-only recovery](releases/native-intake-v1.1.5.md) from the
+new pinned release. It reuses the completed export and preserves the original
+attempt; it does not start the full native/CH graph again.
 
 ## Laboratory QC
 

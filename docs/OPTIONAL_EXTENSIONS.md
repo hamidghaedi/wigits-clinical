@@ -158,7 +158,10 @@ reference evidence. Both inspected Fir native WGTS analyses and blood CH
 extensions completed, but additional RNA/pVACseq prediction failed: one proximal
 VCF had non-contiguous chromosome blocks, and the other encountered a NumPy
 `libflexiblas.so.3` import error. Full optional-neo portability is therefore
-unresolved. See [deployment requirements and known issues](DEPLOYMENT_REQUIREMENTS.md).
+unresolved at that checkpoint. The [v1.1.5 fix](releases/native-intake-v1.1.5.md)
+now passes both technical regressions and real prediction/review replays;
+Fir's owner-run recovery remains separate. The earlier proximal-phasing
+limitation is recorded explicitly. See [deployment requirements and known issues](DEPLOYMENT_REQUIREMENTS.md).
 The following paragraph records the earlier integration checkpoint.
 
 Offline unit/feature results and the compute-node CLI inspection are recorded in

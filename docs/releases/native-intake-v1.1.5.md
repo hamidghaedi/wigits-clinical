@@ -54,3 +54,15 @@ status files are preserved rather than overwritten.
 
 Verification receipts are recorded in
 [`tests/results/optional-portability/README.md`](../../tests/results/optional-portability/README.md).
+
+## Separate pre-existing scientific limitation
+
+The nonempty replay also exposes an incomplete proximal-phasing interface:
+selected somatic anchors are excluded from the proximal file, and native LPS
+has not been adapted to pVACseq's phased-context input. Its proximal-context
+tables remain empty; the earlier successful reference emitted the same missing-
+anchor warning. The current tool also skips non-missense proximal variants.
+This release repairs execution, not that separate interface. Technical completion
+is not validation of phased peptide sequences or clinical/vaccine suitability.
+See gap `OP-NEO-PHASING`; no phase or biological assessment is fabricated, and
+native NEO outputs/interpretations are preserved independently.

@@ -1,6 +1,9 @@
 # Deploying the native workflow on another cluster
 
 Reviewed 27 November 2026 against native-intake/v1.1.4 (`295c0f1`).
+The technical repairs below are now published in **native-intake/v1.1.5**;
+see [release and recovery commands](releases/native-intake-v1.1.5.md) and the
+[verification receipt](../tests/results/optional-portability/README.md).
 Frontenac's successful executions are the reference deployment. Reuse their
 exact source, images, resources and selected options; put cluster differences
 in the shared site configuration. A successful source-site run does not establish
@@ -39,8 +42,8 @@ alignment nor completed metrics need repeating.
 | Observation on Fir | Category and current disposition |
 |---|---|
 | QC dispatcher could not import `yaml` | Host Python dependency/binding. Corrected interpreter configuration; both missed notifications replayed successfully. |
-| Additional pVACseq prediction reports NumPy1.24.2 failing to load `libflexiblas.so.3` with Python3.11 at `/usr/local/bin/python` | Host user-site contamination is observed: the full Fir traceback imports pandas from `/home/ghaedi/.local/lib/python3.11/site-packages/`. The source image imports its own NumPy1.26.4/OpenBLAS successfully on Frontenac. Disable user-site imports explicitly inside the container and verify on Fir; no host FlexiBLAS module installation is indicated by this evidence. |
-| Additional neo prediction fails tabix with `Chromosome blocks not continuous` on the proximal VEP VCF | Adapter data-ordering defect, not an installation prerequisite. The current `neo_predict` annotates then compresses/indexes without explicitly sorting. Correct the maintained implementation with a regression test that preserves records; do not use hand-edited outputs as the reusable fix. |
+| Additional pVACseq prediction reports NumPy1.24.2 failing to load `libflexiblas.so.3` with Python3.11 at `/usr/local/bin/python` | Host user-site contamination is observed: the full Fir traceback imports pandas from `/home/ghaedi/.local/lib/python3.11/site-packages/`. Repaired in v1.1.5 with explicit container Python isolation. Real poisoned-user-site/PYTHONPATH probes pass; no host numerical-library installation is required by the repair. Fir's own recovery remains owner-run. |
+| Additional neo prediction fails tabix with `Chromosome blocks not continuous` on the proximal VEP VCF | Adapter data-ordering defect, not an installation prerequisite. Repaired in v1.1.5 by sorting task-owned VEP output before compression/indexing, including recovery from existing exports. Real replay retains all66 selected and4 proximal input records; no hand-edited production output is used. |
 
 The two inspected Fir cases completed native WGTS (48/48 tasks each), including
 ORANGE and native NEO, and completed blood CH. Their additional RNA/pVACseq
@@ -72,7 +75,11 @@ records and an existing host Python user site. `--cleanenv` clears ordinary
 environment inheritance but does not disable Python's user-site lookup in a
 mounted home directory. Repairs must cover these conditions without dropping
 variants, changing scientific thresholds or reinstalling host numerical libraries.
-No source repair, Fir retry or production output change is claimed here.
+That was the diagnosis checkpoint. The v1.1.5 verification now demonstrates
+both repairs and a complete replay of the affected case's optional work on
+Frontenac. No Fir retry or original production output change is claimed.
+The separate pVACseq proximal-phasing interface remains incomplete (gap
+`OP-NEO-PHASING`); technical completion does not validate phased peptide sequences.
 
 ## Containerising the remaining software: proposed next increment
 
