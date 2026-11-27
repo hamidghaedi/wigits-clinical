@@ -39,7 +39,7 @@ alignment nor completed metrics need repeating.
 | Observation on Fir | Category and current disposition |
 |---|---|
 | QC dispatcher could not import `yaml` | Host Python dependency/binding. Corrected interpreter configuration; both missed notifications replayed successfully. |
-| Additional pVACseq prediction reports NumPy1.24.2 failing to load `libflexiblas.so.3` with Python3.11 at `/usr/local/bin/python` | Unresolved container/runtime isolation issue. FlexiBLAS is a compiled BLAS/LAPACK wrapper library. Determine whether the pinned image is incomplete or imports mounted/injected packages before choosing a repair. No host FlexiBLAS module requirement has been established. |
+| Additional pVACseq prediction reports NumPy1.24.2 failing to load `libflexiblas.so.3` with Python3.11 at `/usr/local/bin/python` | Host user-site contamination is observed: the full Fir traceback imports pandas from `/home/ghaedi/.local/lib/python3.11/site-packages/`. The source image imports its own NumPy1.26.4/OpenBLAS successfully on Frontenac. Disable user-site imports explicitly inside the container and verify on Fir; no host FlexiBLAS module installation is indicated by this evidence. |
 | Additional neo prediction fails tabix with `Chromosome blocks not continuous` on the proximal VEP VCF | Adapter data-ordering defect, not an installation prerequisite. The current `neo_predict` annotates then compresses/indexes without explicitly sorting. Correct the maintained implementation with a regression test that preserves records; do not use hand-edited outputs as the reusable fix. |
 
 The two inspected Fir cases completed native WGTS (48/48 tasks each), including
@@ -48,6 +48,31 @@ prediction failed at the two different points above. Earlier Frontenac extension
 tests, including the 69-row comparison, passed on their tested inputs/environment.
 That evidence is retained; it does not resolve the later target/input failures.
 Raw case logs remain in the private execution records, outside Git.
+
+### Why the successful reference missed these failures
+
+The Frontenac reference proximal VCF contained **zero records**. The failing
+Fir export contains **three somatic records followed by one germline record**;
+its chromosome blocks are `chr3, chr6, chr10, chr6`. The exporter source is
+byte-identical across these executions. Appending separately ordered call sets
+does not make a combined ordered VCF. The corresponding VEP output retains
+the problem. The other inspected Fir case also has zero proximal records and
+passes indexing before encountering the separate Python import failure.
+
+Compute probe12516094 on Frontenac completed0:0 in4s: tabix rejected a copy of
+the failing VCF (exit1), then indexed a sorted copy (exit0). All four complete
+record lines, including sample values, and the header were preserved. The same
+probe imported the source pVACtools image's NumPy1.26.4 successfully, using its
+bundled OpenBLAS libraries. The original attempt12516093 stopped before container
+execution because the cluster module setup was sourced under `set -u`; the
+corrected probe temporarily relaxed nounset only for module initialization.
+
+This identifies two missing test conditions: nonempty mixed-origin proximal
+records and an existing host Python user site. `--cleanenv` clears ordinary
+environment inheritance but does not disable Python's user-site lookup in a
+mounted home directory. Repairs must cover these conditions without dropping
+variants, changing scientific thresholds or reinstalling host numerical libraries.
+No source repair, Fir retry or production output change is claimed here.
 
 ## Containerising the remaining software: proposed next increment
 
@@ -60,11 +85,10 @@ unsorted-VCF defect.
 
 The practical next increment is to package remaining Python helpers with their
 dependencies (including PyYAML), pin those images and build recipes, and make
-container environment isolation explicit. First reproduce the pVACseq import
-failure with the same image on Frontenac and Fir, recording interpreter/package
-origins and library resolution. Preserve the passing image if the problem is
-external contamination; rebuild a versioned image only if its dependency closure
-is incomplete. Keep predictor models/cache pinned outside images where needed.
+container environment isolation explicit. The diagnosis above now supports
+preserving the existing pVACtools image and excluding host user-site imports.
+Confirm that repair on Fir using the image's own packages before restarting
+prediction. Keep predictor models/cache pinned outside images where needed.
 
 Test the resulting bundle once on a compute node at each site with small native
 and selected-extension inputs. Record exact source/image/resource bindings and
