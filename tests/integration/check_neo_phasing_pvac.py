@@ -25,7 +25,7 @@ def check(outdir):
     out = Path(outdir).resolve()
     out.mkdir(parents=True, exist_ok=True)
     csq = 'Allele|Consequence|Feature|SYMBOL|Gene|Protein_position|Amino_acids|Codons|TSL|BIOTYPE|WildtypeProtein|FrameshiftSequence'
-    header = ('##fileformat=VCFv4.2\n##reference=GRCh38\n##contig=<ID=chr1,length=1000>\n'
+    header = ('##fileformat=VCFv4.2\n##reference=GRCh38\n##contig=<ID=chr1,length=10000>\n'
               '##INFO=<ID=LPS,Number=.,Type=Integer,Description="Local phase set">\n'
               '##INFO=<ID=LPS_RC,Number=.,Type=Integer,Description="Phase support">\n'
               f'##INFO=<ID=CSQ,Number=.,Type=String,Description="Consequence annotations. Format: {csq}">\n'
