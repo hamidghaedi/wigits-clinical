@@ -2,7 +2,8 @@
 
 27 November 2026. Adds a derivative SAGE-LPS adapter and an export-only entry to
 the existing launcher. Main candidate selection, measured DNA/RNA/expression,
-prediction models, thresholds, native NEO and CH are unchanged. Old packages and
+prediction models, thresholds, native NEO and CH are unchanged. Narval retains the same launcher under its `run_native_workflow.sh` alias.
+Old packages and
 running jobs retain their source; this release does not update KQ0061's run.
 
 All selected somatic anchors appear in proximal context. Only unambiguous,
@@ -30,13 +31,14 @@ bash "$launcher" --entry neo-predict --run-dir "$run" --workflow-dir "$workflow"
 
 `native` and `neo-review` retain their previous meanings. `--existing-export`
 also works for review, while prediction without that flag still selects the
-original export explicitly. Optional entries write isolated versioned attempt
+original export explicitly. `--dependency afterok:JOB_ID` can queue a prediction/review entry against a
+future output path; the path must exist when its prerequisite completes.
+Optional entries write isolated versioned attempt
 directories, default24h, support native Slurm `--dependency` and configurable
 `--controller-time`, and never invoke native alignment/calling or CH. Repeating
 an ended attempt requires `--resume`. Export-only status means prepared inputs,
 not completed prediction. Reusing old prediction scores after changing peptide
 context is scientifically invalid; predict the new sequences first.
 
-Runtime validation is recorded in `tests/results/neo-phasing/README.md` when
-complete. The source release must not be interpreted as scientific sign-out or
+Runtime validation is recorded in [the phasing test receipt](../../tests/results/neo-phasing/README.md). The source release must not be interpreted as scientific sign-out or
 as support for pVACtools' unsupported non-missense/ambiguous proximal contexts.
