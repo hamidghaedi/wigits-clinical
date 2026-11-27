@@ -71,7 +71,7 @@ WIGITS_EXTENSIONS_ENTRY=REVIEW_EXISTING_NEO \
 ## Execute or resume independently
 
 For a failed prediction with completed native/CH/export products, use the
-[v1.1.5 prediction-only recovery](releases/native-intake-v1.1.5.md). It preserves
+[common launcher's explicit entry points](releases/native-intake-v1.2.0.md). It preserves
 the original attempt and cannot call CH or native analysis. The ordinary entry
 below still runs whichever options the original package selects.
 

@@ -106,12 +106,13 @@ uses the exact versioned local checkout instead; record its SHA explicitly.
 
 ## Reusable native-intake component
 
-`native-intake/v1.1.5` supplies the sample-independent laboratory manifest
+`native-intake/v1.2.0` supplies the sample-independent laboratory manifest
 preparer, operator guide and owner-run QC enrollment on the v0.3.0 native base.
 The maintained source is `codex/reusable-native-intake`; main promotion still
 follows the normal PR policy. Issued tool packages pin this component tag and
 its exact commit, not a moving branch. No new scientific workflow or per-case
 implementation is introduced. The wrapper's native tool/reference/resource
 bindings remain those in v0.3.0. See [manifest preparation](NATIVE_MANIFEST_PREPARATION.md).
-The [v1.1.5 fix](releases/native-intake-v1.1.5.md) adds optional-prediction recovery
-without invoking native analysis or blood CH; previous executions remain pinned.
+The [v1.2.0 launcher](releases/native-intake-v1.2.0.md) selects native, prediction
+or review entry points, retaining the [v1.1.5 fixes](releases/native-intake-v1.1.5.md).
+Previous executions remain pinned.

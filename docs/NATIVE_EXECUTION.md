@@ -34,8 +34,10 @@ Check with `squeue -u "$USER"`. Use the same command with `--resume` after a
 corrected failure; do not change the frozen package or rerun completed work.
 
 For completed native/CH results with failed additional neo prediction, use
-[prediction-only recovery](releases/native-intake-v1.1.5.md) from the repaired
-release, retaining the original package/export and separate recovery results.
+the same launcher with `--entry neo-predict --run-dir ORIGINAL_RUN --workflow-dir
+PINNED_WORKFLOW`. `--entry neo-review --existing-predictions DIR` starts after
+model inference. See [entry-point commands](releases/native-intake-v1.2.0.md).
+Original packages/exports are retained and recovery results are separate.
 
 `case_manifest.json` is the generated input SSOT; its CSV/site/options files
 are projections. Do not edit them independently. All expected DNA libraries in

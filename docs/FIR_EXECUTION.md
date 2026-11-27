@@ -59,9 +59,11 @@ same submission command with `--resume`. A different analysis needs a new
 `--analysis-id`, not edits inside an existing execution.
 
 If native analysis and CH completed and only additional neo prediction failed,
-use the [prediction-only recovery](releases/native-intake-v1.1.5.md) from the
-new pinned release. It reuses the completed export and preserves the original
-attempt; it does not start the full native/CH graph again.
+use the same launcher with `--entry neo-predict --run-dir ORIGINAL_RUN
+--workflow-dir PINNED_WORKFLOW`. It reuses the completed export. If predictions
+already completed, `--entry neo-review --existing-predictions DIR` reuses those
+too. See [entry-point commands](releases/native-intake-v1.2.0.md); neither entry
+starts native/CH analysis or export generation.
 
 ## Laboratory QC
 

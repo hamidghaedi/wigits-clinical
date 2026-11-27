@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class NeoRecoveryHeadTests(unittest.TestCase):
-    def run_head(self, native_status):
+    def run_head(self, native_status, entry='neo-predict'):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         base = Path(temporary.name)
@@ -45,7 +45,7 @@ Path(os.environ['TEST_RECORD']).write_text(json.dumps({'args':sys.argv[1:],
         record = base/'record.json'
         env = dict(os.environ, BASH_ENV=str(modules), WIGITS_RECOVERY_WORKFLOW=str(workflow),
                    TEST_RECORDER=str(recorder), TEST_RECORD=str(record), SBATCH_DEPENDENCY='afterany:456')
-        result = subprocess.run(['bash',str(ROOT/'workflow/resume_optional_neo.sbatch'),str(run)],
+        result = subprocess.run(['bash',str(ROOT/'workflow/run_optional_recovery.sbatch'),str(run),entry,str(base/'predictions')],
                                 env=env,text=True,capture_output=True)
         self.assertEqual(native.read_text(), json.dumps({'status':native_status}))
         self.assertEqual(ch.read_text(), '{"status":"COMPLETED"}\n')
@@ -58,7 +58,7 @@ Path(os.environ['TEST_RECORD']).write_text(json.dumps({'args':sys.argv[1:],
         self.assertEqual(invocation['entry'], 'PREDICT_EXISTING_NEO')
         self.assertEqual(invocation['prior'], str(run/'extensions/results'))
         self.assertIsNone(invocation['dependency'])
-        self.assertEqual(invocation['args'], [str(config),str(run/'extensions/recovery/native-intake-v1.1.5'),
+        self.assertEqual(invocation['args'], [str(config),str(run/'extensions/recovery/native-intake-v1.2.0/neo-predict'),
                          '--case_id','SYNTHETIC','--existing_export',str(run/'extensions/results/SYNTHETIC/neo_export')])
 
     def test_head_cannot_start_when_native_did_not_complete(self):
@@ -66,6 +66,14 @@ Path(os.environ['TEST_RECORD']).write_text(json.dumps({'args':sys.argv[1:],
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('Native completion is required', result.stderr)
         self.assertFalse(record.exists())
+
+    def test_review_entry_passes_existing_predictions_without_prediction(self):
+        result, record, run, config = self.run_head('COMPLETED', 'neo-review')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        invocation = json.loads(record.read_text())
+        self.assertEqual(invocation['entry'], 'REVIEW_EXISTING_NEO')
+        self.assertIn('--existing_predictions', invocation['args'])
+        self.assertEqual(invocation['args'][1],str(run/'extensions/recovery/native-intake-v1.2.0/neo-review'))
 
 
 if __name__ == '__main__':
