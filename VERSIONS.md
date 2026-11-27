@@ -7,6 +7,7 @@ Oncoanalyser/source/reference bindings remain unchanged. See
 
 | Component | Bound version / identity |
 |---|---|
+| Maintained native intake and optional recovery | **native-intake/v1.1.5**; record-preserving VEP sorting, explicit container Python isolation and prediction-only recovery from completed native/CH/export results |
 | Upstream workflow | nf-core/oncoanalyser **3.0.0**, commit `7c74c87a43749952b38c9a18915947570f0595a0` |
 | Default installed source | **3.0.0-qlmp.2.2**, commit `05b8ec3ac953248d1f025528f03fe647c6f8ce30`; native analysis/eligibility plus [ORANGE source-value mapping](docs/ORANGE_SOURCE_VALUES.md) |
 | HMF reference bundle | **GRCh38, 3.0.0--8**, with the release's GRCh38_hmf genome/index configuration |

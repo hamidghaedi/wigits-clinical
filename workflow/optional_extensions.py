@@ -129,7 +129,7 @@ def build_plan(config):
                 native_results_modified=False, report_template_modified=False)
 
 
-def collect_status(plan, result_root, trace=None):
+def collect_status(plan, result_root, trace=None, prior_results=None):
     result_root = Path(result_root)
     terminal = {}
     if trace and Path(trace).is_file():
@@ -144,6 +144,10 @@ def collect_status(plan, result_root, trace=None):
         for feature in ("blood_ch", "rna_neoantigens"):
             status = dict(case[feature])
             path = result_root / case["case_id"] / feature / "status.json"
+            if not path.is_file() and prior_results is not None:
+                prior = Path(prior_results) / case["case_id"] / feature / "status.json"
+                if prior.is_file():
+                    path = prior
             if feature == "rna_neoantigens" and not path.is_file():
                 path = result_root / case["case_id"] / "neo_export/status.json"
             if path.is_file():
@@ -175,12 +179,13 @@ def main():
     status.add_argument("--plan", type=Path, required=True)
     status.add_argument("--results", type=Path, required=True)
     status.add_argument("--trace", type=Path)
+    status.add_argument("--prior-results", type=Path)
     status.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "plan":
         write_json(args.out, build_plan(json.loads(args.config.read_text())))
     else:
-        write_json(args.out, collect_status(json.loads(args.plan.read_text()), args.results, args.trace))
+        write_json(args.out, collect_status(json.loads(args.plan.read_text()), args.results, args.trace, args.prior_results))
 
 
 if __name__ == "__main__":

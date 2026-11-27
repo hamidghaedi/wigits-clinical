@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -24,7 +25,32 @@ class Commands:
 
     def container(self, image, *args):
         binds = list(self.resources["bind_roots"]) + [str(self.outdir), os.environ.get("SLURM_TMPDIR", str(self.outdir))]
-        self.run(["apptainer", "exec", "--cleanenv", "-B", ",".join(dict.fromkeys(binds)), self.resources[image], *args])
+        self.run(["apptainer", "exec", "--cleanenv", "--env", "PYTHONNOUSERSITE=1",
+                  "--env", "PYTHONPATH=", "-B", ",".join(dict.fromkeys(binds)), self.resources[image], *args])
+
+
+def sort_annotation_vcf(path):
+    """Order task-owned VEP output for tabix without changing record contents.
+
+    Somatic and germline proximal records arrive as separate ordered groups.
+    Sorting after VEP also covers completed exports reused by recovery runs.
+    """
+    path = Path(path)
+    lines = path.read_text().splitlines(keepends=True)
+    headers = [line for line in lines if line.startswith('#')]
+    records = [line for line in lines if not line.startswith('#')]
+    contigs = [re.search(r'ID=([^,>]+)', line).group(1)
+               for line in headers if line.startswith('##contig=<ID=')]
+    ranks = {chrom: index for index, chrom in enumerate(contigs)}
+
+    def key(line):
+        chrom, pos = line.split('\t', 2)[:2]
+        return ranks.get(chrom, len(ranks)), chrom, int(pos)
+
+    records.sort(key=key)
+    temporary = path.with_suffix(path.suffix + '.sorted')
+    temporary.write_text(''.join(headers + records))
+    temporary.replace(path)
 
 
 def chip(case, resources, out, threads, commands):
@@ -79,6 +105,7 @@ def neo_predict(case, resources, out, threads, commands, prepared):
                            "--tsl", "--biotype", "--transcript_version", "--hgvs", "--flag_pick",
                            "--pick_order", "canonical,tsl,biotype,rank,ccds,length", "--plugin", "Wildtype", "--plugin", "Frameshift",
                            "--dir_plugins", resources["vep_plugins"], "--fork", str(threads))
+        sort_annotation_vcf(target)
         commands.container("samtools_image", "bgzip", "-kf", target)
         commands.container("samtools_image", "tabix", "-fp", "vcf", str(target) + ".gz")
     prediction_dir = out / "pvacseq"
@@ -123,6 +150,8 @@ def neo_review(case, resources, out, threads, commands, prepared, prediction):
 def execute(plan, case_id, stage, outdir, threads, prepared=None, prediction=None):
     case = next(c for c in plan["cases"] if c["case_id"] == case_id)
     out = Path(outdir).resolve()
+    if stage == "neo_predict" and (out == Path(prepared).resolve() or Path(prepared).resolve() in out.parents):
+        raise ValueError("Prediction output must be separate from its preserved export")
     if stage == "neo_review" and (out == Path(prediction).resolve() or Path(prediction).resolve() in out.parents):
         raise ValueError("Review output must be separate from the preserved prediction directory")
     out.mkdir(parents=True, exist_ok=True)
@@ -138,6 +167,11 @@ def execute(plan, case_id, stage, outdir, threads, prepared=None, prediction=Non
             prepared_status = json.loads((Path(prepared) / "task_metadata.json").read_text())
             if prepared_status["status"] != "PREPARED":
                 raise ValueError("Prediction requires a successful eligible export")
+            export = json.loads((Path(prepared) / (case_id + '.interface_manifest.json')).read_text())
+            samples = export['samples']
+            if export['case'] != case_id or any(samples[key] != case[value] for key, value in
+                    (('tumour_dna', 'tumour_sample'), ('normal_dna', 'normal_sample'), ('tumour_rna', 'rna_sample'))):
+                raise ValueError("Export source disagrees with the configured case")
             result = neo_predict(case, plan["resources"], out, threads, commands, prepared)
         elif stage == "neo_review":
             source = Path(prediction)

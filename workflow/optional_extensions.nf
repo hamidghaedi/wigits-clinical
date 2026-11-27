@@ -123,3 +123,20 @@ workflow REVIEW_EXISTING_NEO {
     def scores = prediction.resolve("pvacseq/MHC_Class_I/${meta.tumour_sample}.all_epitopes.tsv")
     NEO_REVIEW(Channel.of(tuple(meta, prediction, prepared, scores.size() / (1024d*1024d*1024d), planFile)))
 }
+
+// Recovery deliberately has no BLOOD_CH or NEO_PREPARE invocation. Completed
+// native/CH outputs and the existing export are read-only prerequisites.
+workflow PREDICT_EXISTING_NEO {
+    if (!params.plan || !params.outdir || !params.case_id || !params.existing_export)
+        error 'Supply --plan, --outdir, --case_id and --existing_export'
+    def planFile = file(params.plan, checkIfExists: true)
+    def plan = new groovy.json.JsonSlurper().parse(planFile.toFile())
+    def matches = plan.cases.findAll { it.case_id == params.case_id }
+    if (matches.size() != 1) error 'Select exactly one configured case'
+    def meta = matches[0]
+    if (meta.rna_neoantigens.status != 'READY') error 'RNA neoantigens are not ready in the bound plan'
+    def prepared = file(params.existing_export, checkIfExists: true)
+    def taskMeta = new groovy.json.JsonSlurper().parse(prepared.resolve('task_metadata.json').toFile())
+    if (taskMeta.status != 'PREPARED') error 'Supply a successfully prepared export'
+    NEO_PREDICT(Channel.of(tuple(meta, prepared, taskMeta.resources, planFile)))
+}

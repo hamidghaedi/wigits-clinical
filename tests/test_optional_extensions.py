@@ -176,6 +176,8 @@ class OptionalExtensionTests(unittest.TestCase):
                 self.calls.append([str(v) for v in argv])
             def container(self, image, *argv):
                 self.calls.append([image] + [str(v) for v in argv])
+                if argv[0] == 'vep':
+                    Path(argv[argv.index('--output_file') + 1]).write_text('##fileformat=VCFv4.2\n#CHROM\tPOS\n')
         prepared = self.root / "prepared"
         prepared.mkdir()
         planner.write_json(prepared / "SYNTHETIC.interface_manifest.json", dict(hla=dict(alleles=["HLA-A*02:01"])))

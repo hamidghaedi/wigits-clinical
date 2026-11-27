@@ -18,8 +18,10 @@ status=0
 NXF_SYNTAX_PARSER=v1 nextflow run "$HERE/optional_extensions.nf" -entry "${WIGITS_EXTENSIONS_ENTRY:-OPTIONAL_EXTENSIONS}" \
   -c "$site_config" -c "$HERE/conf/optional_extensions.config" --plan "$RUN_DIR/state/plan.json" --outdir "$RUN_DIR/results" \
   -work-dir "$RUN_DIR/work" -with-trace "$RUN_DIR/logs/trace.tsv" -resume "$@" || status=$?
+prior=()
+[[ -z "${WIGITS_EXTENSIONS_PRIOR_RESULTS:-}" ]] || prior=(--prior-results "$WIGITS_EXTENSIONS_PRIOR_RESULTS")
 python3 "$HERE/optional_extensions.py" status --plan "$RUN_DIR/state/plan.json" \
-  --results "$RUN_DIR/results" --trace "$RUN_DIR/logs/trace.tsv" --out "$RUN_DIR/state/status.json"
+  --results "$RUN_DIR/results" --trace "$RUN_DIR/logs/trace.tsv" --out "$RUN_DIR/state/status.json" "${prior[@]}"
 # Missing required inputs for a selected eligible extension cannot be success.
 python3 - "$RUN_DIR/state/status.json" <<'PY' || status=1
 import json, sys
