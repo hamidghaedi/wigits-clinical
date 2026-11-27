@@ -148,6 +148,14 @@ prose are not regenerated, replaced or extended by this integration.
 
 ## Verification and remaining deployment work
 
+**27 November deployment update:** the Frontenac tests below remain successful
+reference evidence. Both inspected Fir native WGTS analyses and blood CH
+extensions completed, but additional RNA/pVACseq prediction failed: one proximal
+VCF had non-contiguous chromosome blocks, and the other encountered a NumPy
+`libflexiblas.so.3` import error. Full optional-neo portability is therefore
+unresolved. See [deployment requirements and known issues](DEPLOYMENT_REQUIREMENTS.md).
+The following paragraph records the earlier integration checkpoint.
+
 Offline unit/feature results and the compute-node CLI inspection are recorded in
 `tests/results/optional-extensions/README.md`. The feature branch is pushed.
 All four Nextflow option combinations pass the stub canary; the real CH and

@@ -1,5 +1,9 @@
 # Running a patient on Fir
 
+For a new installation, use the [deployment requirements](DEPLOYMENT_REQUIREMENTS.md)
+once to record host, container and selected-feature readiness. The current Fir
+native/CH successes and unresolved additional neo failures are distinguished there.
+
 Use the same tools for every patient. The preparer scans the **original lab
 manifest files** configured for this project and finds the tumour, matched
 normal and any declared RNA. You do not choose run manifests or assemble IDs.

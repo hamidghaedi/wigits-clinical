@@ -1,5 +1,8 @@
 # Running a patient on an execution worker
 
+Before routine use on a new worker, follow the [deployment requirements](DEPLOYMENT_REQUIREMENTS.md).
+Transferred assets and configured paths alone do not establish target runtime readiness.
+
 Use the same reusable tools on Fir and Narval. Set `mohcc` to the persistent
 project root on that worker (Narval: `/project/def-ghaedi/$USER/mohcc`).
 FASTQs remain on scratch in `fastq/<original_run>/<laboratory_sample>/`.
