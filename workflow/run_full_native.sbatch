@@ -27,6 +27,8 @@ if [[ -z "${WIGITS_SITE_ENV:-}" ]]; then
 fi
 export WIGITS_WORKFLOW_DIR="$PACKAGE/workflow"
 source "$WIGITS_SITE_ENV"
+# A direct sbatch/site dependency belongs to this head, not its children.
+unset SBATCH_DEPENDENCY
 export ONCO_SOURCE="${ONCO_SOURCE:-$ONCO_SOURCE_DIR}" ONCO_REV=3.0.0 ONCO_GENOME=GRCh38_hmf
 site_final=()
 if [[ -n "${WIGITS_FINAL_CONFIG:-}" ]]; then

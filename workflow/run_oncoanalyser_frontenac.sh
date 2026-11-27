@@ -27,6 +27,8 @@ source "${WIGITS_SITE_ENV:-$HERE/conf/frontenac_paths.env}"
 source /cvmfs/soft.computecanada.ca/config/profile/bash.sh
 module load "$NEXTFLOW_MODULE" "$APPTAINER_MODULE"
 set -u
+# Submission-only dependencies must not constrain Nextflow child jobs.
+unset SBATCH_DEPENDENCY
 
 RUN_ID="${1:?usage: $0 <run_id> <samplesheet.csv> [extra args]}"
 SAMPLESHEET="$(readlink -f "${2:?usage: $0 <run_id> <samplesheet.csv> [extra args]}")"

@@ -120,3 +120,19 @@ Validation for v1.1.3:181 primary tests pass (3 existing skips),3 adapter
 tests pass, shell syntax and diff checks pass. Stubbed submissions verify the
 default, shared-site value and explicit CLI precedence, while preserving the
 prepared package and duplicate-submission behavior.
+
+## v1.1.4 — native Slurm dependencies
+
+The launcher accepts `--dependency` and forwards native Slurm syntax without
+reinterpretation. It records the requested expression separately from frozen
+scientific inputs and prevents SBATCH_DEPENDENCY leaking into Nextflow child
+submissions. The direct head clears the same inherited variable. Existing runs,
+resource defaults and scientific modules are unchanged. Dependency chaining is
+head-level admission; abnormal head termination can leave children to review.
+
+Validation:183 primary offline tests (3 existing skips),3 adapter tests, shell
+syntax and diff checks pass. Actual launcher subprocess tests cover omitted,
+CLI/inherited and compound dependencies, precedence, scheduler rejection and
+head receipts. A native-entry test includes a site file that reintroduces the
+variable; the final native/helper cleanup prevents it reaching Nextflow. No
+new Fir dependency job or case analysis has been submitted by this change.

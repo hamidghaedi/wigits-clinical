@@ -22,7 +22,7 @@ import shlex
 import sys
 import xml.etree.ElementTree as ET
 
-VERSION = '1.1.3'
+VERSION = '1.1.4'
 FIELDS = 'group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath'.split(',')
 PHASES = {'Phase_1', 'phase_1.5', 'Phase_2'}
 PHASE_ALIASES = {'Phase 1':'Phase_1','Phase 1.5':'phase_1.5','Phase 2':'Phase_2'}

@@ -2,6 +2,8 @@
 # Run explicitly selected post-native extensions; reusable for completed runs.
 # Source/site configuration stays in the frozen native package. No data copying.
 set -euo pipefail
+# Standalone or post-native execution must not inherit head dependencies.
+unset SBATCH_DEPENDENCY
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="$(readlink -f "${1:?optional_extensions.json required}")"
 RUN_DIR="$(readlink -m "${2:?extension execution root required}")"

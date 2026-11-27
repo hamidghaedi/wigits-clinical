@@ -88,3 +88,40 @@ fallback. Slurm validates the duration. The selected request is recorded in
 `state/head_walltime.txt`. Already submitted jobs keep their allocation; changing
 the shared setting or installing a new release does not update them. The native
 head's direct `sbatch` fallback is also96h and accepts normal `sbatch --time`.
+
+## Slurm dependencies and two case chains
+
+Append `--dependency afterany:PREVIOUS_HEAD_JOB_ID` to a prepared case’s printed
+submission command. The launcher passes this verbatim as one sbatch argument;
+Slurm validates job IDs and the dependency expression. It immediately prints the
+new queued head ID; it does not wait on a login node or submit a polling job.
+The selected expression is recorded in `state/head_dependency.txt`.
+
+Use `afterany` for independent cases: the next head becomes eligible when the
+previous head terminates, including failure/cancellation. `afterok` requires
+success and can leave successors blocked if the predecessor fails. Native
+compound expressions are accepted unchanged. CLI overrides an inherited
+SBATCH_DEPENDENCY; the variable is then removed before head/nested submission.
+Dependencies are per-submission, never stored as a shared site default. A
+scheduler rejection propagates without recording a new successful submission.
+
+To queue two independent chains, start one behind each of two existing heads.
+Keep each chain’s most recently submitted head ID and make its next case depend
+on that ID. Under normal end-to-end completion this permits at most two case
+controllers, including native analysis and selected optional branches. It does
+not limit the number of process jobs within each case. Scheduler availability
+can leave fewer than two running. Static chains cannot share an idle slot when
+one chain finishes earlier; they are not a dynamic two-slot work pool. A killed
+or timed-out controller can leave child jobs; those need an explicit review
+before treating that case as finished. No automatic cancellation/retry is added.
+Running heads and their allocations remain unchanged.
+
+Example (after preparing the next case):
+
+```bash
+bash "$mohcc/scripts/run_native_fir.sh" \
+  --manifest /prepared/samplesheet.csv --config /prepared/site.env \
+  --dependency afterany:PREVIOUS_HEAD_JOB_ID
+```
+
+On Narval the maintained script is `run_native_workflow.sh` with the same options.

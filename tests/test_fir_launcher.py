@@ -37,7 +37,7 @@ class FirLauncherTests(unittest.TestCase):
             (package / 'site.env').write_text(
                 f'WIGITS_PROJECT_ROOT="{project}"\nWIGITS_SCRATCH_ROOT="{root}/scratch"\n'
                 f'WIGITS_RUN_ROOT="{run.parent}"\n'
-                'source "$WIGITS_WORKFLOW_DIR/conf/fir_paths.env"\n')
+                'source "$WIGITS_WORKFLOW_DIR/conf/fir_paths.env"\nexport SBATCH_DEPENDENCY=afterany:88888\n')
             commands = root / 'bin'
             commands.mkdir()
             fake = commands / 'nextflow'
@@ -45,7 +45,7 @@ class FirLauncherTests(unittest.TestCase):
                             'if "-version" in sys.argv: print("nextflow version synthetic")\n'
                             'else:\n open(os.environ["CAPTURE"],"w").write(json.dumps(dict(argv=sys.argv[1:],'
                             'cache=os.environ["APPTAINER_CACHEDIR"],plugins=os.environ["NXF_PLUGINS_DIR"],'
-                            'site=os.environ["WIGITS_EXTENSIONS_SITE_CONFIG"])))\n'
+                            'site=os.environ["WIGITS_EXTENSIONS_SITE_CONFIG"],dependency=os.environ.get("SBATCH_DEPENDENCY"))))\n'
                             ' open(".nextflow.log","w").write("synthetic")\n')
             fake.chmod(0o755)
             apptainer = commands / 'apptainer'
@@ -54,7 +54,7 @@ class FirLauncherTests(unittest.TestCase):
             # Replace only the external module profile, retaining normal source semantics.
             wrapper = 'source() { if [[ "$1" != /cvmfs/soft.computecanada.ca/config/profile/bash.sh ]]; then builtin source "$@"; fi; }; module() { :; }; export -f source module; exec bash "$@"'
             env = {k: v for k, v in os.environ.items() if k != 'BASH_ENV' and not k.startswith(('WIGITS_', 'SLURM_', 'ONCO_', 'REF_CONFIG'))}
-            env.update(PATH=str(commands)+os.pathsep+env['PATH'], CAPTURE=str(root/'capture.json'))
+            env.update(PATH=str(commands)+os.pathsep+env['PATH'], CAPTURE=str(root/'capture.json'),SBATCH_DEPENDENCY='afterany:99999')
             reply = subprocess.run(['bash', '-c', wrapper, 'test', str(ROOT/'workflow/run_full_native.sbatch'),
                                     str(package), 'synthetic'], env=env, text=True, capture_output=True)
             self.assertEqual(reply.returncode, 0, reply.stdout+reply.stderr)
@@ -67,6 +67,7 @@ class FirLauncherTests(unittest.TestCase):
             self.assertEqual(data['cache'], str(root/'scratch/.cache/apptainer'))
             self.assertEqual(data['plugins'], str(project/'resources/nextflow/plugins'))
             self.assertEqual(data['site'], str(package/'workflow/conf/fir.config'))
+            self.assertIsNone(data['dependency'])
             resources = json.loads((run/'state/input_resources.json').read_text())
             self.assertEqual(len(resources['alignment_lanes']), 2)
             self.assertTrue(all(lane['cpus']==64 for lane in resources['alignment_lanes']))
@@ -121,6 +122,52 @@ class FirLauncherTests(unittest.TestCase):
                 self.assertEqual((root/'analysis/SYNTHETIC/state/head_walltime.txt').read_text(),expected+'\n')
                 self.assertEqual((root/'analysis/SYNTHETIC/package/site.env').read_bytes(),site.read_bytes())
                 self.assertEqual((root/'analysis/SYNTHETIC/state/head_job.txt').read_text(),'12345\n')
+
+    def test_dependencies_reach_sbatch_once_and_do_not_leak_to_children(self):
+        scenarios=[([],None,None),
+            (['--dependency','afterany:12345'],None,'afterany:12345'),
+            (['--dependency','afterok:12345:67890,afterany:99999'],None,'afterok:12345:67890,afterany:99999'),
+            ([],'afterany:11111','afterany:11111'),
+            (['--dependency','afterany:22222'],'afterok:11111','afterany:22222')]
+        for extra,inherited,expected in scenarios:
+            with self.subTest(expected=expected,inherited=inherited), tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);workflow=root/'release/workflow';workflow.mkdir(parents=True)
+                (workflow/'run_full_native.sbatch').touch()
+                manifest=root/'samplesheet.csv';manifest.write_text('prepared synthetic input\n')
+                site=root/'site.env';site.write_text(f'RUN_ROOT="{root}/analysis"\nWIGITS_RUN_ID=SYNTHETIC\n'
+                    f'WIGITS_WORKFLOW_DIR="{workflow}"\nSLURM_ACCOUNT_CPU=synthetic\n')
+                commands=root/'bin';commands.mkdir()
+                stub=commands/'sbatch';stub.write_text('#!/usr/bin/env python3\nimport json,os,sys\n'
+                    'open(os.environ["CAPTURE"],"w").write(json.dumps(dict(argv=sys.argv[1:],inherited=os.environ.get("SBATCH_DEPENDENCY"))))\nprint("12345")\n');stub.chmod(0o755)
+                env={k:v for k,v in os.environ.items() if k!='BASH_ENV' and not k.startswith(('WIGITS_','SBATCH_'))}
+                env.update(PATH=str(commands)+os.pathsep+env['PATH'],CAPTURE=str(root/'submit.json'))
+                if inherited:env['SBATCH_DEPENDENCY']=inherited
+                result=subprocess.run(['bash',str(ROOT/'workflow/run_native_fir.sh'),
+                    '--manifest',str(manifest),'--config',str(site),*extra],env=env,text=True,capture_output=True)
+                self.assertEqual(result.returncode,0,result.stderr)
+                captured=json.loads((root/'submit.json').read_text())
+                self.assertEqual([x for x in captured['argv'] if x.startswith('--dependency=')],
+                    ['--dependency='+expected] if expected else [])
+                self.assertIsNone(captured['inherited'])
+                self.assertEqual((root/'analysis/SYNTHETIC/state/head_dependency.txt').read_text(),(expected or 'none')+'\n')
+                self.assertEqual((root/'analysis/SYNTHETIC/package/site.env').read_bytes(),site.read_bytes())
+
+    def test_rejected_dependency_does_not_record_a_submitted_job(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);workflow=root/'release/workflow';workflow.mkdir(parents=True)
+            (workflow/'run_full_native.sbatch').touch()
+            manifest=root/'samplesheet.csv';manifest.write_text('prepared synthetic input\n')
+            site=root/'site.env';site.write_text(f'RUN_ROOT="{root}/analysis"\nWIGITS_RUN_ID=SYNTHETIC\n'
+                f'WIGITS_WORKFLOW_DIR="{workflow}"\nSLURM_ACCOUNT_CPU=synthetic\n')
+            commands=root/'bin';commands.mkdir()
+            stub=commands/'sbatch';stub.write_text('#!/bin/sh\necho "sbatch: error: Invalid dependency" >&2\nexit 1\n');stub.chmod(0o755)
+            env={k:v for k,v in os.environ.items() if k!='BASH_ENV'};env['PATH']=str(commands)+os.pathsep+env['PATH']
+            result=subprocess.run(['bash',str(ROOT/'workflow/run_native_fir.sh'),'--manifest',str(manifest),
+                '--config',str(site),'--dependency','afterany:12345'],env=env,text=True,capture_output=True)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('Invalid dependency',result.stderr)
+            self.assertNotIn('Submitted',result.stdout)
+            self.assertFalse((root/'analysis/SYNTHETIC/state/head_job.txt').exists())
 
     def test_missing_explicit_site_never_falls_back_silently(self):
         source = (ROOT/'workflow/run_full_native.sbatch').read_text()
