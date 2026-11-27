@@ -90,6 +90,14 @@ class OptionalEntryLauncherTests(unittest.TestCase):
         self.assertNotEqual(result.returncode,0)
         self.assertFalse(self.capture.exists())
 
+    def test_prediction_dependency_can_wait_for_a_future_export(self):
+        prepared=self.root/'future/entry/results/SYNTHETIC/neo_export'
+        result=self.launch(extra=['--existing-export',str(prepared),'--dependency','afterok:42'])
+        self.assertEqual(result.returncode,0,result.stderr)
+        args=json.loads(self.capture.read_text())['args']
+        self.assertEqual(args[-1],str(prepared))
+        self.assertIn('--dependency=afterok:42',args)
+
     def test_repeated_recovery_requires_resume(self):
         self.assertEqual(self.launch().returncode,0)
         self.assertNotEqual(self.launch().returncode,0)

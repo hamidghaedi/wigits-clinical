@@ -118,6 +118,18 @@ class PhasingTests(unittest.TestCase):
         self.assertEqual(line.split('\t')[-1],'.:.')
         self.assertEqual(json.loads(ledger.read_text())['missing_tumour_genotypes'],1)
 
+    def test_germline_tumour_column_is_resolved_by_name_in_reversed_sample_order(self):
+        somatic=self.root/'somatic.vcf';somatic.write_text(HEADER+row(100))
+        fields=row(103,gt='1/1').rstrip('\n').split('\t')
+        germline=self.root/'germline.vcf'
+        germline.write_text(HEADER.replace('\tNORMAL\tTUMOUR','\tTUMOUR\tNORMAL')+
+            '\t'.join(fields[:9]+[fields[10],fields[9]])+'\n')
+        output=self.root/'context.vcf'
+        phase.export_context(str(somatic),str(germline),str(somatic),'TUMOUR',
+            {('chr1','100','A','T')},output,self.root/'evidence.json')
+        line=next(l for l in output.read_text().splitlines() if l.startswith('chr1\t103'))
+        self.assertEqual(line.split('\t')[-1],'1/1:10,9')
+
     def test_existing_hp_is_preserved_as_evidence_not_trusted_across_callers(self):
         s = row(100).replace('GT:AD','GT:AD:HP').replace('0/0:20,0','0/0:20,0:.').replace('0/1:10,9','0/1:10,9:old')
         rows, evidence, _ = self.export(s)

@@ -36,10 +36,11 @@ case "$entry" in
         if [[ "$entry" == neo-prepare ]]; then
             [[ -z "$existing_export" ]] || { echo '--existing-export is for prediction/review' >&2; exit 2; }
         elif [[ -n "$existing_export" ]]; then
-            existing_export="$(readlink -f "$existing_export")"
+            # An afterok dependency may produce this export after submission.
+            existing_export="$(readlink -m "$existing_export")"
         fi
         if [[ "$entry" == neo-review ]]; then
-            existing_predictions="$(readlink -f "${existing_predictions:?Use --existing-predictions}")"
+            existing_predictions="$(readlink -m "${existing_predictions:?Use --existing-predictions}")"
         else
             [[ -z "$existing_predictions" ]] || { echo '--existing-predictions is for neo-review' >&2; exit 2; }
         fi ;;
