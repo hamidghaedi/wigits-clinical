@@ -63,10 +63,28 @@ variant calling finishes. No polling or partial-run completion is used.
 Full-run membership/state is in `file_manifests/lab_qc/`; successful reports
 are retained under project `<phase>/qc_reports/<run_id>/` before central return.
 
-The shared configuration is `config/native_fir.json`. Its `laboratory_sources`
+New installations use shared `config/native_site.json`; the preparer falls back
+to `config/native_fir.json` on existing installations. Its `laboratory_sources`
 points to the original lab directories and their phase bindings; the maintained
 alias registry contains source-confirmed corrections. New original lab files
 go in those source directories, so later preparation discovers them automatically.
 Routine native analysis uses fresh-frozen tumours; new FFPE analysis still needs
 its separately agreed analytical route. No software or resources are installed
 by either command.
+
+## Controller walltime
+
+New submissions default to96hours (`4-00:00:00`), based on9 completed native
+controllers at11.7–71.8hours, including downstream job queue waits. The head's
+own pre-start queue is excluded. Recovery-only heads and failed/current attempts
+are not used to choose the default. Historical task caching remains represented.
+The extra24.2hours is a starting margin, not a guarantee on a new cluster or for
+full optional CH/neo runs. Individual task resources are unchanged.
+
+Set `controller_walltime` in the shared site JSON before preparation, or append
+`--controller-time 3-00:00:00` to the printed submission command for an explicit
+per-submission override. CLI wins over the prepared site value, then the96h
+fallback. Slurm validates the duration. The selected request is recorded in
+`state/head_walltime.txt`. Already submitted jobs keep their allocation; changing
+the shared setting or installing a new release does not update them. The native
+head's direct `sbatch` fallback is also96h and accepts normal `sbatch --time`.

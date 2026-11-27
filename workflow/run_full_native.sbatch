@@ -2,7 +2,7 @@
 #SBATCH --job-name=onco-full-native-head
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
-#SBATCH --time=13-00:00:00
+#SBATCH --time=4-00:00:00
 set -euo pipefail
 PACKAGE="$(readlink -f "${1:?execution package required}")"
 RUN_ID="${2:?run ID required}"

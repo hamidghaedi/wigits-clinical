@@ -205,6 +205,14 @@ class PrepareNativeTests(unittest.TestCase):
         self.assertEqual(result.stdout.splitlines(),[str(self.scratch/'analysis/WiGiTS/test'),
             str(self.project/'resources/containers'),str(ROOT/'workflow/conf/narval.config')])
 
+    def test_shared_controller_walltime_is_frozen_in_prepared_site(self):
+        self.config['controller_walltime']='3-12:00:00';self.write_config()
+        package=self.prepared()
+        result=subprocess.run(['bash','-c','source "$1"; printf "%s" "$WIGITS_CONTROLLER_TIME"',
+            'test',str(package/'site.env')],text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(result.stdout,'3-12:00:00')
+
     def test_standalone_prefers_shared_site_config(self):
         self.config['laboratory_sources']=[dict(glob=str(self.lab),phase='Phase_1')]
         self.config['site']='narval'

@@ -22,7 +22,7 @@ import shlex
 import sys
 import xml.etree.ElementTree as ET
 
-VERSION = '1.1.2'
+VERSION = '1.1.3'
 FIELDS = 'group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath'.split(',')
 PHASES = {'Phase_1', 'phase_1.5', 'Phase_2'}
 PHASE_ALIASES = {'Phase 1':'Phase_1','Phase 1.5':'phase_1.5','Phase 2':'Phase_2'}
@@ -370,7 +370,7 @@ def prepare(args):
         WIGITS_EXTENSIONS_CONFIG=str(out/'optional_extensions.json'),WIGITS_LAB_QC_CONFIG=str(qc),
         ONCO_SOURCE=config['native_source'],REF_CONFIG=str(reference/'reference_data.config'))
     if runtime:values['WIGITS_NATIVE_EXTRA_CONFIG']=str(out/'native_runtime.config')
-    for key,cfgkey in [('WIGITS_SLURM_ACCOUNT','account'),('WIGITS_NEXTFLOW_MODULE','nextflow_module'),('WIGITS_APPTAINER_MODULE','apptainer_module')]:
+    for key,cfgkey in [('WIGITS_CONTROLLER_TIME','controller_walltime'),('WIGITS_SLURM_ACCOUNT','account'),('WIGITS_NEXTFLOW_MODULE','nextflow_module'),('WIGITS_APPTAINER_MODULE','apptainer_module')]:
         if config.get(cfgkey): values[key]=config[cfgkey]
     site=config.get('site','fir')
     if site not in {'fir','frontenac','narval'}:raise ValueError('Unknown configured site')

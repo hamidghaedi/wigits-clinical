@@ -97,6 +97,31 @@ class FirLauncherTests(unittest.TestCase):
             self.assertNotEqual(changed.returncode,0)
             self.assertIn('Existing package differs',changed.stderr)
 
+    def test_controller_walltime_default_site_and_cli_override_reach_sbatch(self):
+        for site_time,extra,expected in [('',[], '4-00:00:00'),
+                ('3-00:00:00',[], '3-00:00:00'),
+                ('3-00:00:00',['--controller-time','2-12:00:00'],'2-12:00:00')]:
+            with self.subTest(site_time=site_time,extra=extra), tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);workflow=root/'release/workflow';workflow.mkdir(parents=True)
+                (workflow/'run_full_native.sbatch').touch()
+                manifest=root/'samplesheet.csv';manifest.write_text('prepared synthetic input\n')
+                site=root/'site.env';site.write_text(f'RUN_ROOT="{root}/analysis"\nWIGITS_RUN_ID=SYNTHETIC\n'
+                    f'WIGITS_WORKFLOW_DIR="{workflow}"\nSLURM_ACCOUNT_CPU=synthetic\n'
+                    +(f'WIGITS_CONTROLLER_TIME={site_time}\n' if site_time else ''))
+                commands=root/'bin';commands.mkdir()
+                stub=commands/'sbatch';stub.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$CAPTURE"\necho 12345\n');stub.chmod(0o755)
+                env={k:v for k,v in os.environ.items() if k!='BASH_ENV' and not k.startswith('WIGITS_')}
+                env.update(PATH=str(commands)+os.pathsep+env['PATH'],CAPTURE=str(root/'sbatch.args'))
+                result=subprocess.run(['bash',str(ROOT/'workflow/run_native_fir.sh'),
+                    '--manifest',str(manifest),'--config',str(site),*extra],env=env,text=True,capture_output=True)
+                self.assertEqual(result.returncode,0,result.stderr)
+                submitted=(root/'sbatch.args').read_text().splitlines()
+                self.assertIn('--time='+expected,submitted)
+                self.assertEqual(sum(arg.startswith('--time=') for arg in submitted),1)
+                self.assertEqual((root/'analysis/SYNTHETIC/state/head_walltime.txt').read_text(),expected+'\n')
+                self.assertEqual((root/'analysis/SYNTHETIC/package/site.env').read_bytes(),site.read_bytes())
+                self.assertEqual((root/'analysis/SYNTHETIC/state/head_job.txt').read_text(),'12345\n')
+
     def test_missing_explicit_site_never_falls_back_silently(self):
         source = (ROOT/'workflow/run_full_native.sbatch').read_text()
         self.assertIn('if [[ -z "${WIGITS_SITE_ENV:-}" ]]', source)

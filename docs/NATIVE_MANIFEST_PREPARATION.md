@@ -105,3 +105,18 @@ Narval site validation:179 primary offline tests pass (3 existing skips),3
 adapter tests pass, shell syntax and `git diff --check` pass. These tests cover
 generated WGTS/CH/neo inputs and shared root bindings; they do not establish
 Narval module availability, scheduler execution or performance.
+
+## v1.1.3 — configurable controller walltime
+
+An optional site `controller_walltime` is retained as `WIGITS_CONTROLLER_TIME`
+in generated `site.env`. The maintained launcher accepts `--controller-time`,
+using CLI, prepared site, then96h default precedence. The native head's direct
+Slurm fallback is96h. The default covers the longest of9 observed successful
+native controller occupancies (71.8h) with24.2h margin, including child queue
+waits. No task CPU, memory, walltime, inputs or analytical code changes.
+Current KQ0061 remains running with its existing allocation by owner direction.
+
+Validation for v1.1.3:181 primary tests pass (3 existing skips),3 adapter
+tests pass, shell syntax and diff checks pass. Stubbed submissions verify the
+default, shared-site value and explicit CLI precedence, while preserving the
+prepared package and duplicate-submission behavior.

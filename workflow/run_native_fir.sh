@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Owner-operated submission of a prepared original-FASTQ native case.
 set -euo pipefail
-manifest= config= blood_ch=false resume=false
+manifest= config= controller_time= blood_ch=false resume=false
 while (($#)); do
     case "$1" in
         --manifest) manifest="${2:?CSV required}"; shift 2 ;;
         --config) config="${2:?site.env required}"; shift 2 ;;
+        --controller-time) controller_time="${2:?Slurm walltime required}"; shift 2 ;;
         --blood-ch) blood_ch=true; shift ;;
         --resume) resume=true; shift ;;
         -h|--help)
-            echo 'Usage: run_native_fir.sh --manifest samplesheet.csv --config site.env [--blood-ch] [--resume]'
+            echo 'Usage: run_native_fir.sh --manifest samplesheet.csv --config site.env [--controller-time D-HH:MM:SS] [--blood-ch] [--resume]'
             exit 0 ;;
         *) echo "Unknown argument: $1" >&2; exit 2 ;;
     esac
@@ -17,6 +18,8 @@ done
 manifest="$(readlink -f "${manifest:?Use --manifest}")"
 config="$(readlink -f "${config:?Use --config}")"
 source "$config"
+# CLI overrides the prepared site value; old packages use the measured default.
+controller_time="${controller_time:-${WIGITS_CONTROLLER_TIME:-4-00:00:00}}"
 run_dir="$RUN_ROOT/${WIGITS_RUN_ID:?Set WIGITS_RUN_ID in the supplied configuration}"
 package="$run_dir/package"
 mkdir -p "$package" "$run_dir/logs" "$run_dir/state"
@@ -63,11 +66,13 @@ native_args=()
 if [[ -n "${WIGITS_NATIVE_EXTRA_CONFIG:-}" ]]; then
     native_args=(-c "$WIGITS_NATIVE_EXTRA_CONFIG")
 fi
-job="$(sbatch --parsable --account="$SLURM_ACCOUNT_CPU" --time=6-23:00:00 \
+job="$(sbatch --parsable --account="$SLURM_ACCOUNT_CPU" --time="$controller_time" \
     --job-name="$WIGITS_RUN_ID" --chdir="$run_dir" \
     --output="$run_dir/logs/head-%j.out" --error="$run_dir/logs/head-%j.err" \
     --export="ALL,WIGITS_SITE_ENV=$package/site.env,WIGITS_WORKFLOW_DIR=$WIGITS_WORKFLOW_DIR" \
     "$WIGITS_WORKFLOW_DIR/run_full_native.sbatch" "$package" "$WIGITS_RUN_ID" "${native_args[@]}")"
 printf '%s\n' "${job%%;*}" > "$run_dir/state/head_job.txt"
+printf '%s\n' "$controller_time" > "$run_dir/state/head_walltime.txt"
 echo "Submitted ${job%%;*}"
+echo "Controller walltime: $controller_time"
 echo "Run: $run_dir"

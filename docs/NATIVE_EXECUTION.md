@@ -37,3 +37,20 @@ events trigger one run-level report after the final library, without polling or
 waiting for variant calling. The per-run registry is `file_manifests/lab_qc/`.
 Neither command installs software, copies inputs or deletes sources. Owner-run
 target execution is required before claiming a new site's runtime validated.
+
+## Controller walltime
+
+New submissions default to96hours (`4-00:00:00`), based on9 completed native
+controllers at11.7–71.8hours, including downstream job queue waits. The head's
+own pre-start queue is excluded. Recovery-only heads and failed/current attempts
+are not used to choose the default. Historical task caching remains represented.
+The extra24.2hours is a starting margin, not a guarantee on a new cluster or for
+full optional CH/neo runs. Individual task resources are unchanged.
+
+Set `controller_walltime` in the shared site JSON before preparation, or append
+`--controller-time 3-00:00:00` to the printed submission command for an explicit
+per-submission override. CLI wins over the prepared site value, then the96h
+fallback. Slurm validates the duration. The selected request is recorded in
+`state/head_walltime.txt`. Already submitted jobs keep their allocation; changing
+the shared setting or installing a new release does not update them. The native
+head's direct `sbatch` fallback is also96h and accepts normal `sbatch --time`.
